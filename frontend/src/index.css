@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: dark;
+
+  /* Golden × Dark Luxury Design System Tokens */
+  --bg-obsidian: #090909;
+  --surface-charcoal: #111111;
+  --surface-card: #171717;
+  --surface-elevated: #211E18;
+  --border-gold: #302B22;
+  --border-gold-subtle: #242018;
+  --gold-primary: #D6AD60;
+  --gold-highlight: #F1D99F;
+  --gold-muted: #8F763F;
+  --text-ivory: #F5F0E6;
+  --text-muted: #A7A094;
+  --text-dim: #6B655B;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #090909;
+  color: #F5F0E6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  selection-background-color: #D6AD60;
+  selection-color: #090909;
+}
+
+/* Custom Gold Glow & Luxury Gradients */
+.gold-glow {
+  box-shadow: 0 0 25px -5px rgba(214, 173, 96, 0.25);
+}
+
+.gold-glow-subtle {
+  box-shadow: 0 4px 20px -2px rgba(214, 173, 96, 0.12);
+}
+
+.gold-glow-sm {
+  box-shadow: 0 0 12px -2px rgba(214, 173, 96, 0.3);
+}
+
+.gold-border-gradient {
+  border-image: linear-gradient(to bottom, #D6AD60, #302B22) 1;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090909;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #211E18;
+  border-radius: 9999px;
+  border: 1px solid #302B22;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D6AD60;
+}
