@@ -211,40 +211,36 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
       label: 'Daily Love', 
       sublabel: 'Romance & Relationships',
       icon: Heart, 
-      color: '#85283C',
-      badgeClass: 'ambient-badge-crimson'
+      color: '#D7374B'
     },
     { 
       id: 'friendship' as DailyTab, 
       label: 'Daily Friendship', 
       sublabel: 'Trust & Human Connection',
       icon: Users, 
-      color: '#203D62',
-      badgeClass: 'ambient-badge-blue'
+      color: '#D7374B'
     },
     { 
       id: 'mind' as DailyTab, 
       label: 'Daily Mind', 
       sublabel: 'Psychology & Awareness',
       icon: Brain, 
-      color: '#49315F',
-      badgeClass: 'ambient-badge-violet'
+      color: '#D7374B'
     },
     { 
       id: 'growth' as DailyTab, 
       label: 'Daily Growth', 
       sublabel: 'Motivation & Self-Worth',
       icon: Sparkles, 
-      color: '#79502D',
-      badgeClass: 'ambient-badge-amber'
+      color: '#D7374B'
     }
   ];
 
   if (loading) {
     return (
       <div className="w-full min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-        <div className="w-10 h-10 rounded-full border-2 border-[#85283C] border-t-transparent animate-spin" />
-        <p className="text-xs text-[#A99BAA] tracking-wider uppercase">Loading Today's Connection Intelligence...</p>
+        <div className="w-10 h-10 rounded-full border-2 border-[#D7374B] border-t-transparent animate-spin" />
+        <p className="text-xs text-[#A898A7] tracking-wider uppercase">Loading Today's Connection Intelligence...</p>
       </div>
     );
   }
@@ -255,23 +251,23 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
       {/* ===================================================================== */}
       {/* 1. TOP HEADER & STREAK BANNER                                         */}
       {/* ===================================================================== */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#321323]">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
             {onBackToHome && (
               <button 
                 onClick={onBackToHome}
-                className="p-1.5 rounded-xl bg-[#160D19] border border-[#321323] text-[#A99BAA] hover:text-[#E9DFE8] cursor-pointer"
+                className="p-1.5 rounded-xl dark-glass border border-white/[0.08] text-[#A898A7] hover:text-[#F2EBF0] cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            <h1 className="text-xl sm:text-2xl font-black text-[#E9DFE8] font-serif flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black text-[#F2EBF0] font-serif flex items-center gap-2">
               <span>Daily Connection</span>
-              <span className="text-[#85283C] text-sm">❤️</span>
+              <span className="text-[#D7374B] text-sm">✧</span>
             </h1>
           </div>
-          <p className="text-xs text-[#A99BAA]">
+          <p className="text-xs text-[#A898A7]">
             Personalized Relationship & Human Connection Intelligence • Helping you love, understand and connect.
           </p>
         </div>
@@ -279,24 +275,24 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
         {/* Streaks & Personalization Controls */}
         <div className="flex items-center gap-2.5">
           {streak && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#160D19] border border-[#79502D]/40 text-[#F8D2A6] text-xs font-bold shadow-md">
-              <Flame className="w-4 h-4 text-[#F8D2A6] fill-[#79502D]" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full dark-glass border border-[#D7374B]/35 text-[#FFA4B2] text-xs font-bold shadow-md">
+              <Flame className="w-4 h-4 text-[#D7374B] fill-[#D7374B]" />
               <span>{streak.current_streak} Day Streak</span>
             </div>
           )}
 
           <button
             onClick={() => setIsPersonalizeOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#160D19] hover:bg-[#321323] border border-[#321323] text-xs font-medium text-[#E9DFE8] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-[#F2EBF0] transition-colors cursor-pointer"
             title="Personalize your daily track"
           >
-            <Sliders className="w-3.5 h-3.5 text-[#A99BAA]" />
+            <Sliders className="w-3.5 h-3.5 text-[#A898A7]" />
             <span className="hidden sm:inline">Personalize</span>
           </button>
 
           <button
             onClick={handleOpenSaved}
-            className="p-2 rounded-full bg-[#160D19] hover:bg-[#321323] border border-[#321323] text-[#A99BAA] hover:text-[#F0B8D3] transition-colors cursor-pointer"
+            className="p-2 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-[#A898A7] hover:text-[#FFA4B2] transition-colors cursor-pointer"
             title="Saved Wisdom"
           >
             <Bookmark className="w-4 h-4" />
@@ -304,7 +300,7 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
 
           <button
             onClick={handleOpenHistory}
-            className="p-2 rounded-full bg-[#160D19] hover:bg-[#321323] border border-[#321323] text-[#A99BAA] hover:text-[#F0B8D3] transition-colors cursor-pointer"
+            className="p-2 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-[#A898A7] hover:text-[#FFA4B2] transition-colors cursor-pointer"
             title="Past Reflections"
           >
             <Calendar className="w-4 h-4" />
@@ -325,31 +321,31 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
               onClick={() => setActiveTab(t.id)}
               className={`p-3.5 rounded-2xl flex flex-col text-left transition-all cursor-pointer relative overflow-hidden group ${
                 isActive
-                  ? 'bg-[#160D19] border border-[#85283C]/50 shadow-xl'
-                  : 'bg-[#160D19]/40 border border-[#321323]/50 hover:bg-[#160D19] hover:border-[#321323]'
+                  ? 'dark-glass border border-[#D7374B]/50 shadow-[0_0_20px_rgba(215,55,75,0.18)]'
+                  : 'dark-glass-card hover:border-white/20'
               }`}
             >
               {isActive && (
                 <div 
-                  className="absolute inset-x-0 top-0 h-1"
-                  style={{ backgroundColor: t.color }}
+                  className="absolute inset-x-0 top-0 h-1 bg-[#D7374B]"
                 />
               )}
               <div className="flex items-center justify-between mb-1.5">
                 <div 
-                  className="w-7 h-7 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: `${t.color}25`, color: t.color }}
+                  className={`w-7 h-7 rounded-xl flex items-center justify-center ${
+                    isActive ? 'bg-[#D7374B]/20 text-[#FFA4B2]' : 'bg-white/[0.05] text-[#A898A7]'
+                  }`}
                 >
                   <Icon className="w-4 h-4" />
                 </div>
                 {editions && editions[t.id]?.is_saved && (
-                  <Bookmark className="w-3.5 h-3.5 text-[#F8D2A6] fill-[#79502D]" />
+                  <Bookmark className="w-3.5 h-3.5 text-[#D7374B] fill-[#D7374B]" />
                 )}
               </div>
-              <span className={`text-xs font-bold ${isActive ? 'text-[#E9DFE8]' : 'text-[#A99BAA]'}`}>
+              <span className={`text-xs font-bold ${isActive ? 'text-[#F2EBF0]' : 'text-[#A898A7]'}`}>
                 {t.label}
               </span>
-              <span className="text-[10px] text-[#A99BAA] line-clamp-1">
+              <span className="text-[10px] text-[#A898A7] line-clamp-1">
                 {t.sublabel}
               </span>
             </button>
@@ -358,28 +354,28 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
       </div>
 
       {/* ===================================================================== */}
-      {/* 3. TODAY'S PRIMARY EDITION CARD (Dark Cinematic UI)                   */}
+      {/* 3. TODAY'S PRIMARY EDITION CARD (Frosted Dark Glass)                  */}
       {/* ===================================================================== */}
       {currentItem ? (
-        <div className="rounded-3xl bg-[#160D19] border border-[#321323] overflow-hidden shadow-2xl relative">
+        <div className="rounded-3xl dark-glass border border-white/[0.08] overflow-hidden shadow-2xl relative">
           
           {/* Banner Artwork & Category Badges */}
-          <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#09080D]">
+          <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#060507]">
             <img 
               src={currentItem.cover_image_url || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80'}
               alt={currentItem.title}
-              className="w-full h-full object-cover opacity-60 filter contrast-105 saturate-110"
+              className="w-full h-full object-cover opacity-50 filter contrast-110 saturate-110"
             />
-            {/* Cinematic Multicolour Ambient Fog Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#160D19] via-[#160D19]/60 to-transparent" />
+            {/* Dark glass subtle fade */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0E0A11] via-[#0E0A11]/60 to-transparent" />
             
             {/* Edition & Category Metadata Pill */}
             <div className="absolute top-4 left-4 sm:left-6 flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#09080D]/80 border border-white/10 text-[#E9DFE8] backdrop-blur-md flex items-center gap-1.5">
+              <span className="px-3 py-1 rounded-full text-xs font-bold dark-glass border border-white/10 text-[#F2EBF0] backdrop-blur-md flex items-center gap-1.5">
                 <span>{currentItem.category_icon}</span>
                 <span>{currentItem.category_name}</span>
               </span>
-              <span className="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider bg-[#321323]/80 border border-[#85283C]/30 text-[#F0B8D3] backdrop-blur-md">
+              <span className="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider dark-glass border border-[#D7374B]/35 text-[#FFA4B2] backdrop-blur-md">
                 Today's {currentItem.format_type.replace('_', ' ')}
               </span>
             </div>
@@ -388,7 +384,7 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
             <div className="absolute top-4 right-4 sm:right-6">
               <button
                 onClick={() => setIsShareModalOpen(true)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#09080D]/80 hover:bg-[#321323] border border-white/10 text-[#E9DFE8] backdrop-blur-md flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-full text-xs font-medium dark-glass hover:bg-white/[0.08] border border-white/10 text-[#F2EBF0] backdrop-blur-md flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Share2 className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Share Card</span>
@@ -401,11 +397,11 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
             
             {/* The Core Quote / One-Liner */}
             <div className="space-y-3">
-              <h2 className="text-xl sm:text-2xl font-black text-[#E9DFE8] font-serif leading-snug">
+              <h2 className="text-xl sm:text-2xl font-black text-[#F2EBF0] font-serif leading-snug">
                 "{currentItem.quote_one_liner}"
               </h2>
-              <div className="flex items-center gap-2 text-xs text-[#A99BAA]">
-                <span className="uppercase tracking-wider font-bold text-[10px] text-[#85283C]">
+              <div className="flex items-center gap-2 text-xs text-[#A898A7]">
+                <span className="uppercase tracking-wider font-bold text-[10px] text-[#D7374B]">
                   {currentItem.title}
                 </span>
                 <span>•</span>
@@ -414,21 +410,21 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
             </div>
 
             {/* Deep In-Depth Thought Insight */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-[#09080D]/60 border border-[#321323] space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#A99BAA] block">
+            <div className="p-4 sm:p-5 rounded-2xl dark-glass border border-white/[0.07] space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#A898A7] block">
                 Today's Insight & Context
               </span>
-              <p className="text-sm text-[#E9DFE8] leading-relaxed">
+              <p className="text-sm text-[#F2EBF0] leading-relaxed">
                 {currentItem.body_insight}
               </p>
             </div>
 
             {/* Daily Reflection Question (Interactive) */}
             {currentItem.reflection_question && (
-              <div className="p-5 rounded-2xl bg-[#1c1322] border border-[#49315F]/40 space-y-3">
+              <div className="p-5 rounded-2xl dark-glass border border-white/[0.08] space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#E2CEF7] flex items-center gap-1.5">
-                    <span>💭</span>
+                  <span className="text-xs font-bold text-[#F2EBF0] flex items-center gap-1.5">
+                    <span className="text-[#D7374B]">💭</span>
                     <span>Daily Reflection Question</span>
                   </span>
                   {currentItem.reflection_answer && (
@@ -439,7 +435,7 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
                   )}
                 </div>
 
-                <p className="text-xs text-[#E9DFE8] font-medium italic">
+                <p className="text-xs text-[#F2EBF0] font-medium italic">
                   "{currentItem.reflection_question}"
                 </p>
 
@@ -448,13 +444,13 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
                     value={reflectionInput}
                     onChange={(e) => setReflectionInput(e.target.value)}
                     placeholder="Write your honest thoughts here (saved privately to your Personal Memoir)..."
-                    className="w-full h-20 p-3 rounded-xl bg-[#09080D] border border-[#321323] text-xs text-[#E9DFE8] placeholder-[#A99BAA]/50 focus:outline-none focus:border-[#49315F] transition-colors resize-none"
+                    className="w-full h-20 p-3 rounded-xl bg-black/40 border border-white/[0.08] text-xs text-[#F2EBF0] placeholder-[#A898A7]/50 focus:outline-none focus:border-[#D7374B]/60 transition-colors resize-none"
                   />
                   <div className="flex justify-end">
                     <button
                       onClick={handleSubmitReflection}
                       disabled={isSavingReflection || !reflectionInput.trim()}
-                      className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#49315F] to-[#85283C] text-white text-xs font-bold shadow-md hover:brightness-110 disabled:opacity-50 cursor-pointer transition-all flex items-center gap-1.5"
+                      className="px-4 py-1.5 rounded-xl light-red-gradient-btn text-white text-xs font-bold shadow-md hover:brightness-110 disabled:opacity-50 cursor-pointer transition-all flex items-center gap-1.5"
                     >
                       <Send className="w-3 h-3" />
                       <span>{isSavingReflection ? 'Saving...' : 'Save Reflection'}</span>
@@ -466,16 +462,16 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
 
             {/* Relationship / Friendship Action Challenge (Interactive) */}
             {currentItem.action_exercise && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-[#112320] border border-[#24544F]/40 space-y-3">
+              <div className="p-4 sm:p-5 rounded-2xl dark-glass border border-[#D7374B]/25 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#AEE6DE] flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-[#FFA4B2] flex items-center gap-1.5">
                     <span>🎯</span>
                     <span>Today's Connection Exercise</span>
                   </span>
-                  <span className="text-[10px] text-[#A99BAA]">Small deliberate practice</span>
+                  <span className="text-[10px] text-[#A898A7]">Small deliberate practice</span>
                 </div>
 
-                <p className="text-xs text-[#E9DFE8] leading-relaxed">
+                <p className="text-xs text-[#F2EBF0] leading-relaxed">
                   {currentItem.action_exercise}
                 </p>
 
@@ -484,7 +480,7 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
                   className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     currentItem.challenge_completed
                       ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-300'
-                      : 'bg-[#160D19] border border-[#24544F]/60 text-[#AEE6DE] hover:bg-[#24544F]/20'
+                      : 'dark-glass border border-[#D7374B]/40 text-[#FFA4B2] hover:bg-[#D7374B]/15'
                   }`}
                 >
                   {currentItem.challenge_completed ? (
@@ -503,17 +499,17 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
             )}
 
             {/* Footer Action Controls: Like, Save, Share */}
-            <div className="pt-4 border-t border-[#321323] flex items-center justify-between text-xs">
+            <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs">
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleToggleLike}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
                     currentItem.is_liked
-                      ? 'bg-[#85283C]/20 border border-[#85283C]/60 text-[#F8B4C4]'
-                      : 'bg-[#09080D] border border-[#321323] text-[#A99BAA] hover:text-[#E9DFE8]'
+                      ? 'bg-[#D7374B]/20 border border-[#D7374B]/60 text-[#FFA4B2]'
+                      : 'dark-glass border border-white/[0.08] text-[#A898A7] hover:text-[#F2EBF0]'
                   }`}
                 >
-                  <Heart className={`w-3.5 h-3.5 ${currentItem.is_liked ? 'fill-[#85283C] text-[#85283C]' : ''}`} />
+                  <Heart className={`w-3.5 h-3.5 ${currentItem.is_liked ? 'fill-[#D7374B] text-[#D7374B]' : ''}`} />
                   <span>{currentItem.likes_count}</span>
                 </button>
 
@@ -521,11 +517,11 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
                   onClick={handleToggleSave}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
                     currentItem.is_saved
-                      ? 'bg-[#79502D]/20 border border-[#79502D]/60 text-[#F8D2A6]'
-                      : 'bg-[#09080D] border border-[#321323] text-[#A99BAA] hover:text-[#E9DFE8]'
+                      ? 'bg-[#D7374B]/20 border border-[#D7374B]/60 text-[#FFA4B2]'
+                      : 'dark-glass border border-white/[0.08] text-[#A898A7] hover:text-[#F2EBF0]'
                   }`}
                 >
-                  <Bookmark className={`w-3.5 h-3.5 ${currentItem.is_saved ? 'fill-[#79502D] text-[#79502D]' : ''}`} />
+                  <Bookmark className={`w-3.5 h-3.5 ${currentItem.is_saved ? 'fill-[#D7374B] text-[#D7374B]' : ''}`} />
                   <span>{currentItem.is_saved ? 'Saved' : 'Save'}</span>
                 </button>
               </div>
@@ -533,7 +529,7 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsShareModalOpen(true)}
-                  className="p-2 rounded-full bg-[#09080D] hover:bg-[#321323] border border-[#321323] text-[#A99BAA] hover:text-[#E9DFE8] transition-colors cursor-pointer"
+                  className="p-2 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-[#A898A7] hover:text-[#F2EBF0] transition-colors cursor-pointer"
                   title="Share quote card"
                 >
                   <Share2 className="w-3.5 h-3.5" />
@@ -545,11 +541,10 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
 
         </div>
       ) : (
-        <div className="p-8 rounded-3xl bg-[#160D19] border border-[#321323] text-center text-xs text-[#A99BAA]">
+        <div className="p-8 rounded-3xl dark-glass border border-white/[0.08] text-center text-xs text-[#A898A7]">
           No content scheduled for this track today.
         </div>
       )}
-
       {/* ===================================================================== */}
       {/* 4. MODAL: PERSONALIZATION SETTINGS                                    */}
       {/* ===================================================================== */}
