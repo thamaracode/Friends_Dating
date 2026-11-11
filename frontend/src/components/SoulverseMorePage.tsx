@@ -67,10 +67,10 @@ export const SoulverseMorePage: React.FC<SoulverseMorePageProps> = ({
 
   return (
     <div className="w-full space-y-6 animate-fadeIn pb-16 max-w-4xl mx-auto">
-      <div className="p-6 rounded-3xl bg-[#160D19] border border-[#321323] shadow-2xl flex items-center justify-between">
+      <div className="p-6 rounded-3xl dark-glass border border-white/[0.08] shadow-2xl flex items-center justify-between">
         <div>
-          <h1 className="text-base font-black text-[#E9DFE8] font-serif">More Soulverse Dimensions</h1>
-          <p className="text-xs text-[#A99BAA]">Explore specialized identity systems, public links, crisis support, and personal writing</p>
+          <h1 className="text-base font-black text-white font-serif">More Soulverse Dimensions</h1>
+          <p className="text-xs text-zinc-400">Explore specialized identity systems, public links, crisis support, and personal writing</p>
         </div>
       </div>
 
@@ -81,25 +81,25 @@ export const SoulverseMorePage: React.FC<SoulverseMorePageProps> = ({
             <div
               key={idx}
               onClick={item.action}
-              className="p-5 rounded-3xl bg-[#160D19] border border-[#321323] hover:border-[#A64D78]/40 transition-all cursor-pointer shadow-lg flex items-start justify-between gap-4 group"
+              className="p-5 rounded-3xl dark-glass-card border border-white/[0.08] hover:border-white/25 transition-all cursor-pointer shadow-lg flex items-start justify-between gap-4 group"
             >
               <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-[#321323] border border-[#A64D78]/30 flex items-center justify-center text-[#D78BAF] shrink-0 group-hover:scale-105 transition-transform">
-                  <Icon className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl bg-white/[0.08] border border-white/15 flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+                  <Icon className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xs font-bold text-[#E9DFE8] group-hover:text-[#F0B8D3] transition-colors">
+                    <h3 className="text-xs font-bold text-white group-hover:text-zinc-200 transition-colors">
                       {item.title}
                     </h3>
-                    <span className="text-[9px] font-bold px-2 py-0.2 rounded-full bg-[#321323] text-[#F0B8D3] border border-[#A64D78]/30">
+                    <span className="text-[9px] font-bold px-2 py-0.2 rounded-full bg-white/[0.06] text-zinc-300 border border-white/10">
                       {item.badge}
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#A99BAA] leading-relaxed mt-1">{item.desc}</p>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed mt-1">{item.desc}</p>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-[#A99BAA] group-hover:translate-x-0.5 transition-transform shrink-0 mt-1" />
+              <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 group-hover:text-white transition-all shrink-0 mt-1" />
             </div>
           );
         })}

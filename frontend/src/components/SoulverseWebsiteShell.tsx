@@ -144,9 +144,9 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const sidebarWorlds = worlds.length > 0 ? worlds.slice(0, 4) : fallbackWorlds;
 
   return (
-    <div className="min-h-screen bg-[#08060A] text-[#F2EBF0] flex flex-col font-sans selection:bg-[#D7374B] selection:text-white relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#090A0E] text-zinc-100 flex flex-col font-sans selection:bg-white/20 selection:text-white relative overflow-x-hidden">
       
-      {/* Dark Void with Little Light Red Ambient Background */}
+      {/* Dark Void with Ambient Silver Glass Background */}
       <CinematicAmbientBackground />
 
       {/* ===================================================================== */}
@@ -158,7 +158,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl dark-glass border border-white/[0.08] text-[#A898A7] hover:text-[#FFA4B2] cursor-pointer"
+            className="lg:hidden p-2 rounded-xl dark-glass border border-white/[0.08] text-zinc-400 hover:text-white cursor-pointer"
           >
             {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
@@ -167,32 +167,32 @@ export const SoulverseWebsiteShell: React.FC = () => {
             onClick={() => navigateTo('home')}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#220B12] to-[#D7374B] flex items-center justify-center text-white shadow-[0_0_14px_rgba(215,55,75,0.45)] group-hover:scale-105 transition-transform">
-              <Heart className="w-3.5 h-3.5 fill-white" />
+            <div className="w-7 h-7 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center text-white shadow-[0_0_14px_rgba(255,255,255,0.12)] group-hover:scale-105 transition-transform">
+              <Heart className="w-3.5 h-3.5 fill-white text-white" />
             </div>
-            <span className="font-black text-sm tracking-widest text-[#F2EBF0] font-serif">
-              Soulverse <span className="text-[#D7374B]">✧</span>
+            <span className="font-black text-sm tracking-widest text-white font-serif">
+              Soulverse <span className="text-zinc-400">✧</span>
             </span>
           </div>
 
-          {/* Subtle Ambient Red Status Pill */}
-          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full dark-glass-pill text-[10px] text-[#A898A7]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D7374B] shadow-[0_0_8px_#D7374B]" />
-            <span className="font-medium tracking-wide">
-              Dark Glass Sanctuary
+          {/* Subtle Ambient Glass Status Pill */}
+          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full dark-glass-pill text-[10px] text-zinc-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+            <span className="font-medium tracking-wide text-zinc-300">
+              Gray & Glass Sanctuary
             </span>
           </div>
         </div>
 
         {/* Center: Frosted Dark Glass Search Bar */}
         <div className="hidden sm:flex flex-1 max-w-lg mx-6 relative">
-          <Search className="w-4 h-4 text-[#A898A7] absolute left-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-zinc-400 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search people, worlds, memories, or topics..."
-            className="w-full pl-11 pr-4 py-2 rounded-full dark-glass border border-white/[0.08] text-xs text-[#F2EBF0] placeholder-[#A898A7]/60 focus:outline-none focus:border-[#D7374B]/60 transition-colors"
+            className="w-full pl-11 pr-4 py-2 rounded-full dark-glass border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
           />
         </div>
 
@@ -200,15 +200,15 @@ export const SoulverseWebsiteShell: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setIsCrisisModalOpen(true)}
-            className="hidden sm:flex px-2.5 py-1 rounded-full dark-glass border border-rose-500/30 text-rose-300 text-[10px] font-bold items-center gap-1.5 hover:border-rose-400 cursor-pointer shadow-sm"
+            className="hidden sm:flex px-2.5 py-1 rounded-full dark-glass border border-white/15 text-zinc-300 text-[10px] font-bold items-center gap-1.5 hover:border-white/30 cursor-pointer shadow-sm"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>1926 Safe</span>
           </button>
 
           <button 
             onClick={() => setIsReadmeModalOpen(true)}
-            className="p-2 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-[#A898A7] hover:text-[#FFA4B2] transition-colors cursor-pointer"
+            className="p-2 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-zinc-400 hover:text-white transition-colors cursor-pointer"
             title="Open 5,000-char GitHub Markdown Journal"
           >
             <FileText className="w-4 h-4" />
@@ -216,17 +216,17 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
           <button 
             onClick={() => navigateTo('messages')}
-            className="p-2 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-[#A898A7] hover:text-[#FFA4B2] relative transition-colors cursor-pointer"
+            className="p-2 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-zinc-400 hover:text-white relative transition-colors cursor-pointer"
             title="Messages"
           >
             <MessageCircle className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#D7374B] shadow-[0_0_8px_#D7374B]" />
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
           </button>
 
           {/* User Avatar Action */}
           <div 
             onClick={() => navigateTo('profile')}
-            className="w-8 h-8 rounded-full overflow-hidden border border-white/20 cursor-pointer hover:border-[#D7374B] transition-all ml-1 shadow-sm"
+            className="w-8 h-8 rounded-full overflow-hidden border border-white/20 cursor-pointer hover:border-white/60 transition-all ml-1 shadow-sm"
           >
             <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
           </div>
@@ -251,16 +251,16 @@ export const SoulverseWebsiteShell: React.FC = () => {
                   onClick={() => navigateTo(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-medium transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-white/[0.08] text-white font-bold border border-[#D7374B]/40 shadow-[0_0_16px_rgba(215,55,75,0.18)]'
-                      : 'text-[#A898A7] hover:bg-white/[0.04] hover:text-[#F2EBF0]'
+                      ? 'bg-white/10 text-white font-bold border border-white/20 shadow-[0_0_16px_rgba(255,255,255,0.06)]'
+                      : 'text-zinc-400 hover:bg-white/[0.04] hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#D7374B]' : 'text-[#A898A7]'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-zinc-400'}`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#D7374B]/20 text-[#FFA4B2] border border-[#D7374B]/40">
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-white/10 text-zinc-200 border border-white/15">
                       {item.badge}
                     </span>
                   )}
@@ -272,10 +272,10 @@ export const SoulverseWebsiteShell: React.FC = () => {
           {/* Sub-Section: Your Worlds */}
           <div className="space-y-2 pt-2 border-t border-white/[0.08]">
             <div className="flex items-center justify-between px-2 text-[11px] font-bold">
-              <span className="text-[#F2EBF0]">Your Worlds</span>
+              <span className="text-white">Your Worlds</span>
               <button 
                 onClick={() => navigateTo('worlds')}
-                className="text-[10px] text-[#D7374B] hover:text-[#FFA4B2] cursor-pointer"
+                className="text-[10px] text-zinc-400 hover:text-white cursor-pointer transition-colors"
               >
                 Manage ›
               </button>
@@ -286,7 +286,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
                 <div
                   key={w.id}
                   onClick={() => handleOpenWorld(w.id)}
-                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs text-[#A898A7] hover:bg-white/[0.04] hover:text-[#F2EBF0] cursor-pointer transition-colors group"
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs text-zinc-400 hover:bg-white/[0.04] hover:text-white cursor-pointer transition-colors group"
                 >
                   <div className="flex items-center gap-2 truncate">
                     <div className="w-5 h-5 rounded-md overflow-hidden shrink-0 border border-white/10">
@@ -294,7 +294,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
                     </div>
                     <span className="truncate text-[11px] font-medium">{w.name}</span>
                   </div>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-black/40 text-[#A898A7] shrink-0 border border-white/5">
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-black/40 text-zinc-400 shrink-0 border border-white/5">
                     {w.visibility === 'public' ? 'Public' : 'Friends'}
                   </span>
                 </div>
@@ -302,7 +302,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
               <button
                 onClick={() => navigateTo('worlds')}
-                className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-[#D7374B] hover:text-[#FFA4B2] cursor-pointer transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-zinc-300 hover:text-white cursor-pointer transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Create New World</span>
@@ -312,36 +312,36 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
           {/* Premium Card: Dark Glass matching dashboard screenshot */}
           <div className="p-3.5 rounded-2xl dark-glass-elevated border border-white/[0.08] space-y-2 text-center mt-auto shadow-lg relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-t from-[#D7374B]/15 to-transparent pointer-events-none" />
-            <span className="text-xs font-bold text-[#FFA4B2] block flex items-center justify-center gap-1.5">
+            <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent pointer-events-none" />
+            <span className="text-xs font-bold text-white block flex items-center justify-center gap-1.5">
               <span>👑</span>
               <span>Premium</span>
             </span>
-            <p className="text-[10px] text-[#A898A7] relative z-10">Unlock more magic ✨</p>
+            <p className="text-[10px] text-zinc-400 relative z-10">Unlock more magic ✨</p>
             <button 
               onClick={() => alert("Premium active")}
-              className="w-full py-1.5 rounded-xl light-red-gradient-btn text-xs font-bold cursor-pointer shadow-md hover:brightness-110 transition-all relative z-10"
+              className="w-full py-1.5 rounded-xl gray-glass-btn text-xs font-bold cursor-pointer shadow-md hover:brightness-110 transition-all relative z-10"
             >
               Go Premium
             </button>
           </div>
 
           {/* Bottom Footer Toolbar: Settings, TV, Moon */}
-          <div className="flex items-center justify-around py-1 border-t border-white/[0.08] text-[#A898A7]">
+          <div className="flex items-center justify-around py-1 border-t border-white/[0.08] text-zinc-400">
             <button onClick={() => navigateTo('settings')} className="p-1.5 hover:text-white" title="Settings"><Settings className="w-3.5 h-3.5" /></button>
             <button onClick={() => navigateTo('timeline')} className="p-1.5 hover:text-white" title="Channels / TV"><Tv className="w-3.5 h-3.5" /></button>
-            <button onClick={() => alert("Dark Glass Sanctuary Mode")} className="p-1.5 hover:text-[#FFA4B2]" title="Theme"><Moon className="w-3.5 h-3.5 text-[#D7374B]" /></button>
-            <button onClick={() => navigateTo('account')} className="p-1.5 hover:text-rose-400" title="Account"><LogOut className="w-3.5 h-3.5" /></button>
+            <button onClick={() => alert("Gray & Glass UI Active")} className="p-1.5 hover:text-white" title="Theme"><Moon className="w-3.5 h-3.5 text-zinc-300" /></button>
+            <button onClick={() => navigateTo('account')} className="p-1.5 hover:text-white" title="Account"><LogOut className="w-3.5 h-3.5" /></button>
           </div>
         </aside>
 
         {/* MOBILE DRAWER MENU (When open on mobile/tablet) */}
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md lg:hidden flex">
-            <div className="w-72 bg-[#160D19] border-r border-[#321323] h-full p-5 space-y-4 overflow-y-auto no-scrollbar animate-fadeIn">
-              <div className="flex items-center justify-between pb-3 border-b border-[#321323]">
-                <span className="font-bold text-sm text-[#F0B8D3] font-serif">Soulverse Menu</span>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="text-[#A99BAA] p-1">
+            <div className="w-72 bg-[#12141B] border-r border-white/10 h-full p-5 space-y-4 overflow-y-auto no-scrollbar animate-fadeIn">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <span className="font-bold text-sm text-white font-serif">Soulverse Menu</span>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="text-zinc-400 p-1 hover:text-white">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -354,7 +354,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
                       key={item.id}
                       onClick={() => navigateTo(item.id)}
                       className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-medium ${
-                        currentRoute === item.id ? 'bg-[#321323] text-[#F0B8D3] font-bold' : 'text-[#A99BAA]'
+                        currentRoute === item.id ? 'bg-white/15 text-white font-bold border border-white/20' : 'text-zinc-400'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
@@ -408,7 +408,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
           {/* PAGE 4: MESSAGING & INBOX */}
           {currentRoute === 'messages' && (
-            <div className="h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-[#321323] shadow-2xl bg-[#160D19]">
+            <div className="h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass">
               <MessagingInboxView
                 onOpenProfileDetail={(p) => setInspectedProfile(p)}
                 activeProfileOverride={activeChatProfileOverride}

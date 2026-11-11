@@ -202,7 +202,7 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
       case 'real_identity':
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">🟢 Real Identity</span>;
       case 'fictional_character':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D7374B]/20 text-[#FFA4B2] border border-[#D7374B]/40">🦇 Fictional / Roleplay</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-zinc-200 border border-white/20">🎭 Fictional / Roleplay</span>;
       case 'inspired_character':
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">✨ Inspired Persona</span>;
       case 'alternate_self':
@@ -214,7 +214,7 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
       case 'anonymous_identity':
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-500/20 text-zinc-300 border border-zinc-500/30">🎭 Anonymous</span>;
       default:
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-[#F2EBF0] border border-white/20">Custom Persona</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-white border border-white/20">Custom Persona</span>;
     }
   };
 
@@ -225,14 +225,14 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
       <div className="p-5 rounded-3xl dark-glass border border-white/[0.08] shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#220B12] to-[#D7374B] flex items-center justify-center text-white shadow-[0_0_14px_rgba(215,55,75,0.4)]">
+            <div className="w-8 h-8 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center text-white shadow-[0_0_14px_rgba(255,255,255,0.1)]">
               <Sparkles className="w-4 h-4" />
             </div>
-            <h2 className="text-lg font-black text-[#F2EBF0] font-serif tracking-tight">
+            <h2 className="text-lg font-black text-white font-serif tracking-tight">
               Soulverse Identity Universe
             </h2>
           </div>
-          <p className="text-xs text-[#A898A7] mt-1">
+          <p className="text-xs text-zinc-400 mt-1">
             Express real lives, fictional characters, universal timelines, and imaginative worlds.
           </p>
         </div>
@@ -253,8 +253,8 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-[#D7374B]/25 text-[#F2EBF0] border border-[#D7374B]/50 shadow-[0_0_14px_rgba(215,55,75,0.2)]'
-                    : 'text-[#A898A7] hover:text-[#F2EBF0] hover:bg-white/[0.04]'
+                    ? 'bg-white/15 text-white border border-white/25 shadow-sm'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -285,14 +285,14 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                   }}
                   className={`p-4 rounded-3xl dark-glass border transition-all cursor-pointer flex flex-col justify-between group ${
                     isSelected
-                      ? 'border-[#D7374B] shadow-[0_8px_30px_rgba(215,55,75,0.22)]'
+                      ? 'border-white/40 shadow-[0_8px_30px_rgba(255,255,255,0.06)]'
                       : 'border-white/[0.08] hover:border-white/20'
                   }`}
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       {getClassificationBadge(id.classification)}
-                      <div className="flex items-center gap-1 text-[10px] text-[#A898A7]">
+                      <div className="flex items-center gap-1 text-[10px] text-zinc-400">
                         {id.visibility === 'public' ? '🌐 Public' : '🔒 Private'}
                       </div>
                     </div>
@@ -306,14 +306,14 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                         />
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-[#F2EBF0] truncate group-hover:text-[#FFA4B2] transition-colors">
+                        <h4 className="text-xs font-bold text-white truncate group-hover:text-zinc-200 transition-colors">
                           {id.name}
                         </h4>
-                        <p className="text-[10px] text-[#A898A7] truncate">{id.display_title || 'Identity'}</p>
+                        <p className="text-[10px] text-zinc-400 truncate">{id.display_title || 'Identity'}</p>
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-[#A898A7] line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
                       {id.description || 'No description provided.'}
                     </p>
 
@@ -321,7 +321,7 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                     {id.personality_traits && id.personality_traits.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-1">
                         {id.personality_traits.slice(0, 3).map((t, idx) => (
-                          <span key={idx} className="px-2 py-0.5 rounded-full text-[9px] bg-white/[0.04] text-[#F2EBF0] border border-white/10">
+                          <span key={idx} className="px-2 py-0.5 rounded-full text-[9px] bg-white/[0.04] text-zinc-300 border border-white/10">
                             {t}
                           </span>
                         ))}
@@ -330,7 +330,7 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                   </div>
 
                   {/* Actions footer */}
-                  <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between mt-3 text-xs text-[#A898A7]">
+                  <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between mt-3 text-xs text-zinc-400">
                     <span className="text-[10px]">{id.is_primary ? '★ Primary' : 'Persona'}</span>
                     {isOwner && (
                       <div className="flex items-center gap-2">
@@ -345,7 +345,7 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleDelete(id.id); }} 
                             title="Delete"
-                            className="hover:text-rose-400 p-1"
+                            className="hover:text-white p-1"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -361,15 +361,15 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
             {isOwner && (
               <div
                 onClick={() => setIsCreateIdentityOpen(true)}
-                className="p-6 rounded-3xl border border-dashed border-white/15 hover:border-[#D7374B]/60 bg-white/[0.02] hover:bg-white/[0.05] flex flex-col items-center justify-center text-center cursor-pointer transition-all group min-h-[190px]"
+                className="p-6 rounded-3xl border border-dashed border-white/15 hover:border-white/30 bg-white/[0.02] hover:bg-white/[0.05] flex flex-col items-center justify-center text-center cursor-pointer transition-all group min-h-[190px]"
               >
-                <div className="w-10 h-10 rounded-2xl dark-glass border border-white/10 flex items-center justify-center text-[#D7374B] group-hover:text-[#FFA4B2] group-hover:scale-110 transition-all mb-2">
+                <div className="w-10 h-10 rounded-2xl dark-glass border border-white/10 flex items-center justify-center text-zinc-300 group-hover:text-white group-hover:scale-110 transition-all mb-2">
                   <Plus className="w-5 h-5" />
                 </div>
-                <span className="text-xs font-bold text-[#F2EBF0] group-hover:text-[#FFA4B2] transition-colors">
+                <span className="text-xs font-bold text-white group-hover:text-zinc-200 transition-colors">
                   Create Persona / Identity
                 </span>
-                <span className="text-[10px] text-[#A898A7] mt-1">
+                <span className="text-[10px] text-zinc-400 mt-1">
                   Add real, fictional, Batman-inspired, or custom persona
                 </span>
               </div>
@@ -381,7 +381,7 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
             <div className="p-6 rounded-3xl dark-glass border border-white/[0.08] shadow-2xl space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-sm font-bold text-[#F2EBF0] font-serif">
+                  <h3 className="text-sm font-bold text-white font-serif">
                     {selectedIdentity.name}
                   </h3>
                   {getClassificationBadge(selectedIdentity.classification)}
@@ -389,9 +389,9 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => alert(`Previewing identity: ${selectedIdentity.name}`)}
-                    className="px-3 py-1.5 rounded-xl dark-glass text-xs text-[#F2EBF0] border border-white/10 hover:border-[#D7374B]/40 flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl dark-glass text-xs text-zinc-200 border border-white/10 hover:border-white/30 flex items-center gap-1.5"
                   >
-                    <Eye className="w-3.5 h-3.5 text-[#FFA4B2]" />
+                    <Eye className="w-3.5 h-3.5 text-zinc-300" />
                     <span>Preview As Others See</span>
                   </button>
                 </div>
@@ -399,22 +399,22 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-[#A898A7] uppercase tracking-wider block">Biography & Dossier</span>
-                  <p className="text-[#F2EBF0] leading-relaxed dark-glass p-3 rounded-2xl border border-white/5">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Biography & Dossier</span>
+                  <p className="text-zinc-300 leading-relaxed dark-glass p-3 rounded-2xl border border-white/5">
                     {selectedIdentity.biography || selectedIdentity.description || 'No biography written.'}
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-[#A898A7] uppercase tracking-wider block">Skills & Capabilities</span>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Skills & Capabilities</span>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedIdentity.skills && selectedIdentity.skills.length > 0 ? (
                       selectedIdentity.skills.map((s, idx) => (
-                        <span key={idx} className="px-2.5 py-1 rounded-full bg-[#D7374B]/15 text-[#FFA4B2] border border-[#D7374B]/30 font-medium text-[11px]">
+                        <span key={idx} className="px-2.5 py-1 rounded-full bg-white/10 text-zinc-200 border border-white/15 font-medium text-[11px]">
                           ⚡ {s}
                         </span>
                       ))
                     ) : (
-                      <span className="text-[#A898A7] text-[11px]">No specific skills declared.</span>
+                      <span className="text-zinc-400 text-[11px]">No specific skills declared.</span>
                     )}
                   </div>
                 </div>
@@ -431,15 +431,15 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
         <div className="p-6 rounded-3xl dark-glass border border-white/[0.08] shadow-2xl space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
             <div>
-              <h3 className="text-sm font-bold text-[#F2EBF0] font-serif">Universal Life Timeline</h3>
-              <p className="text-xs text-[#A898A7]">
+              <h3 className="text-sm font-bold text-white font-serif">Universal Life Timeline</h3>
+              <p className="text-xs text-zinc-400">
                 Record real life, 1500 BCE, 65 million years ago, or 10,000,000,000,000 years ago without calendar bounds.
               </p>
             </div>
             {isOwner && (
               <button
                 onClick={() => setIsAddTimelineOpen(true)}
-                className="px-3.5 py-2 rounded-2xl light-red-gradient-btn text-xs font-bold flex items-center gap-1.5 shadow-md hover:brightness-110 cursor-pointer"
+                className="px-3.5 py-2 rounded-2xl gray-glass-btn text-xs font-bold flex items-center gap-1.5 shadow-md hover:brightness-110 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Time Entry</span>
@@ -452,11 +452,11 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
             {timelineEvents.map((evt, idx) => (
               <div key={evt.id || idx} className="relative group">
                 {/* Dot */}
-                <span className="absolute -left-6 top-1.5 w-3 h-3 rounded-full bg-[#D7374B] ring-4 ring-[#08060A] shadow-[0_0_10px_#D7374B]" />
+                <span className="absolute -left-6 top-1.5 w-3 h-3 rounded-full bg-white ring-4 ring-[#090A0E] shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
                 
-                <div className="p-4 rounded-2xl dark-glass border border-white/[0.08] group-hover:border-[#D7374B]/40 transition-colors space-y-1.5">
+                <div className="p-4 rounded-2xl dark-glass border border-white/[0.08] group-hover:border-white/20 transition-colors space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono font-bold text-[#FFA4B2]">
+                    <span className="text-xs font-mono font-bold text-zinc-300">
                       {evt.display_label}
                     </span>
                     <div className="flex items-center gap-1.5">
@@ -472,14 +472,14 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                     </div>
                   </div>
 
-                  <h4 className="text-xs sm:text-sm font-bold text-[#F2EBF0]">
+                  <h4 className="text-xs sm:text-sm font-bold text-white">
                     {evt.title}
                   </h4>
-                  <p className="text-xs text-[#A898A7] leading-relaxed">
+                  <p className="text-xs text-zinc-400 leading-relaxed">
                     {evt.short_description}
                   </p>
                   {evt.detailed_description && (
-                    <p className="text-[11px] text-[#A898A7]/80 italic pt-1 border-t border-white/5">
+                    <p className="text-[11px] text-zinc-400/80 italic pt-1 border-t border-white/5">
                       "{evt.detailed_description}"
                     </p>
                   )}
@@ -497,20 +497,20 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {universes.map(u => (
-              <div key={u.id} className="p-5 rounded-3xl dark-glass border border-white/[0.08] hover:border-[#D7374B]/40 transition-all space-y-3 shadow-lg">
+              <div key={u.id} className="p-5 rounded-3xl dark-glass border border-white/[0.08] hover:border-white/20 transition-all space-y-3 shadow-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase text-[#FFA4B2] tracking-wider">{u.genre}</span>
-                  <span className="text-[10px] text-[#A898A7]">{u.is_collaborative ? '👥 Collaborative' : 'Solo'}</span>
+                  <span className="text-[10px] font-mono uppercase text-zinc-400 tracking-wider">{u.genre}</span>
+                  <span className="text-[10px] text-zinc-400">{u.is_collaborative ? '👥 Collaborative' : 'Solo'}</span>
                 </div>
 
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-[#F2EBF0] font-serif">{u.name}</h4>
-                  <p className="text-xs text-[#A898A7] line-clamp-2">{u.description || 'An imagined world.'}</p>
+                  <h4 className="text-sm font-bold text-white font-serif">{u.name}</h4>
+                  <p className="text-xs text-zinc-400 line-clamp-2">{u.description || 'An imagined world.'}</p>
                 </div>
 
                 {u.rules_of_universe && (
-                  <div className="p-2.5 rounded-xl dark-glass border border-white/5 text-[11px] text-[#A898A7]">
-                    <span className="font-bold text-[#F2EBF0] block text-[10px] uppercase mb-1">Rules of Universe:</span>
+                  <div className="p-2.5 rounded-xl dark-glass border border-white/5 text-[11px] text-zinc-400">
+                    <span className="font-bold text-white block text-[10px] uppercase mb-1">Rules of Universe:</span>
                     <pre className="font-sans whitespace-pre-wrap line-clamp-3">{u.rules_of_universe}</pre>
                   </div>
                 )}
@@ -526,25 +526,25 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
       {activeTab === 'games' && (
         <div className="p-6 rounded-3xl dark-glass border border-white/[0.08] shadow-2xl space-y-6">
           <div>
-            <h3 className="text-sm font-bold text-[#F2EBF0] font-serif">Interactive Games Platform</h3>
-            <p className="text-xs text-[#A898A7]">
+            <h3 className="text-sm font-bold text-white font-serif">Interactive Games Platform</h3>
+            <p className="text-xs text-zinc-400">
               Play native connection games or launch verified sandboxed external experiences.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {externalGames.map(game => (
-              <div key={game.id} className="p-5 rounded-3xl dark-glass border border-white/[0.08] hover:border-[#D7374B]/40 transition-all space-y-3 flex flex-col justify-between">
+              <div key={game.id} className="p-5 rounded-3xl dark-glass border border-white/[0.08] hover:border-white/20 transition-all space-y-3 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-0.5 rounded-full text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30">
                       {game.category}
                     </span>
-                    <span className="text-[10px] text-[#A898A7]">{game.provider_name}</span>
+                    <span className="text-[10px] text-zinc-400">{game.provider_name}</span>
                   </div>
 
-                  <h4 className="text-xs sm:text-sm font-bold text-[#F2EBF0]">{game.game_title}</h4>
-                  <p className="text-xs text-[#A898A7] line-clamp-2">{game.description}</p>
+                  <h4 className="text-xs sm:text-sm font-bold text-white">{game.game_title}</h4>
+                  <p className="text-xs text-zinc-400 line-clamp-2">{game.description}</p>
                 </div>
 
                 <button
@@ -552,7 +552,7 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                     setActiveGameToPlay(game);
                     setIsGameLauncherOpen(true);
                   }}
-                  className="w-full py-2 rounded-xl light-red-gradient-btn text-xs font-bold flex items-center justify-center gap-1.5 shadow-md hover:brightness-110 cursor-pointer"
+                  className="w-full py-2 rounded-xl gray-glass-btn text-xs font-bold flex items-center justify-center gap-1.5 shadow-md hover:brightness-110 cursor-pointer"
                 >
                   <Gamepad2 className="w-3.5 h-3.5" />
                   <span>Launch Game (Sandboxed)</span>
@@ -570,42 +570,42 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-lg dark-glass border border-white/10 rounded-3xl p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-sm font-bold text-[#F2EBF0] font-serif">Create Persona / Identity</h3>
-              <button onClick={() => setIsCreateIdentityOpen(false)} className="text-[#A898A7] hover:text-white">
+              <h3 className="text-sm font-bold text-white font-serif">Create Persona / Identity</h3>
+              <button onClick={() => setIsCreateIdentityOpen(false)} className="text-zinc-400 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleCreateIdentity} className="space-y-3 text-xs">
               <div>
-                <label className="block text-[11px] font-bold text-[#A898A7] mb-1">Identity Name *</label>
+                <label className="block text-[11px] font-bold text-zinc-400 mb-1">Identity Name *</label>
                 <input
                   type="text"
                   value={newIdentityName}
                   onChange={e => setNewIdentityName(e.target.value)}
                   placeholder="e.g. The Dark Knight, Real Life, Aethelgard Scholar"
                   required
-                  className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D7374B]"
+                  className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#A898A7] mb-1">Display Title</label>
+                <label className="block text-[11px] font-bold text-zinc-400 mb-1">Display Title</label>
                 <input
                   type="text"
                   value={newIdentityTitle}
                   onChange={e => setNewIdentityTitle(e.target.value)}
                   placeholder="e.g. Masked Protector of Gotham"
-                  className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D7374B]"
+                  className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#A898A7] mb-1">Classification *</label>
+                <label className="block text-[11px] font-bold text-zinc-400 mb-1">Classification *</label>
                 <select
                   value={newIdentityClass}
                   onChange={e => setNewIdentityClass(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#160D19] border border-white/10 text-white focus:outline-none focus:border-[#D7374B]"
+                  className="w-full px-3 py-2 rounded-xl bg-[#181B24] border border-white/10 text-white focus:outline-none focus:border-white/30"
                 >
                   <option value="real_identity">Real Identity (Represents actual life)</option>
                   <option value="fictional_character">Fictional Character / Roleplay</option>
@@ -620,18 +620,18 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#A898A7] mb-1">Short Description</label>
+                <label className="block text-[11px] font-bold text-zinc-400 mb-1">Short Description</label>
                 <textarea
                   value={newIdentityDesc}
                   onChange={e => setNewIdentityDesc(e.target.value)}
                   placeholder="Brief summary of this dimension of yourself"
                   rows={2}
-                  className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D7374B]"
+                  className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#A898A7] mb-1">Visibility</label>
+                <label className="block text-[11px] font-bold text-zinc-400 mb-1">Visibility</label>
                 <div className="flex gap-2">
                   {(['public', 'matches', 'friends', 'private'] as const).map(vis => (
                     <button
@@ -640,8 +640,8 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                       onClick={() => setNewIdentityVisibility(vis)}
                       className={`px-3 py-1.5 rounded-xl border text-[11px] font-medium capitalize cursor-pointer ${
                         newIdentityVisibility === vis
-                          ? 'bg-[#D7374B]/20 text-white border-[#D7374B]'
-                          : 'border-white/10 text-[#A898A7]'
+                          ? 'bg-white/20 text-white border-white/40'
+                          : 'border-white/10 text-zinc-400 hover:text-white'
                       }`}
                     >
                       {vis}
@@ -654,13 +654,13 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsCreateIdentityOpen(false)}
-                  className="px-4 py-2 rounded-xl dark-glass text-[#A898A7] hover:text-white"
+                  className="px-4 py-2 rounded-xl dark-glass text-zinc-400 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl light-red-gradient-btn font-bold text-white shadow-md cursor-pointer"
+                  className="px-5 py-2 rounded-xl gray-glass-btn font-bold text-white shadow-md cursor-pointer"
                 >
                   Create Identity
                 </button>
@@ -677,8 +677,8 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-lg dark-glass border border-white/10 rounded-3xl p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-sm font-bold text-[#F2EBF0] font-serif">Add Universal Timeline Entry</h3>
-              <button onClick={() => setIsAddTimelineOpen(false)} className="text-[#A898A7] hover:text-white">
+              <h3 className="text-sm font-bold text-white font-serif">Add Universal Timeline Entry</h3>
+              <button onClick={() => setIsAddTimelineOpen(false)} className="text-zinc-400 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -686,22 +686,22 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
             <form onSubmit={handleCreateTimelineEvent} className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] font-bold text-[#A898A7] mb-1">Time Expression *</label>
+                  <label className="block text-[11px] font-bold text-zinc-400 mb-1">Time Expression *</label>
                   <input
                     type="text"
                     value={newTimeExpr}
                     onChange={e => setNewTimeExpr(e.target.value)}
                     placeholder="e.g. 1500 BCE, 65 million years ago"
                     required
-                    className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D7374B]"
+                    className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-[#A898A7] mb-1">Time Category</label>
+                  <label className="block text-[11px] font-bold text-zinc-400 mb-1">Time Category</label>
                   <select
                     value={newTimeType}
                     onChange={e => setNewTimeType(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#160D19] border border-white/10 text-white focus:outline-none focus:border-[#D7374B]"
+                    className="w-full px-3 py-2 rounded-xl bg-[#181B24] border border-white/10 text-white focus:outline-none focus:border-white/30"
                   >
                     <option value="standard_ce">Standard Calendar (CE)</option>
                     <option value="bce">Ancient History (BCE)</option>
@@ -713,26 +713,26 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#A898A7] mb-1">Title *</label>
+                <label className="block text-[11px] font-bold text-zinc-400 mb-1">Title *</label>
                 <input
                   type="text"
                   value={newTimeTitle}
                   onChange={e => setNewTimeTitle(e.target.value)}
                   placeholder="e.g. The Ancient Kingdom, The Great Canopy Migration"
                   required
-                  className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D7374B]"
+                  className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#A898A7] mb-1">Short Description *</label>
+                <label className="block text-[11px] font-bold text-zinc-400 mb-1">Short Description *</label>
                 <textarea
                   value={newTimeDesc}
                   onChange={e => setNewTimeDesc(e.target.value)}
                   placeholder="What happened during this era?"
                   required
                   rows={2}
-                  className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D7374B]"
+                  className="w-full px-3 py-2 rounded-xl dark-glass border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30"
                 />
               </div>
 
@@ -742,9 +742,9 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                   id="fictionalCheck"
                   checked={newTimeIsFictional}
                   onChange={e => setNewTimeIsFictional(e.target.checked)}
-                  className="rounded text-[#D7374B]"
+                  className="rounded text-white accent-white"
                 />
-                <label htmlFor="fictionalCheck" className="text-xs text-[#F2EBF0] cursor-pointer">
+                <label htmlFor="fictionalCheck" className="text-xs text-zinc-200 cursor-pointer">
                   This is an imaginary / fictional event
                 </label>
               </div>
@@ -753,13 +753,13 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddTimelineOpen(false)}
-                  className="px-4 py-2 rounded-xl dark-glass text-[#A898A7] hover:text-white"
+                  className="px-4 py-2 rounded-xl dark-glass text-zinc-400 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl light-red-gradient-btn font-bold text-white shadow-md cursor-pointer"
+                  className="px-5 py-2 rounded-xl gray-glass-btn font-bold text-white shadow-md cursor-pointer"
                 >
                   Save Entry
                 </button>

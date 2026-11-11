@@ -64,19 +64,19 @@ export const SoulverseCollectionsPage: React.FC = () => {
   return (
     <div className="w-full space-y-6 animate-fadeIn pb-16">
       {/* Top Banner */}
-      <div className="p-6 rounded-3xl bg-[#160D19] border border-[#321323] shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl dark-glass border border-white/[0.08] shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[#321323] border border-[#A64D78]/30 flex items-center justify-center text-[#D78BAF]">
-            <Boxes className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-white/[0.08] border border-white/15 flex items-center justify-center text-white shadow-inner">
+            <Boxes className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-base font-black text-[#E9DFE8] font-serif">Collections, Media & Galleries</h1>
-            <p className="text-xs text-[#A99BAA]">Curated photography, soundscapes, concept visual boards, and literature</p>
+            <h1 className="text-base font-black text-white font-serif">Collections, Media & Galleries</h1>
+            <p className="text-xs text-zinc-400">Curated photography, soundscapes, concept visual boards, and literature</p>
           </div>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#09080D] border border-[#321323] text-xs">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/[0.04] border border-white/10 text-xs">
           {[
             { id: 'all', label: 'All Collections' },
             { id: 'visual', label: 'Photography & Art' },
@@ -88,8 +88,8 @@ export const SoulverseCollectionsPage: React.FC = () => {
               onClick={() => setActiveCategory(tab.id as any)}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                 activeCategory === tab.id
-                  ? 'bg-[#321323] text-[#F0B8D3] border border-[#A64D78]/30 shadow-sm'
-                  : 'text-[#A99BAA] hover:text-[#E9DFE8]'
+                  ? 'bg-white/20 text-white border border-white/30 shadow-sm'
+                  : 'text-zinc-400 hover:text-white'
               }`}
             >
               {tab.label}
@@ -104,30 +104,30 @@ export const SoulverseCollectionsPage: React.FC = () => {
           <div
             key={item.id}
             onClick={() => setPreviewMedia(item)}
-            className="rounded-3xl overflow-hidden bg-[#160D19] border border-[#321323] hover:border-[#A64D78]/40 transition-all shadow-lg flex flex-col justify-between group cursor-pointer"
+            className="rounded-3xl overflow-hidden dark-glass-card border border-white/[0.08] hover:border-white/25 transition-all shadow-lg flex flex-col justify-between group cursor-pointer"
           >
-            <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#09080D]">
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/40">
               <img
                 src={item.cover}
                 alt={item.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#160D19] via-transparent to-black/20" />
-              <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[9px] font-bold text-[#F0B8D3]">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#090A0E] via-transparent to-black/20" />
+              <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[9px] font-bold text-white">
                 {item.count}
               </div>
             </div>
 
             <div className="p-4 space-y-2">
-              <h3 className="text-xs font-bold text-[#E9DFE8] group-hover:text-[#F0B8D3] transition-colors truncate">
+              <h3 className="text-xs font-bold text-white group-hover:text-zinc-200 transition-colors truncate">
                 {item.title}
               </h3>
-              <p className="text-[10px] text-[#A99BAA] line-clamp-2 leading-relaxed">
+              <p className="text-[10px] text-zinc-400 line-clamp-2 leading-relaxed">
                 {item.desc}
               </p>
-              <div className="flex items-center justify-between pt-2 border-t border-[#321323] text-[10px] text-[#A99BAA]">
+              <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-[10px] text-zinc-400">
                 <span>📅 {item.date}</span>
-                <span className="text-[#A64D78] group-hover:translate-x-0.5 transition-transform">Open Album ›</span>
+                <span className="text-zinc-300 group-hover:translate-x-0.5 transition-transform">Open Album ›</span>
               </div>
             </div>
           </div>
@@ -137,7 +137,7 @@ export const SoulverseCollectionsPage: React.FC = () => {
       {/* Media Preview Modal */}
       {previewMedia && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="w-full max-w-2xl bg-[#160D19] border border-[#321323] rounded-3xl overflow-hidden shadow-2xl">
+          <div className="w-full max-w-2xl bg-[#12141B] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
             <div className="relative aspect-[16/9] w-full bg-black">
               <img src={previewMedia.cover} alt={previewMedia.title} className="w-full h-full object-cover" />
               <button 
@@ -148,9 +148,9 @@ export const SoulverseCollectionsPage: React.FC = () => {
               </button>
             </div>
             <div className="p-6 space-y-2">
-              <h2 className="text-base font-bold text-[#E9DFE8]">{previewMedia.title}</h2>
-              <p className="text-xs text-[#A99BAA] leading-relaxed">{previewMedia.desc}</p>
-              <div className="flex items-center justify-between pt-3 text-xs text-[#A64D78]">
+              <h2 className="text-base font-bold text-white">{previewMedia.title}</h2>
+              <p className="text-xs text-zinc-400 leading-relaxed">{previewMedia.desc}</p>
+              <div className="flex items-center justify-between pt-3 text-xs text-zinc-300">
                 <span>{previewMedia.count} in this collection</span>
                 <span>{previewMedia.date}</span>
               </div>

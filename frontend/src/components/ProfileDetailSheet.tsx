@@ -358,23 +358,23 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
                   </p>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-rose-950/20 border border-rose-500/20 space-y-1">
-                  <div className="flex items-center gap-1 text-rose-400 font-bold text-[11px]">
+                <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 space-y-1">
+                  <div className="flex items-center gap-1 text-zinc-300 font-bold text-[11px]">
                     <ThumbsDown className="w-3.5 h-3.5" />
                     <span>Turn-offs</span>
                   </div>
-                  <p className="text-[11px] text-[#B9A8B3] leading-relaxed">
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
                     {profile.dislikes.join(' • ')}
                   </p>
                 </div>
               </div>
 
               {/* Vulnerable Prompt */}
-              <div className="p-4 rounded-3xl glass-panel space-y-1.5">
-                <span className="text-[10px] font-bold text-[#FFB4CE] uppercase">
+              <div className="p-4 rounded-3xl dark-glass space-y-1.5 border border-white/10">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase">
                   {profile.deepQuestion.question}
                 </span>
-                <p className="text-xs text-[#FFF1F3] italic leading-relaxed">
+                <p className="text-xs text-white italic leading-relaxed">
                   "{profile.deepQuestion.answer}"
                 </p>
               </div>
@@ -383,7 +383,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
               {!isSelf && (
                 <div className="p-4 rounded-3xl dark-glass border border-white/10 space-y-3 shadow-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[#FFA4B2] uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-white uppercase tracking-wider">
                       Community Feedback & Personality Traits
                     </span>
                     <div className="flex items-center gap-2">
@@ -392,7 +392,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
                         className={`px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 transition-all ${
                           socialFeedback.userVote === 'like'
                             ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/50'
-                            : 'bg-white/5 text-[#A898A7] hover:text-white border border-white/10'
+                            : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
                         }`}
                       >
                         <ThumbsUp className="w-3 h-3" />
@@ -402,8 +402,8 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
                         onClick={() => handleVote('dislike')}
                         className={`px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 transition-all ${
                           socialFeedback.userVote === 'dislike'
-                            ? 'bg-rose-500/25 text-rose-300 border border-rose-500/50'
-                            : 'bg-white/5 text-[#A898A7] hover:text-white border border-white/10'
+                            ? 'bg-white/15 text-white border border-white/30'
+                            : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
                         }`}
                       >
                         <ThumbsDown className="w-3 h-3" />
@@ -424,8 +424,8 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
                           onClick={() => handleToggleTrait(trait.slug)}
                           className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all cursor-pointer flex items-center gap-1 ${
                             isSelected
-                              ? 'bg-[#D7374B]/20 text-[#FFA4B2] border-[#D7374B]/60 shadow-[0_0_10px_rgba(215,55,75,0.25)]'
-                              : 'bg-white/[0.03] text-[#A898A7] border-white/10 hover:text-white'
+                              ? 'bg-white/20 text-white border-white/40 shadow-sm'
+                              : 'bg-white/[0.03] text-zinc-400 border-white/10 hover:text-white'
                           }`}
                         >
                           <span>{trait.label}</span>
@@ -441,8 +441,8 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
               {!isSelf && (
                 <div className="p-4 rounded-3xl dark-glass border border-white/10 space-y-2.5 shadow-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[#FFA4B2] uppercase tracking-wider flex items-center gap-1.5">
-                      <Lock className="w-3 h-3 text-[#D7374B]" />
+                    <span className="text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <Lock className="w-3 h-3 text-zinc-300" />
                       <span>Private Note (Only You See This)</span>
                     </span>
                     {noteSavedFeedback && (
@@ -453,7 +453,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
                     )}
                   </div>
 
-                  <p className="text-[10px] text-[#A898A7] leading-relaxed">
+                  <p className="text-[10px] text-zinc-400 leading-relaxed">
                     Personal contact note inspired by Telegram. Notes belong exclusively to you; neither {profile.name} nor other viewers can see this.
                   </p>
 
@@ -462,7 +462,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
                     onChange={e => setPrivateNote(e.target.value)}
                     placeholder={`e.g. Met through indie gaming meetup. Likes sci-fi, preferred slow Ceylon tea...`}
                     rows={2}
-                    className="w-full px-3 py-2 rounded-2xl dark-glass border border-white/10 text-xs text-[#F2EBF0] placeholder-white/30 focus:outline-none focus:border-[#D7374B]/60 transition-colors"
+                    className="w-full px-3 py-2 rounded-2xl dark-glass border border-white/10 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
                   />
 
                   <div className="flex justify-end">
@@ -531,10 +531,10 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
       </div>
 
       {/* Floating Bottom Action Bar */}
-      <div className="fixed bottom-0 inset-x-0 z-40 max-w-md mx-auto p-4 bg-gradient-to-t from-[#100B12] via-[#100B12]/90 to-transparent flex items-center gap-3">
+      <div className="fixed bottom-0 inset-x-0 z-40 max-w-md mx-auto p-4 bg-gradient-to-t from-[#090A0E] via-[#090A0E]/90 to-transparent flex items-center gap-3">
         <button
           onClick={() => onSuperLike(profile)}
-          className="w-12 h-12 rounded-2xl glass-panel-elevated flex items-center justify-center text-sky-400 border border-sky-400/40 shadow-lg cursor-pointer"
+          className="w-12 h-12 rounded-2xl dark-glass flex items-center justify-center text-zinc-300 border border-white/20 shadow-lg cursor-pointer hover:text-white hover:border-white/40"
           title="Super Like"
         >
           <Star className="w-5 h-5 fill-current" />
@@ -545,9 +545,9 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
             onClose();
             onInitiateChat(profile);
           }}
-          className="flex-1 py-3.5 rounded-2xl pink-gradient-btn font-bold text-xs flex items-center justify-center gap-2 shadow-xl cursor-pointer"
+          className="flex-1 py-3.5 rounded-2xl gray-glass-btn font-bold text-xs flex items-center justify-center gap-2 shadow-xl cursor-pointer"
         >
-          <MessageCircle className="w-4 h-4" />
+          <MessageCircle className="w-4 h-4 text-white" />
           <span>Message {profile.name}</span>
         </button>
       </div>

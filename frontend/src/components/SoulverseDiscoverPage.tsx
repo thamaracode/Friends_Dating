@@ -53,43 +53,43 @@ export const SoulverseDiscoverPage: React.FC<SoulverseDiscoverPageProps> = ({
   return (
     <div className="w-full space-y-6 animate-fadeIn pb-16">
       {/* Header & Filter Controls Bar */}
-      <div className="p-6 rounded-3xl bg-[#160D19] border border-[#321323] shadow-2xl space-y-4">
+      <div className="p-6 rounded-3xl dark-glass border border-white/[0.08] shadow-2xl space-y-4">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#321323] border border-[#A64D78]/30 flex items-center justify-center text-[#D78BAF]">
-              <Compass className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-white/[0.08] border border-white/15 flex items-center justify-center text-white shadow-inner">
+              <Compass className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-base font-black text-[#E9DFE8] font-serif">Discover Humans & Deep Chemistry</h1>
-              <p className="text-xs text-[#A99BAA]">Explore verified profiles matched by ontological compatibility and core values</p>
+              <h1 className="text-base font-black text-white font-serif">Discover Humans & Deep Chemistry</h1>
+              <p className="text-xs text-zinc-400">Explore verified profiles matched by ontological compatibility and core values</p>
             </div>
           </div>
 
           {/* Search bar */}
           <div className="w-full md:w-80 relative">
-            <Search className="w-4 h-4 text-[#A99BAA] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name, location, or passion..."
-              className="w-full pl-10 pr-4 py-2 rounded-2xl bg-[#09080D] border border-[#321323] text-xs text-[#E9DFE8] placeholder-[#A99BAA]/60 focus:outline-none focus:border-[#A64D78]/60"
+              className="w-full pl-10 pr-4 py-2 rounded-2xl bg-white/[0.04] border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 focus:bg-white/[0.07] transition-colors"
             />
           </div>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#321323]">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.08]">
           {/* Intent Switcher */}
-          <div className="flex items-center gap-1 p-1 rounded-2xl bg-[#09080D] border border-[#321323] text-xs">
+          <div className="flex items-center gap-1 p-1 rounded-2xl bg-white/[0.04] border border-white/10 text-xs">
             {(['all', 'Dating', 'Friendship'] as const).map(intent => (
               <button
                 key={intent}
                 onClick={() => setIntentFilter(intent)}
                 className={`px-3 py-1 rounded-xl font-bold transition-all cursor-pointer ${
                   intentFilter === intent
-                    ? 'bg-[#321323] text-[#F0B8D3] border border-[#A64D78]/30 shadow-sm'
-                    : 'text-[#A99BAA] hover:text-[#E9DFE8]'
+                    ? 'bg-white/20 text-white border border-white/30 shadow-sm'
+                    : 'text-zinc-400 hover:text-white'
                 }`}
               >
                 {intent === 'all' ? 'All Intent' : intent}
@@ -103,10 +103,10 @@ export const SoulverseDiscoverPage: React.FC<SoulverseDiscoverPageProps> = ({
               <button
                 key={tag}
                 onClick={() => setSelectedTag(tag)}
-                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer border ${
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer border ${
                   selectedTag === tag
-                    ? 'bg-[#321323] text-[#F0B8D3] border-[#A64D78]/40'
-                    : 'bg-[#09080D] text-[#A99BAA] border-[#321323] hover:text-[#E9DFE8]'
+                    ? 'bg-white/20 text-white border-white/30 shadow-sm'
+                    : 'bg-white/[0.04] text-zinc-400 border-white/10 hover:text-white hover:border-white/20'
                 }`}
               >
                 {tag === 'all' ? 'All Passions' : `#${tag}`}
@@ -115,12 +115,12 @@ export const SoulverseDiscoverPage: React.FC<SoulverseDiscoverPageProps> = ({
           </div>
 
           {/* Verified Toggle */}
-          <label className="flex items-center gap-2 text-xs text-[#E9DFE8] cursor-pointer select-none">
+          <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={verifiedOnly}
               onChange={(e) => setVerifiedOnly(e.target.checked)}
-              className="rounded bg-[#09080D] border-[#321323] text-[#A64D78]"
+              className="rounded bg-white/[0.06] border-white/20 text-white accent-white"
             />
             <span className="flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
@@ -135,20 +135,20 @@ export const SoulverseDiscoverPage: React.FC<SoulverseDiscoverPageProps> = ({
         {filtered.map(person => (
           <div
             key={person.id}
-            className="rounded-3xl overflow-hidden bg-[#160D19] border border-[#321323] hover:border-[#A64D78]/40 transition-all shadow-lg flex flex-col justify-between group"
+            className="rounded-3xl overflow-hidden dark-glass-card border border-white/[0.08] hover:border-white/25 transition-all shadow-lg flex flex-col justify-between group"
           >
             <div 
               onClick={() => onOpenProfile(person)}
-              className="relative aspect-[4/3] w-full overflow-hidden bg-[#09080D] cursor-pointer"
+              className="relative aspect-[4/3] w-full overflow-hidden bg-black/40 cursor-pointer"
             >
               <img
                 src={person.avatar}
                 alt={person.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-85"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#160D19] via-transparent to-black/20" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#090A0E] via-transparent to-black/25" />
               
-              <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-bold text-[#F0B8D3]">
+              <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[10px] font-bold text-white shadow-sm">
                 {person.compatibilityScore}% HCM
               </div>
             </div>
@@ -156,39 +156,39 @@ export const SoulverseDiscoverPage: React.FC<SoulverseDiscoverPageProps> = ({
             <div className="p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs font-bold text-[#E9DFE8] flex items-center gap-1.5">
+                  <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
                     <span>{person.name}</span>
-                    <span className="text-[#A99BAA] font-normal">{person.age}</span>
+                    <span className="text-zinc-400 font-normal">{person.age}</span>
                     {person.verifications?.photoVerified && <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />}
                   </h3>
-                  <p className="text-[10px] text-[#A99BAA]">{person.location} • {person.status}</p>
+                  <p className="text-[10px] text-zinc-400">{person.location} • {person.status}</p>
                 </div>
               </div>
 
-              <p className="text-xs text-[#A99BAA] line-clamp-2 italic">
+              <p className="text-xs text-zinc-300 line-clamp-2 italic">
                 "{person.aboutMeLong || person.tagline}"
               </p>
 
               <div className="flex flex-wrap gap-1 pt-1">
                 {person.coreValues.slice(0, 3).map((val, idx) => (
-                  <span key={idx} className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-[#321323] text-[#F0B8D3] border border-[#A64D78]/20">
+                  <span key={idx} className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-white/[0.06] text-zinc-300 border border-white/10">
                     {val}
                   </span>
                 ))}
               </div>
 
-              <div className="flex items-center gap-2 pt-2 border-t border-[#321323]">
+              <div className="flex items-center gap-2 pt-2 border-t border-white/[0.08]">
                 <button
                   onClick={() => onOpenProfile(person)}
-                  className="flex-1 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#E9DFE8] text-xs font-bold cursor-pointer transition-colors text-center"
+                  className="flex-1 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/15 text-zinc-200 hover:text-white border border-white/10 text-xs font-bold cursor-pointer transition-all text-center"
                 >
                   View Story
                 </button>
                 <button
                   onClick={() => onInitiateChat(person)}
-                  className="flex-1 py-1.5 rounded-xl rose-gradient-btn text-xs font-bold cursor-pointer flex items-center justify-center gap-1"
+                  className="flex-1 py-1.5 rounded-xl gray-glass-btn text-xs font-bold cursor-pointer flex items-center justify-center gap-1"
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
+                  <MessageCircle className="w-3.5 h-3.5 text-white" />
                   <span>Chat</span>
                 </button>
               </div>
