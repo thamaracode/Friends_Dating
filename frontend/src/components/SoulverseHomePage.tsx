@@ -112,6 +112,37 @@ export const SoulverseHomePage: React.FC<SoulverseHomePageProps> = ({
         </div>
       </div>
 
+      {/* 1.5 TODAY'S DAILY CONNECTION INTELLIGENCE BANNER */}
+      <div 
+        onClick={() => onNavigate('daily')}
+        className="rounded-3xl p-5 sm:p-6 bg-gradient-to-r from-[#160D19] via-[#321323]/40 to-[#160D19] border border-[#85283C]/35 hover:border-[#85283C]/70 transition-all cursor-pointer shadow-xl relative overflow-hidden group"
+      >
+        <div className="absolute top-0 right-0 w-80 h-full bg-gradient-to-l from-[#85283C]/12 to-transparent pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-2 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#85283C]/25 text-[#F8B4C4] border border-[#85283C]/40 flex items-center gap-1.5">
+                <Flame className="w-3 h-3 text-[#F8D2A6]" />
+                <span>DAILY CONNECTION</span>
+              </span>
+              <span className="text-[10px] text-[#A99BAA]">Today's Thought • Love & Understanding</span>
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-[#E9DFE8] font-serif group-hover:text-[#F0B8D3] transition-colors leading-snug">
+              "Love is not only about finding someone. It's about learning how to understand someone."
+            </h3>
+            <p className="text-xs text-[#A99BAA] line-clamp-1">
+              Today's reflection: Do you listen to understand someone, or do you listen just to prepare your response?
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-bold text-[#F0B8D3] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              <span>Open Daily Edition</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* 2. PROFILE WORLDS CAROUSEL */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">

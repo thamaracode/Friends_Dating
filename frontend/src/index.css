@@ -4,10 +4,15 @@
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color-scheme: dark;
 
-  /* Preferred Design Direction: Dark Ambient / Subtle Rose */
-  /* 85–90% dark surfaces: near-black, charcoal and deep plum. */
-  /* 5–10% muted pink: subtle rose and dusty pink accents. */
-  /* Small neon-pink highlights for active navigation and notifications. */
+  /* Soulverse Dark Cinematic UI: Ambient Colour System */
+  --ambient-crimson: #85283C;        /* Primary emotional identity & romantic interactions */
+  --ambient-burgundy: #461829;       /* Deep atmospheric base & shadow tones */
+  --ambient-violet: #49315F;         /* Creative worlds, imagination & cinematic experiences */
+  --ambient-midnight-blue: #203D62;  /* Communication, discovery & informational areas */
+  --ambient-teal: #24544F;           /* Subtle contrast & secondary highlights */
+  --ambient-warm-amber: #79502D;     /* Achievements, special moments & premium elements */
+
+  /* Dark Surfaces (85–90% of layout) */
   --color-obsidian: #09080D;         /* Deep canvas base */
   --color-deep-plum: #160D19;        /* Card & panel surface */
   --color-dark-rose: #321323;        /* Subtle borders & active card tints */
@@ -146,16 +151,45 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 16px);
 }
 
-/* Hide scrollbars on native feel carousels while keeping scrollability */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* Multicolour Ambient Badges & Accents */
+.ambient-badge-crimson {
+  background: rgba(133, 40, 60, 0.22);
+  border: 1px solid rgba(133, 40, 60, 0.45);
+  color: #F8B4C4;
 }
 
-/* Mobile Safe Area Bottom */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 16px);
+.ambient-badge-violet {
+  background: rgba(73, 49, 95, 0.24);
+  border: 1px solid rgba(73, 49, 95, 0.45);
+  color: #E2CEF7;
+}
+
+.ambient-badge-blue {
+  background: rgba(32, 61, 98, 0.25);
+  border: 1px solid rgba(32, 61, 98, 0.45);
+  color: #BED8F6;
+}
+
+.ambient-badge-teal {
+  background: rgba(36, 84, 79, 0.25);
+  border: 1px solid rgba(36, 84, 79, 0.45);
+  color: #AEE6DE;
+}
+
+.ambient-badge-amber {
+  background: rgba(121, 80, 45, 0.25);
+  border: 1px solid rgba(121, 80, 45, 0.45);
+  color: #F7D4AE;
+}
+
+/* Accessibility: Support Reduced Motion Settings */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

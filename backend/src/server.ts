@@ -2573,6 +2573,439 @@ app.post('/api/v1/worlds/entries/reference', (req, res) => {
   res.json({ success: true, relationId: id });
 });
 
+// ============================================================================
+// DAILY RELATIONSHIP & HUMAN CONNECTION INTELLIGENCE SYSTEM ENDPOINTS
+// ============================================================================
+
+// 1. Get All Categories
+app.get('/api/v1/daily-content/categories', (req, res) => {
+  const categories = db.prepare('SELECT * FROM daily_content_categories ORDER BY tab ASC, name ASC').all();
+  res.json({ success: true, categories });
+});
+
+// 2. Get Member Personalization Preferences & Streak
+app.get('/api/v1/daily-content/preferences', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+  let prefs = db.prepare('SELECT * FROM daily_member_preferences WHERE member_id = ?').get(userId) as any;
+  if (!prefs) {
+    const now = Date.now();
+    db.prepare(`
+      INSERT OR IGNORE INTO daily_member_preferences (
+        member_id, edition_preference, relationship_status, dating_intentions,
+        friendship_track, delivery_time, timezone, love_notifications,
+        friendship_notifications, growth_notifications, quiet_hours_enabled, updated_at
+      ) VALUES (?, 'universal', 'single', 'meaningful_connection', 'making_new_friends', '08:00', 'Asia/Colombo', 1, 1, 1, 1, ?)
+    `).run(userId, now);
+    prefs = db.prepare('SELECT * FROM daily_member_preferences WHERE member_id = ?').get(userId);
+  }
+
+  const streak = db.prepare('SELECT * FROM daily_member_streaks WHERE member_id = ?').get(userId) || {
+    current_streak: 1,
+    longest_streak: 1,
+    total_reflections: 0,
+    total_challenges_done: 0
+  };
+
+  res.json({ success: true, preferences: prefs, streak });
+});
+
+// 3. Update Member Personalization Preferences
+app.put('/api/v1/daily-content/preferences', (req, res) => {
+  const {
+    userId = 'usr_me',
+    editionPreference = 'universal',
+    relationshipStatus = 'single',
+    datingIntentions = 'meaningful_connection',
+    friendshipTrack = 'making_new_friends',
+    deliveryTime = '08:00',
+    timezone = 'Asia/Colombo',
+    loveNotifications = 1,
+    friendshipNotifications = 1,
+    growthNotifications = 1,
+    quietHoursEnabled = 1
+  } = req.body;
+
+  const now = Date.now();
+  db.prepare(`
+    INSERT INTO daily_member_preferences (
+      member_id, edition_preference, relationship_status, dating_intentions,
+      friendship_track, delivery_time, timezone, love_notifications,
+      friendship_notifications, growth_notifications, quiet_hours_enabled, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(member_id) DO UPDATE SET
+      edition_preference = excluded.edition_preference,
+      relationship_status = excluded.relationship_status,
+      dating_intentions = excluded.dating_intentions,
+      friendship_track = excluded.friendship_track,
+      delivery_time = excluded.delivery_time,
+      timezone = excluded.timezone,
+      love_notifications = excluded.love_notifications,
+      friendship_notifications = excluded.friendship_notifications,
+      growth_notifications = excluded.growth_notifications,
+      quiet_hours_enabled = excluded.quiet_hours_enabled,
+      updated_at = excluded.updated_at
+  `).run(
+    userId, editionPreference, relationshipStatus, datingIntentions,
+    friendshipTrack, deliveryTime, timezone, loveNotifications ? 1 : 0,
+    friendshipNotifications ? 1 : 0, growthNotifications ? 1 : 0,
+    quietHoursEnabled ? 1 : 0, now
+  );
+
+  res.json({ success: true, updated: true });
+});
+
+// 4. Retrieve Today's Deterministic Assigned Content (4 Permanent Tabs: Love, Friendship, Mind, Growth)
+app.get('/api/v1/daily-content/today', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+  const localDate = (req.query.date as string) || new Date().toISOString().split('T')[0];
+  const requestedTab = req.query.tab as string | undefined;
+
+  // Retrieve user preferences
+  const prefs = db.prepare('SELECT * FROM daily_member_preferences WHERE member_id = ?').get(userId) as any || {
+    edition_preference: 'universal',
+    relationship_status: 'single',
+    friendship_track: 'making_new_friends'
+  };
+
+  const tabs: ('love' | 'friendship' | 'mind' | 'growth')[] = requestedTab 
+    ? [requestedTab as any] 
+    : ['love', 'friendship', 'mind', 'growth'];
+
+  const results: Record<string, any> = {};
+
+  for (const tab of tabs) {
+    // 1. Check if assignment exists for this (member, date, tab)
+    let assignment = db.prepare(`
+      SELECT a.*, c.title, c.quote_one_liner, c.body_insight, c.reflection_question,
+             c.action_exercise, c.format_type, c.cover_image_url, c.author_or_source,
+             c.likes_count, c.saves_count, cat.name as category_name, cat.icon as category_icon,
+             cat.ambient_color
+      FROM daily_member_assignments a
+      JOIN daily_content c ON a.content_id = c.id
+      JOIN daily_content_categories cat ON c.category_id = cat.id
+      WHERE a.member_id = ? AND a.local_date = ? AND a.tab = ?
+    `).get(userId, localDate, tab) as any;
+
+    if (!assignment) {
+      // 2. Select optimal content for this tab matching user profile
+      const candidates = db.prepare(`
+        SELECT c.*, cat.name as category_name, cat.icon as category_icon, cat.ambient_color
+        FROM daily_content c
+        JOIN daily_content_categories cat ON c.category_id = cat.id
+        WHERE c.tab = ?
+      `).all(tab) as any[];
+
+      if (candidates.length > 0) {
+        // Exclude content recently assigned to member in the last 14 days
+        const recentAssignments = db.prepare(`
+          SELECT content_id FROM daily_member_assignments
+          WHERE member_id = ? AND tab = ? AND local_date != ?
+          ORDER BY assigned_at DESC LIMIT 14
+        `).all(userId, tab, localDate) as { content_id: string }[];
+        const recentIds = new Set(recentAssignments.map(r => r.content_id));
+
+        const eligible = candidates.filter(c => !recentIds.has(c.id));
+        const pool = eligible.length > 0 ? eligible : candidates;
+
+        // Score based on preferences:
+        let bestCandidate = pool[0];
+        let bestScore = -1;
+
+        for (const cand of pool) {
+          let score = 0;
+          const genderAudience = JSON.parse(cand.gender_audience || '["all"]');
+          const relStatuses = JSON.parse(cand.relationship_statuses || '["all"]');
+          const friendTracks = JSON.parse(cand.friendship_tracks || '["all"]');
+
+          // Gender edition matching
+          if (prefs.edition_preference !== 'universal') {
+            if (genderAudience.includes(prefs.edition_preference)) score += 5;
+          } else {
+            if (genderAudience.includes('all')) score += 3;
+          }
+
+          // Relationship situation matching
+          if (relStatuses.includes(prefs.relationship_status) || relStatuses.includes('all')) {
+            score += 4;
+          }
+
+          // Friendship track matching
+          if (friendTracks.includes(prefs.friendship_track) || friendTracks.includes('all')) {
+            score += 3;
+          }
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestCandidate = cand;
+          }
+        }
+
+        const assignId = `asg_${uuidv4().slice(0, 8)}`;
+        const now = Date.now();
+
+        db.prepare(`
+          INSERT OR IGNORE INTO daily_member_assignments (
+            id, member_id, local_date, tab, content_id, is_read, assigned_at
+          ) VALUES (?, ?, ?, ?, ?, 1, ?)
+        `).run(assignId, userId, localDate, tab, bestCandidate.id, now);
+
+        assignment = {
+          id: assignId,
+          member_id: userId,
+          local_date: localDate,
+          tab,
+          content_id: bestCandidate.id,
+          is_read: 1,
+          reflection_answer: null,
+          challenge_completed: 0,
+          assigned_at: now,
+          title: bestCandidate.title,
+          quote_one_liner: bestCandidate.quote_one_liner,
+          body_insight: bestCandidate.body_insight,
+          reflection_question: bestCandidate.reflection_question,
+          action_exercise: bestCandidate.action_exercise,
+          format_type: bestCandidate.format_type,
+          cover_image_url: bestCandidate.cover_image_url,
+          author_or_source: bestCandidate.author_or_source,
+          likes_count: bestCandidate.likes_count,
+          saves_count: bestCandidate.saves_count,
+          category_name: bestCandidate.category_name,
+          category_icon: bestCandidate.category_icon,
+          ambient_color: bestCandidate.ambient_color
+        };
+      }
+    }
+
+    // Check if user has liked or saved this content
+    if (assignment) {
+      const feedback = db.prepare(`
+        SELECT action FROM daily_content_feedback WHERE member_id = ? AND content_id = ?
+      `).all(userId, assignment.content_id) as { action: string }[];
+      const userActions = new Set(feedback.map(f => f.action));
+
+      results[tab] = {
+        ...assignment,
+        is_liked: userActions.has('like'),
+        is_saved: userActions.has('save')
+      };
+    }
+  }
+
+  // Update Member Streak for active day
+  const streak = db.prepare('SELECT * FROM daily_member_streaks WHERE member_id = ?').get(userId) as any;
+  if (streak) {
+    if (streak.last_active_date !== localDate) {
+      const newStreak = streak.current_streak + 1;
+      const longest = Math.max(newStreak, streak.longest_streak);
+      db.prepare(`
+        UPDATE daily_member_streaks
+        SET current_streak = ?, longest_streak = ?, last_active_date = ?
+        WHERE member_id = ?
+      `).run(newStreak, longest, localDate, userId);
+    }
+  } else {
+    db.prepare(`
+      INSERT INTO daily_member_streaks (member_id, current_streak, longest_streak, last_active_date)
+      VALUES (?, 1, 1, ?)
+    `).run(userId, localDate);
+  }
+
+  const updatedStreak = db.prepare('SELECT * FROM daily_member_streaks WHERE member_id = ?').get(userId);
+
+  res.json({
+    success: true,
+    date: localDate,
+    preferences: prefs,
+    streak: updatedStreak,
+    editions: results
+  });
+});
+
+// 5. Submit Reflection to Daily Question
+app.post('/api/v1/daily-content/reflect', (req, res) => {
+  const { userId = 'usr_me', assignmentId, reflectionAnswer } = req.body;
+  if (!assignmentId || !reflectionAnswer || !reflectionAnswer.trim()) {
+    return res.status(400).json({ error: 'assignmentId and reflectionAnswer are required' });
+  }
+
+  const assignment = db.prepare('SELECT * FROM daily_member_assignments WHERE id = ?').get(assignmentId) as any;
+  if (!assignment) {
+    return res.status(404).json({ error: 'Assignment not found' });
+  }
+
+  db.prepare(`
+    UPDATE daily_member_assignments
+    SET reflection_answer = ?
+    WHERE id = ?
+  `).run(reflectionAnswer.trim(), assignmentId);
+
+  // Record feedback note
+  const fid = `fb_${uuidv4().slice(0, 8)}`;
+  db.prepare(`
+    INSERT INTO daily_content_feedback (id, member_id, content_id, action, note, created_at)
+    VALUES (?, ?, ?, 'reflect', ?, ?)
+  `).run(fid, userId, assignment.content_id, reflectionAnswer.trim(), Date.now());
+
+  // Increment total reflections in streak
+  db.prepare(`
+    UPDATE daily_member_streaks
+    SET total_reflections = total_reflections + 1
+    WHERE member_id = ?
+  `).run(userId);
+
+  res.json({ success: true, updated: true });
+});
+
+// 6. Complete Daily Action Exercise / Challenge
+app.post('/api/v1/daily-content/challenge', (req, res) => {
+  const { userId = 'usr_me', assignmentId, completed = true } = req.body;
+  if (!assignmentId) {
+    return res.status(400).json({ error: 'assignmentId is required' });
+  }
+
+  const assignment = db.prepare('SELECT * FROM daily_member_assignments WHERE id = ?').get(assignmentId) as any;
+  if (!assignment) {
+    return res.status(404).json({ error: 'Assignment not found' });
+  }
+
+  db.prepare(`
+    UPDATE daily_member_assignments
+    SET challenge_completed = ?
+    WHERE id = ?
+  `).run(completed ? 1 : 0, assignmentId);
+
+  if (completed) {
+    const fid = `fb_${uuidv4().slice(0, 8)}`;
+    db.prepare(`
+      INSERT INTO daily_content_feedback (id, member_id, content_id, action, created_at)
+      VALUES (?, ?, ?, 'challenge_done', ?)
+    `).run(fid, userId, assignment.content_id, Date.now());
+
+    db.prepare(`
+      UPDATE daily_member_streaks
+      SET total_challenges_done = total_challenges_done + 1
+      WHERE member_id = ?
+    `).run(userId);
+  }
+
+  res.json({ success: true, completed });
+});
+
+// 7. Like / Save / Bookmark Daily Content
+app.post('/api/v1/daily-content/feedback', (req, res) => {
+  const { userId = 'usr_me', contentId, action } = req.body;
+  if (!contentId || !['like', 'save'].includes(action)) {
+    return res.status(400).json({ error: 'Valid contentId and action (like | save) required' });
+  }
+
+  const existing = db.prepare(`
+    SELECT id FROM daily_content_feedback WHERE member_id = ? AND content_id = ? AND action = ?
+  `).get(userId, contentId, action) as any;
+
+  if (existing) {
+    // Toggle off
+    db.prepare('DELETE FROM daily_content_feedback WHERE id = ?').run(existing.id);
+    if (action === 'like') {
+      db.prepare('UPDATE daily_content SET likes_count = MAX(0, likes_count - 1) WHERE id = ?').run(contentId);
+    } else if (action === 'save') {
+      db.prepare('UPDATE daily_content SET saves_count = MAX(0, saves_count - 1) WHERE id = ?').run(contentId);
+    }
+    return res.json({ success: true, active: false });
+  }
+
+  const fid = `fb_${uuidv4().slice(0, 8)}`;
+  db.prepare(`
+    INSERT INTO daily_content_feedback (id, member_id, content_id, action, created_at)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(fid, userId, contentId, action, Date.now());
+
+  if (action === 'like') {
+    db.prepare('UPDATE daily_content SET likes_count = likes_count + 1 WHERE id = ?').run(contentId);
+  } else if (action === 'save') {
+    db.prepare('UPDATE daily_content SET saves_count = saves_count + 1 WHERE id = ?').run(contentId);
+  }
+
+  res.json({ success: true, active: true });
+});
+
+// 8. Retrieve Saved Daily Content Archive
+app.get('/api/v1/daily-content/saved', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+  const saved = db.prepare(`
+    SELECT c.*, cat.name as category_name, cat.icon as category_icon, cat.ambient_color,
+           fb.created_at as saved_at
+    FROM daily_content_feedback fb
+    JOIN daily_content c ON fb.content_id = c.id
+    JOIN daily_content_categories cat ON c.category_id = cat.id
+    WHERE fb.member_id = ? AND fb.action = 'save'
+    ORDER BY fb.created_at DESC
+  `).all(userId);
+
+  res.json({ success: true, items: saved });
+});
+
+// 9. Retrieve Past Daily Editions & Reflection Journal
+app.get('/api/v1/daily-content/history', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+  const history = db.prepare(`
+    SELECT a.*, c.title, c.quote_one_liner, c.body_insight, c.reflection_question,
+           c.action_exercise, c.format_type, c.cover_image_url, cat.name as category_name,
+           cat.icon as category_icon, cat.ambient_color
+    FROM daily_member_assignments a
+    JOIN daily_content c ON a.content_id = c.id
+    JOIN daily_content_categories cat ON c.category_id = cat.id
+    WHERE a.member_id = ?
+    ORDER BY a.local_date DESC, a.assigned_at DESC
+    LIMIT 30
+  `).all(userId);
+
+  res.json({ success: true, history });
+});
+
+// 10. Admin Content Management: Add New Curated Wisdom
+app.post('/api/v1/daily-content/admin/create', (req, res) => {
+  const {
+    tab,
+    categoryId,
+    formatType = 'quote',
+    title,
+    quoteOneLiner,
+    bodyInsight,
+    reflectionQuestion = null,
+    actionExercise = null,
+    genderAudience = ['all'],
+    relationshipStatuses = ['all'],
+    friendshipTracks = ['all'],
+    personalityTags = [],
+    coverImageUrl = null,
+    authorOrSource = 'Soulverse Curated Library'
+  } = req.body;
+
+  if (!tab || !categoryId || !title || !quoteOneLiner || !bodyInsight) {
+    return res.status(400).json({ error: 'tab, categoryId, title, quoteOneLiner, and bodyInsight are required' });
+  }
+
+  const id = `cnt_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO daily_content (
+      id, tab, category_id, format_type, title, quote_one_liner, body_insight,
+      reflection_question, action_exercise, gender_audience, relationship_statuses,
+      friendship_tracks, personality_tags, cover_image_url, author_or_source,
+      source_type, review_status, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'curated', 'approved', ?)
+  `).run(
+    id, tab, categoryId, formatType, title.trim(), quoteOneLiner.trim(),
+    bodyInsight.trim(), reflectionQuestion, actionExercise,
+    JSON.stringify(genderAudience), JSON.stringify(relationshipStatuses),
+    JSON.stringify(friendshipTracks), JSON.stringify(personalityTags),
+    coverImageUrl, authorOrSource, now
+  );
+
+  res.json({ success: true, contentId: id });
+});
+
 
 
 const PORT = 3001;

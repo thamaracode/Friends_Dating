@@ -1,5 +1,6 @@
 export type SoulverseRoute = 
   | 'home'
+  | 'daily'
   | 'discover'
   | 'connections'
   | 'messages'
@@ -14,6 +15,7 @@ export type SoulverseRoute =
 
 export type ExperienceTab = 
   | 'home'
+  | 'daily'
   | 'discover'
   | 'likes'
   | 'messages_rooms'

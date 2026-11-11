@@ -29,6 +29,7 @@ import {
   Music, 
   FileText, 
   ShieldAlert,
+  Flame,
   Menu,
   X
 } from 'lucide-react';
@@ -46,6 +47,7 @@ import { SoulverseCollectionsPage } from './SoulverseCollectionsPage';
 import { SoulverseAccountPage } from './SoulverseAccountPage';
 import { SoulverseSettingsPage } from './SoulverseSettingsPage';
 import { SoulverseMorePage } from './SoulverseMorePage';
+import { DailyConnectionHub } from './DailyConnectionHub';
 
 // Established Feature Subsystems
 import { MessagingInboxView } from './MessagingInboxView';
@@ -58,6 +60,7 @@ import { CrisisSupportModal } from './CrisisSupportModal';
 import { DigitalLifeHub } from './DigitalLifeHub';
 import { LivingIdentityProfileView } from './LivingIdentityProfileView';
 import { AdminDashboard } from './AdminDashboard';
+import { CinematicAmbientBackground, ROUTE_AMBIENT_PROFILES } from './CinematicAmbientBackground';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -78,7 +81,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '') as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
-        'home', 'discover', 'connections', 'messages', 'profile', 
+        'home', 'daily', 'discover', 'connections', 'messages', 'profile', 
         'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal'
       ];
       if (validRoutes.includes(hash)) {
@@ -119,6 +122,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
   const navItems = [
     { id: 'home' as SoulverseRoute, label: 'Home', icon: Home },
+    { id: 'daily' as SoulverseRoute, label: 'Daily Connection', icon: Flame, badge: 'Daily' },
     { id: 'discover' as SoulverseRoute, label: 'Discover', icon: Compass },
     { id: 'connections' as SoulverseRoute, label: 'Connections', icon: Heart },
     { id: 'messages' as SoulverseRoute, label: 'Messages', icon: MessageCircle, badge: '12' },
@@ -132,20 +136,17 @@ export const SoulverseWebsiteShell: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#09080D] text-[#E9DFE8] flex flex-col font-sans selection:bg-[#A64D78] selection:text-[#E9DFE8] relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#09080D] text-[#E9DFE8] flex flex-col font-sans selection:bg-[#85283C] selection:text-[#E9DFE8] relative overflow-x-hidden">
       
-      {/* Soft Ambient Rose Glows (Calm at 2 AM, never harsh or nightclub-like) */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-gradient-to-b from-[#A64D78]/8 via-transparent to-transparent rounded-full blur-[130px]" />
-        <div className="absolute bottom-0 left-10 w-[500px] h-[500px] bg-gradient-to-t from-[#321323]/15 via-transparent to-transparent rounded-full blur-[120px]" />
-      </div>
+      {/* Dark Cinematic Multicolour Ambient Background Engine */}
+      <CinematicAmbientBackground currentRoute={currentRoute} />
 
       {/* ===================================================================== */}
       {/* 1. TOP GLOBAL SEARCH & HEADER BAR                                     */}
       {/* ===================================================================== */}
-      <header className="h-16 border-b border-[#321323] px-4 lg:px-6 flex items-center justify-between sticky top-0 z-40 bg-[#09080D]/90 backdrop-blur-md">
+      <header className="h-16 border-b border-[#321323]/80 px-4 lg:px-6 flex items-center justify-between sticky top-0 z-40 bg-[#09080D]/85 backdrop-blur-xl">
         
-        {/* Left: Mobile Menu Toggle + Brand Identity */}
+        {/* Left: Mobile Menu Toggle + Brand Identity + Ambient Mode Pill */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -158,11 +159,22 @@ export const SoulverseWebsiteShell: React.FC = () => {
             onClick={() => navigateTo('home')}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#321323] to-[#A64D78] flex items-center justify-center text-[#F0B8D3] shadow-[0_0_12px_rgba(166,77,120,0.3)] group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#321323] to-[#85283C] flex items-center justify-center text-[#F0B8D3] shadow-[0_0_12px_rgba(133,40,60,0.35)] group-hover:scale-105 transition-transform">
               <Heart className="w-3.5 h-3.5 fill-[#F0B8D3]" />
             </div>
             <span className="font-black text-sm tracking-widest text-[#F0B8D3] font-serif">
-              Soulverse <span className="text-[#A64D78]">💖</span>
+              Soulverse <span className="text-[#85283C]">🖤</span>
+            </span>
+          </div>
+
+          {/* Dynamic Ambient Aura Badge */}
+          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#160D19]/70 border border-[#321323] text-[10px] text-[#A99BAA]">
+            <span 
+              className="w-2 h-2 rounded-full transition-colors duration-700 shadow-sm"
+              style={{ backgroundColor: ROUTE_AMBIENT_PROFILES[currentRoute]?.primary || '#85283C' }}
+            />
+            <span className="font-medium tracking-wide">
+              {ROUTE_AMBIENT_PROFILES[currentRoute]?.themeLabel}
             </span>
           </div>
         </div>
@@ -293,13 +305,17 @@ export const SoulverseWebsiteShell: React.FC = () => {
             </div>
           </div>
 
-          {/* Premium Card */}
-          <div className="p-3.5 rounded-3xl bg-[#160D19] border border-[#321323] space-y-2 text-center mt-auto shadow-md">
-            <span className="text-xs font-bold text-[#F0B8D3] block">👑 Premium Sanctuary</span>
-            <p className="text-[10px] text-[#A99BAA]">Unlimited Profile Worlds, lossless audio, and custom themes ✧</p>
+          {/* Premium Sanctuary Card (Styled with Warm Amber #79502D per Ambient Colour Rules) */}
+          <div className="p-3.5 rounded-3xl bg-[#160D19]/90 border border-[#79502D]/40 space-y-2 text-center mt-auto shadow-md relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-t from-[#79502D]/15 via-transparent to-transparent pointer-events-none" />
+            <span className="text-xs font-bold text-[#F8D2A6] block flex items-center justify-center gap-1.5">
+              <span>👑</span>
+              <span>Premium Sanctuary</span>
+            </span>
+            <p className="text-[10px] text-[#A99BAA] relative z-10">Unlimited Profile Worlds, lossless audio, and custom themes ✧</p>
             <button 
               onClick={() => alert("Premium active")}
-              className="w-full py-1.5 rounded-xl rose-gradient-btn text-xs font-bold cursor-pointer shadow-md"
+              className="w-full py-1.5 rounded-xl bg-gradient-to-r from-[#79502D] to-[#85283C] text-white text-xs font-bold cursor-pointer shadow-md hover:brightness-110 transition-all relative z-10"
             >
               Go Premium
             </button>
@@ -362,6 +378,11 @@ export const SoulverseWebsiteShell: React.FC = () => {
               onInitiateChat={handleInitiateChat}
               onOpenWorld={handleOpenWorld}
             />
+          )}
+
+          {/* PAGE 1.5: DAILY RELATIONSHIP & HUMAN CONNECTION INTELLIGENCE */}
+          {currentRoute === 'daily' && (
+            <DailyConnectionHub onBackToHome={() => navigateTo('home')} />
           )}
 
           {/* PAGE 2: DISCOVER HUMANS */}

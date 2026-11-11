@@ -572,6 +572,98 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_world_entries_section ON profile_world_entries(section_id, sort_order);
     CREATE INDEX IF NOT EXISTS idx_world_entries_world_vis ON profile_world_entries(world_id, visibility, status);
     CREATE INDEX IF NOT EXISTS idx_world_relations_source ON profile_world_entry_relations(source_world_id, source_entry_id);
+
+    -- ========================================================================
+    -- DAILY RELATIONSHIP & HUMAN CONNECTION INTELLIGENCE SYSTEM
+    -- ========================================================================
+    CREATE TABLE IF NOT EXISTS daily_content_categories (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      tab TEXT NOT NULL CHECK(tab IN ('love', 'friendship', 'mind', 'growth')),
+      icon TEXT NOT NULL,
+      description TEXT NOT NULL,
+      ambient_color TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS daily_content (
+      id TEXT PRIMARY KEY,
+      tab TEXT NOT NULL CHECK(tab IN ('love', 'friendship', 'mind', 'growth')),
+      category_id TEXT NOT NULL,
+      format_type TEXT NOT NULL CHECK(format_type IN ('quote', 'advice', 'reflection', 'behavior_insight', 'challenge', 'motivation', 'compatibility')),
+      title TEXT NOT NULL,
+      quote_one_liner TEXT NOT NULL,
+      body_insight TEXT NOT NULL,
+      reflection_question TEXT,
+      action_exercise TEXT,
+      gender_audience TEXT NOT NULL DEFAULT '["all"]',
+      relationship_statuses TEXT NOT NULL DEFAULT '["all"]',
+      friendship_tracks TEXT DEFAULT '["all"]',
+      personality_tags TEXT,
+      cover_image_url TEXT,
+      author_or_source TEXT,
+      source_type TEXT DEFAULT 'curated' CHECK(source_type IN ('curated', 'ai_generated', 'community')),
+      review_status TEXT DEFAULT 'approved',
+      likes_count INTEGER DEFAULT 0,
+      saves_count INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (category_id) REFERENCES daily_content_categories(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS daily_member_preferences (
+      member_id TEXT PRIMARY KEY,
+      edition_preference TEXT NOT NULL DEFAULT 'universal' CHECK(edition_preference IN ('men', 'women', 'universal', 'mixed')),
+      relationship_status TEXT NOT NULL DEFAULT 'single',
+      dating_intentions TEXT DEFAULT 'meaningful_connection',
+      friendship_track TEXT DEFAULT 'making_new_friends',
+      delivery_time TEXT DEFAULT '08:00',
+      timezone TEXT DEFAULT 'Asia/Colombo',
+      love_notifications INTEGER DEFAULT 1,
+      friendship_notifications INTEGER DEFAULT 1,
+      growth_notifications INTEGER DEFAULT 1,
+      quiet_hours_enabled INTEGER DEFAULT 1,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (member_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS daily_member_assignments (
+      id TEXT PRIMARY KEY,
+      member_id TEXT NOT NULL,
+      local_date TEXT NOT NULL,
+      tab TEXT NOT NULL CHECK(tab IN ('love', 'friendship', 'mind', 'growth')),
+      content_id TEXT NOT NULL,
+      is_read INTEGER DEFAULT 0,
+      reflection_answer TEXT,
+      challenge_completed INTEGER DEFAULT 0,
+      assigned_at INTEGER NOT NULL,
+      UNIQUE(member_id, local_date, tab),
+      FOREIGN KEY (member_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (content_id) REFERENCES daily_content(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS daily_content_feedback (
+      id TEXT PRIMARY KEY,
+      member_id TEXT NOT NULL,
+      content_id TEXT NOT NULL,
+      action TEXT NOT NULL CHECK(action IN ('like', 'dislike', 'save', 'reflect', 'challenge_done')),
+      note TEXT,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (member_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (content_id) REFERENCES daily_content(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS daily_member_streaks (
+      member_id TEXT PRIMARY KEY,
+      current_streak INTEGER DEFAULT 1,
+      longest_streak INTEGER DEFAULT 1,
+      last_active_date TEXT NOT NULL,
+      total_reflections INTEGER DEFAULT 0,
+      total_challenges_done INTEGER DEFAULT 0,
+      FOREIGN KEY (member_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_daily_content_tab ON daily_content(tab, category_id);
+    CREATE INDEX IF NOT EXISTS idx_daily_assignments_member_date ON daily_member_assignments(member_id, local_date);
+    CREATE INDEX IF NOT EXISTS idx_daily_feedback_member_content ON daily_content_feedback(member_id, content_id, action);
   `);
 
   seedInitialData();
@@ -580,6 +672,7 @@ export function initDatabase() {
   seedLifeTimeline();
   seedProfileMarkdowns();
   seedProfileWorlds();
+  seedDailyConnectionContent();
 }
 
 function seedInitialData() {
@@ -1440,4 +1533,309 @@ function seedProfileWorlds() {
   `);
 
   insertRelation.run('rel_1', 'wld_real_kavindu', 'ent_real_1', 'wld_cine_kavindu', 'creative_adaptation', now);
+}
+
+function seedDailyConnectionContent() {
+  const count = db.prepare('SELECT COUNT(*) as c FROM daily_content_categories').get() as { c: number };
+  if (count && count.c > 0) return;
+
+  const now = Date.now();
+
+  // 1. Seed 15 Content Categories across the 4 Permanent Tabs
+  const insertCategory = db.prepare(`
+    INSERT INTO daily_content_categories (id, name, tab, icon, description, ambient_color)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  const categories = [
+    // Tab: Love
+    { id: 'cat_love', name: 'Love & Affection', tab: 'love', icon: '❤️', description: 'Love, affection, commitment and romance', ambient_color: '#85283C' },
+    { id: 'cat_relationships', name: 'Relationship Growth', tab: 'love', icon: '💑', description: 'Understanding partners and shared relationship growth', ambient_color: '#461829' },
+    { id: 'cat_romance', name: 'Romantic Intimacy', tab: 'love', icon: '💌', description: 'Romantic gestures and deep emotional intimacy', ambient_color: '#85283C' },
+    { id: 'cat_long_term_love', name: 'Long-Term Love', tab: 'love', icon: '🏡', description: 'Commitment, marriage and shared futures', ambient_color: '#79502D' },
+    { id: 'cat_attraction', name: 'Attraction & Chemistry', tab: 'love', icon: '🔥', description: 'Compatibility, chemistry and romantic connection', ambient_color: '#85283C' },
+
+    // Tab: Friendship
+    { id: 'cat_friendship', name: 'Meaningful Friendship', tab: 'friendship', icon: '🫂', description: 'Trust, loyalty and enduring friendships', ambient_color: '#203D62' },
+    { id: 'cat_communication', name: 'Conscious Communication', tab: 'friendship', icon: '💬', description: 'Listening, expressing and resolving conflict with grace', ambient_color: '#24544F' },
+    { id: 'cat_human_connection', name: 'Human Empathy', tab: 'friendship', icon: '🌍', description: 'Empathy, kindness and cross-cultural understanding', ambient_color: '#203D62' },
+
+    // Tab: Mind
+    { id: 'cat_psychology', name: 'Human Psychology', tab: 'mind', icon: '🧠', description: 'Human behavior, cognitive patterns and attachment theory', ambient_color: '#49315F' },
+    { id: 'cat_emotional_maturity', name: 'Emotional Maturity', tab: 'mind', icon: '🌸', description: 'Navigating difficult feelings and emotional regulation', ambient_color: '#49315F' },
+
+    // Tab: Growth
+    { id: 'cat_self_growth', name: 'Self-Growth', tab: 'growth', icon: '🌱', description: 'Becoming a wiser, more grounded human being', ambient_color: '#79502D' },
+    { id: 'cat_self_worth', name: 'Self-Worth & Identity', tab: 'growth', icon: '🧍', description: 'Self-respect, independence and unshakeable identity', ambient_color: '#79502D' },
+    { id: 'cat_respect', name: 'Healthy Boundaries', tab: 'growth', icon: '🤝', description: 'Boundaries, equality and reciprocal respect', ambient_color: '#24544F' },
+    { id: 'cat_healing', name: 'Heartbreak & Healing', tab: 'growth', icon: '💔', description: 'Rejection, breakups, recovery and rebuilding peace', ambient_color: '#85283C' },
+    { id: 'cat_motivation', name: 'Daily Resilience', tab: 'growth', icon: '✨', description: 'Hope, quiet confidence and daily encouragement', ambient_color: '#79502D' }
+  ];
+
+  for (const cat of categories) {
+    insertCategory.run(cat.id, cat.name, cat.tab, cat.icon, cat.description, cat.ambient_color);
+  }
+
+  // 2. Seed Rich Content Editions
+  const insertContent = db.prepare(`
+    INSERT INTO daily_content (
+      id, tab, category_id, format_type, title, quote_one_liner, body_insight,
+      reflection_question, action_exercise, gender_audience, relationship_statuses,
+      friendship_tracks, personality_tags, cover_image_url, author_or_source,
+      source_type, review_status, likes_count, saves_count, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const dailyItems = [
+    // ------------------------------------------------------------------------
+    // TAB 1: DAILY LOVE
+    // ------------------------------------------------------------------------
+    {
+      id: 'cnt_love_1',
+      tab: 'love',
+      category_id: 'cat_love',
+      format_type: 'reflection',
+      title: "Love & Understanding",
+      quote_one_liner: "Love is not only about finding someone. It's about learning how to understand someone.",
+      body_insight: "Sometimes the strongest relationships are built by people who are willing to listen, communicate, and understand each other even when circumstances become complex. Connection is not an effortless accident—it is a continuous practice of curiosity over judgment.",
+      reflection_question: "Do you listen to understand someone, or do you listen just to prepare your response?",
+      action_exercise: "During your next conversation today, pause for 3 seconds after the other person finishes speaking before offering your thought.",
+      gender_audience: JSON.stringify(['all']),
+      relationship_statuses: JSON.stringify(['single', 'looking_for_love', 'dating', 'in_relationship', 'all']),
+      friendship_tracks: JSON.stringify(['all']),
+      personality_tags: JSON.stringify(['empathetic', 'reflective', 'deep_thinker']),
+      cover_image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+      author_or_source: 'Soulverse Relationship Intelligence',
+      source_type: 'curated',
+      likes_count: 342,
+      saves_count: 189
+    },
+    {
+      id: 'cnt_love_men_1',
+      tab: 'love',
+      category_id: 'cat_emotional_maturity',
+      format_type: 'advice',
+      title: "Vulnerability as Strength (Men's Edition)",
+      quote_one_liner: "Strength is also knowing how to communicate what hurts you without shame.",
+      body_insight: "Learn to express emotional reality without treating it as weakness. True emotional maturity includes the willingness to acknowledge fatigue, admit mistakes without defensive anger, and initiate honest dialogue when unresolved tension lingers.",
+      reflection_question: "What is an emotional truth you have been holding back out of fear of appearing incapable?",
+      action_exercise: "Write down one unexpressed feeling in your notes app today and phrase it using 'I feel...' instead of 'You made me...'",
+      gender_audience: JSON.stringify(['men', 'all']),
+      relationship_statuses: JSON.stringify(['single', 'dating', 'in_relationship', 'all']),
+      friendship_tracks: JSON.stringify(['all']),
+      personality_tags: JSON.stringify(['introvert', 'stoic', 'growth_oriented']),
+      cover_image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1200&q=80',
+      author_or_source: 'Soulverse Emotional Development Series',
+      source_type: 'curated',
+      likes_count: 512,
+      saves_count: 278
+    },
+    {
+      id: 'cnt_love_women_1',
+      tab: 'love',
+      category_id: 'cat_self_worth',
+      format_type: 'advice',
+      title: "Reciprocal Respect (Women's Edition)",
+      quote_one_liner: "You deserve a connection where your voice matters and never has to fight to be acknowledged.",
+      body_insight: "A healthy, enduring relationship allows you to communicate boundaries, honor your individual dreams, and experience deep emotional safety without needing to audition for acceptance or dim your intellect.",
+      reflection_question: "Where in your relationships have you been over-explaining your worth instead of letting your boundaries speak?",
+      action_exercise: "Say a clear, gracious 'No' to a request that drains your peace today without providing a lengthy paragraph of justification.",
+      gender_audience: JSON.stringify(['women', 'all']),
+      relationship_statuses: JSON.stringify(['single', 'looking_for_love', 'dating', 'all']),
+      friendship_tracks: JSON.stringify(['all']),
+      personality_tags: JSON.stringify(['empathetic', 'ambitious', 'intuitive']),
+      cover_image_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
+      author_or_source: 'Soulverse Identity Framework',
+      source_type: 'curated',
+      likes_count: 620,
+      saves_count: 410
+    },
+    {
+      id: 'cnt_love_healing_1',
+      tab: 'love',
+      category_id: 'cat_healing',
+      format_type: 'motivation',
+      title: "Rebuilding After Loss",
+      quote_one_liner: "Grief after romantic ending is not failure; it is proof of your capacity to care deeply.",
+      body_insight: "Healing is neither linear nor instantaneous. You do not need to rush forgiveness or force immediate optimism. Honor the season you are in: let clarity slowly replace confusion, and remember that an ending does not erase your worth.",
+      reflection_question: "What part of your identity have you neglected that is asking to be nourished again?",
+      action_exercise: "Do one private activity today purely for your own joy that has nothing to do with anyone else.",
+      gender_audience: JSON.stringify(['all']),
+      relationship_statuses: JSON.stringify(['heartbroken', 'recently_separated', 'all']),
+      friendship_tracks: JSON.stringify(['all']),
+      personality_tags: JSON.stringify(['healing', 'resilient']),
+      cover_image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+      author_or_source: 'Heart & Restoration Studies',
+      source_type: 'curated',
+      likes_count: 429,
+      saves_count: 312
+    },
+
+    // ------------------------------------------------------------------------
+    // TAB 2: DAILY FRIENDSHIP
+    // ------------------------------------------------------------------------
+    {
+      id: 'cnt_friend_1',
+      tab: 'friendship',
+      category_id: 'cat_friendship',
+      format_type: 'advice',
+      title: "Enduring Friendship Sanctuary",
+      quote_one_liner: "Real friendship does not require daily messages, but it demands sincere presence when life gets heavy.",
+      body_insight: "Adult friendships fade not usually through malice, but through unspoken drift. Checking in without an agenda—just to say 'I was thinking of you and hope you are breathing easy today'—rebuilds bridges that silence quietly weakened.",
+      reflection_question: "Who is a loyal friend you haven't checked on lately because life felt too busy?",
+      action_exercise: "Send a 30-second sincere voice message or note to a friend today with zero expectation of an immediate reply.",
+      gender_audience: JSON.stringify(['all']),
+      relationship_statuses: JSON.stringify(['all']),
+      friendship_tracks: JSON.stringify(['maintaining_friendships', 'deepening_friendships', 'all']),
+      personality_tags: JSON.stringify(['loyal', 'warm', 'connector']),
+      cover_image_url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80',
+      author_or_source: 'Soulverse Friendship Fellowship',
+      source_type: 'curated',
+      likes_count: 489,
+      saves_count: 240
+    },
+    {
+      id: 'cnt_friend_comm_1',
+      tab: 'friendship',
+      category_id: 'cat_communication',
+      format_type: 'behavior_insight',
+      title: "The Art of Non-Defensive Listening",
+      quote_one_liner: "Never make someone guess what you could communicate with calm honesty.",
+      body_insight: "Most relational arguments occur because both parties are defending an unexpressed wound. When a friend expresses frustration, resist the urge to immediately list counter-examples of your own grievances. Validate their feeling first; address the timeline second.",
+      reflection_question: "When someone shares a grievance with you, do you instinctively argue facts or listen for the underlying feeling?",
+      action_exercise: "Respond with 'Help me understand what that felt like for you' before offering your side in your next disagreement.",
+      gender_audience: JSON.stringify(['all']),
+      relationship_statuses: JSON.stringify(['all']),
+      friendship_tracks: JSON.stringify(['friendship_conflicts', 'rebuilding_trust', 'all']),
+      personality_tags: JSON.stringify(['mature', 'peacekeeper', 'analytical']),
+      cover_image_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1200&q=80',
+      author_or_source: 'Communication Psychology Institute',
+      source_type: 'curated',
+      likes_count: 580,
+      saves_count: 395
+    },
+
+    // ------------------------------------------------------------------------
+    // TAB 3: DAILY MIND
+    // ------------------------------------------------------------------------
+    {
+      id: 'cnt_mind_1',
+      tab: 'mind',
+      category_id: 'cat_psychology',
+      format_type: 'behavior_insight',
+      title: "The Fundamental Attribution Bias",
+      quote_one_liner: "We judge others by their actions, but we judge ourselves by our intentions.",
+      body_insight: "Psychologists call this the Fundamental Attribution Error: when someone is late, we label them undisciplined; when we are late, we cite unforeseen traffic. Recognizing this asymmetry is the fastest path to empathy and decreased interpersonal irritability.",
+      reflection_question: "Where in your life are you holding someone to an absolute standard while giving yourself infinite grace?",
+      action_exercise: "Choose one frustrating action by someone today and deliberately construct the most generous possible explanation for why it happened.",
+      gender_audience: JSON.stringify(['all']),
+      relationship_statuses: JSON.stringify(['all']),
+      friendship_tracks: JSON.stringify(['all']),
+      personality_tags: JSON.stringify(['analytical', 'psychologist', 'rational']),
+      cover_image_url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&q=80',
+      author_or_source: 'Cognitive Behaviour Studies',
+      source_type: 'curated',
+      likes_count: 712,
+      saves_count: 504
+    },
+    {
+      id: 'cnt_mind_attract_1',
+      tab: 'mind',
+      category_id: 'cat_attraction',
+      format_type: 'compatibility',
+      title: "Chemistry vs. Compatibility",
+      quote_one_liner: "Chemistry sparks curiosity; emotional regulation builds safety; shared values build longevity.",
+      body_insight: "High-voltage intensity is often mistaken for soul connection. While attraction opens the door, compatibility is determined by how two people resolve boredom, handle money, respect privacy, and navigate conflict during ordinary Tuesdays.",
+      reflection_question: "Are you pursuing excitement that makes you anxious, or peace that makes you comfortable being yourself?",
+      action_exercise: "List your top 3 non-negotiable character values and check whether your closest circle shares them.",
+      gender_audience: JSON.stringify(['all']),
+      relationship_statuses: JSON.stringify(['single', 'looking_for_love', 'has_crush', 'dating', 'all']),
+      friendship_tracks: JSON.stringify(['all']),
+      personality_tags: JSON.stringify(['perceptive', 'dating_mindful']),
+      cover_image_url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=1200&q=80',
+      author_or_source: 'Relational Intelligence Lab',
+      source_type: 'curated',
+      likes_count: 830,
+      saves_count: 620
+    },
+
+    // ------------------------------------------------------------------------
+    // TAB 4: DAILY GROWTH
+    // ------------------------------------------------------------------------
+    {
+      id: 'cnt_growth_1',
+      tab: 'growth',
+      category_id: 'cat_self_growth',
+      format_type: 'challenge',
+      title: "Boundary Architecture",
+      quote_one_liner: "Boundaries are not walls to lock others out; they are clear doors that show where the entrance is.",
+      body_insight: "Without clear boundaries, love turns into resentment. You cannot be genuinely generous when you are silently exhausted. Establishing where your responsibility ends and another adult's responsibility begins preserves your tenderness.",
+      reflection_question: "What resentful feeling are you holding right now that is actually the consequence of an unexpressed boundary?",
+      action_exercise: "Identify one task you agreed to out of guilt. Gracefully renegotiate the terms or set a healthy boundary today.",
+      gender_audience: JSON.stringify(['all']),
+      relationship_statuses: JSON.stringify(['all']),
+      friendship_tracks: JSON.stringify(['all']),
+      personality_tags: JSON.stringify(['growth', 'leader', 'empath']),
+      cover_image_url: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=1200&q=80',
+      author_or_source: 'Soulverse Growth Mastery',
+      source_type: 'curated',
+      likes_count: 650,
+      saves_count: 480
+    },
+    {
+      id: 'cnt_growth_worth_1',
+      tab: 'growth',
+      category_id: 'cat_self_worth',
+      format_type: 'motivation',
+      title: "Unconditional Self-Respect",
+      quote_one_liner: "Never shrink your authenticity to fit into rooms that were never designed for your true self.",
+      body_insight: "When you stop negotiating with your core integrity for external applause, you experience a stillness that no external validation could ever manufacture. You are enough as you are, and you are also worthy of becoming who you aspire to be.",
+      reflection_question: "In what environment do you feel most free to speak and create without self-censorship?",
+      action_exercise: "Write down 3 things you genuinely respect about your character that nobody can take away from you.",
+      gender_audience: JSON.stringify(['all']),
+      relationship_statuses: JSON.stringify(['all']),
+      friendship_tracks: JSON.stringify(['all']),
+      personality_tags: JSON.stringify(['courageous', 'sovereign']),
+      cover_image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+      author_or_source: 'Soulverse Core Identity',
+      source_type: 'curated',
+      likes_count: 920,
+      saves_count: 730
+    }
+  ];
+
+  for (const item of dailyItems) {
+    insertContent.run(
+      item.id, item.tab, item.category_id, item.format_type, item.title,
+      item.quote_one_liner, item.body_insight, item.reflection_question,
+      item.action_exercise, item.gender_audience, item.relationship_statuses,
+      item.friendship_tracks, item.personality_tags, item.cover_image_url,
+      item.author_or_source, item.source_type, 'approved',
+      item.likes_count, item.saves_count, now
+    );
+  }
+
+  // 3. Seed Default Preferences for usr_me
+  const insertPrefs = db.prepare(`
+    INSERT OR IGNORE INTO daily_member_preferences (
+      member_id, edition_preference, relationship_status, dating_intentions,
+      friendship_track, delivery_time, timezone, love_notifications,
+      friendship_notifications, growth_notifications, quiet_hours_enabled, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertPrefs.run(
+    'usr_me', 'universal', 'single', 'meaningful_connection',
+    'making_new_friends', '08:00', 'Asia/Colombo', 1, 1, 1, 1, now
+  );
+
+  // 4. Seed Streaks for usr_me
+  const insertStreak = db.prepare(`
+    INSERT OR IGNORE INTO daily_member_streaks (
+      member_id, current_streak, longest_streak, last_active_date, total_reflections, total_challenges_done
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  insertStreak.run('usr_me', 5, 12, todayStr, 4, 3);
 }

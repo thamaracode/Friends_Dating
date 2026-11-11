@@ -851,4 +851,146 @@ describe('FRIENDS Master Messaging Engine Comprehensive Test Suite', () => {
     await fetch(`${API_URL}/worlds/${newWorldId}`, { method: 'DELETE' });
     await fetch(`${API_URL}/worlds/${dataDup.world.id}`, { method: 'DELETE' });
   });
+
+  it('validates Daily Relationship & Human Connection Intelligence System', async () => {
+    // 1. Fetch Categories (15 categories across 4 tabs)
+    const resCats = await fetch(`${API_URL}/daily-content/categories`);
+    expect(resCats.status).toBe(200);
+    const dataCats = await resCats.json();
+    expect(dataCats.success).toBe(true);
+    expect(dataCats.categories.length).toBeGreaterThanOrEqual(15);
+    const tabs = new Set(dataCats.categories.map((c: any) => c.tab));
+    expect(tabs.has('love')).toBe(true);
+    expect(tabs.has('friendship')).toBe(true);
+    expect(tabs.has('mind')).toBe(true);
+    expect(tabs.has('growth')).toBe(true);
+
+    // 2. Fetch Preferences & Streak
+    const resPrefs = await fetch(`${API_URL}/daily-content/preferences?userId=usr_me`);
+    expect(resPrefs.status).toBe(200);
+    const dataPrefs = await resPrefs.json();
+    expect(dataPrefs.success).toBe(true);
+    expect(dataPrefs.preferences.member_id).toBe('usr_me');
+    expect(dataPrefs.streak.current_streak).toBeGreaterThanOrEqual(1);
+
+    // 3. Update Preferences (Set edition to universal, relationship status to single)
+    const resUpdPrefs = await fetch(`${API_URL}/daily-content/preferences`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        editionPreference: 'universal',
+        relationshipStatus: 'single',
+        datingIntentions: 'meaningful_connection',
+        friendshipTrack: 'deepening_friendships'
+      })
+    });
+    expect(resUpdPrefs.status).toBe(200);
+
+    // 4. Retrieve Today's Content (Must deliver 4 permanent tabs: Love, Friendship, Mind, Growth)
+    const todayStr = '2026-11-11';
+    const resToday = await fetch(`${API_URL}/daily-content/today?userId=usr_me&date=${todayStr}`);
+    expect(resToday.status).toBe(200);
+    const dataToday = await resToday.json();
+    expect(dataToday.success).toBe(true);
+    expect(dataToday.date).toBe(todayStr);
+    expect(dataToday.editions.love).toBeDefined();
+    expect(dataToday.editions.friendship).toBeDefined();
+    expect(dataToday.editions.mind).toBeDefined();
+    expect(dataToday.editions.growth).toBeDefined();
+
+    const loveContent = dataToday.editions.love;
+    expect(loveContent.title).toBeDefined();
+    expect(loveContent.quote_one_liner).toBeDefined();
+    expect(loveContent.reflection_question).toBeDefined();
+
+    // 5. Test Determinism: Second fetch for same user & date MUST return the same assignment ID
+    const resTodayDup = await fetch(`${API_URL}/daily-content/today?userId=usr_me&date=${todayStr}`);
+    const dataTodayDup = await resTodayDup.json();
+    expect(dataTodayDup.editions.love.id).toBe(loveContent.id);
+    expect(dataTodayDup.editions.love.content_id).toBe(loveContent.content_id);
+
+    // 6. Submit Reflection to Daily Question
+    const resReflect = await fetch(`${API_URL}/daily-content/reflect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        assignmentId: loveContent.id,
+        reflectionAnswer: 'I will consciously listen for the emotional feeling instead of preparing a rebuttal.'
+      })
+    });
+    expect(resReflect.status).toBe(200);
+    const dataReflect = await resReflect.json();
+    expect(dataReflect.success).toBe(true);
+
+    // 7. Complete Daily Action Exercise
+    const resChallenge = await fetch(`${API_URL}/daily-content/challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        assignmentId: loveContent.id,
+        completed: true
+      })
+    });
+    expect(resChallenge.status).toBe(200);
+    const dataChallenge = await resChallenge.json();
+    expect(dataChallenge.success).toBe(true);
+    expect(dataChallenge.completed).toBe(true);
+
+    // 8. Like & Save Daily Content
+    const resLike = await fetch(`${API_URL}/daily-content/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        contentId: loveContent.content_id,
+        action: 'like'
+      })
+    });
+    expect(resLike.status).toBe(200);
+    const dataLike = await resLike.json();
+    expect(dataLike.success).toBe(true);
+
+    const resSave = await fetch(`${API_URL}/daily-content/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        contentId: loveContent.content_id,
+        action: 'save'
+      })
+    });
+    expect(resSave.status).toBe(200);
+    const dataSave = await resSave.json();
+    expect(dataSave.success).toBe(true);
+
+    // If it was toggled off from a prior run, toggle it to active
+    if (!dataSave.active) {
+      await fetch(`${API_URL}/daily-content/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'usr_me',
+          contentId: loveContent.content_id,
+          action: 'save'
+        })
+      });
+    }
+
+    // 9. Fetch Saved Archive
+    const resSaved = await fetch(`${API_URL}/daily-content/saved?userId=usr_me`);
+    expect(resSaved.status).toBe(200);
+    const dataSaved = await resSaved.json();
+    expect(dataSaved.success).toBe(true);
+    expect(dataSaved.items.some((i: any) => i.id === loveContent.content_id)).toBe(true);
+
+    // 10. Fetch History
+    const resHist = await fetch(`${API_URL}/daily-content/history?userId=usr_me`);
+    expect(resHist.status).toBe(200);
+    const dataHist = await resHist.json();
+    expect(dataHist.success).toBe(true);
+    expect(dataHist.history.length).toBeGreaterThanOrEqual(1);
+  });
 });
