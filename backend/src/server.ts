@@ -1163,6 +1163,1416 @@ app.post('/api/v1/emojis/recents', (req, res) => {
   res.json({ success: true });
 });
 
+// ============================================================================
+// LIVING IDENTITY PROFILE ENDPOINTS
+// ============================================================================
+
+// Helper to determine allowed visibility levels based on relationship
+function getAllowedVisibilities(viewerId: string, targetUserId: string): string[] {
+  if (viewerId === targetUserId) {
+    return ['public', 'matches', 'friends', 'selected', 'private'];
+  }
+
+  // Check relationship in database
+  const rels = db.prepare(`
+    SELECT relationship_type FROM user_relationships 
+    WHERE user_id = ? AND target_user_id = ?
+  `).all(targetUserId, viewerId) as { relationship_type: string }[];
+
+  const types = new Set(rels.map(r => r.relationship_type));
+  if (types.has('selected')) {
+    return ['public', 'matches', 'friends', 'selected'];
+  }
+  if (types.has('friend')) {
+    return ['public', 'matches', 'friends'];
+  }
+  if (types.has('match')) {
+    return ['public', 'matches'];
+  }
+  return ['public'];
+}
+
+function checkUserBlocked(userA: string, userB: string): boolean {
+  if (!userA || !userB || userA === userB) return false;
+  const blocked = db.prepare(`
+    SELECT 1 FROM user_blocks 
+    WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)
+  `).get(userA, userB, userB, userA);
+  return !!blocked;
+}
+
+// 1. Get Complete Living Identity Profile with Privacy Enforcement
+app.get('/api/v1/profile/living/:userId', (req, res) => {
+  const { userId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+
+  if (checkUserBlocked(userId, viewerId)) {
+    return res.status(403).json({ error: 'Access denied: relationship blocked' });
+  }
+
+  const user = db.prepare('SELECT id, name, username, avatar_url, is_verified, last_seen_at, status_text FROM users WHERE id = ?').get(userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const allowedVis = getAllowedVisibilities(viewerId, userId);
+  const isOwner = viewerId === userId;
+  const visPlaceholders = allowedVis.map(() => '?').join(',');
+
+  // Sections
+  const sections = db.prepare(`
+    SELECT * FROM profile_sections
+    WHERE user_id = ? AND is_archived = 0 AND visibility IN (${visPlaceholders})
+    ORDER BY sort_order ASC, created_at ASC
+  `).all(userId, ...allowedVis) as any[];
+
+  // Entries per section
+  for (const sec of sections) {
+    const statusCondition = isOwner ? '' : "AND status = 'published'";
+    sec.entries = db.prepare(`
+      SELECT * FROM profile_entries
+      WHERE section_id = ? AND visibility IN (${visPlaceholders}) ${statusCondition}
+      ORDER BY sort_order ASC, created_at ASC
+    `).all(sec.id, ...allowedVis);
+  }
+
+  // Questions & Answers
+  const questions = db.prepare(`
+    SELECT * FROM profile_questions
+    WHERE user_id = ? AND visibility IN (${visPlaceholders})
+    ORDER BY sort_order ASC, created_at ASC
+  `).all(userId, ...allowedVis) as any[];
+
+  for (const q of questions) {
+    q.answers = db.prepare(`
+      SELECT a.*, u.name as respondent_name, u.avatar_url as respondent_avatar
+      FROM profile_answers a
+      JOIN users u ON a.user_id = u.id
+      WHERE a.question_id = ? AND a.visibility IN (${visPlaceholders})
+      ORDER BY a.created_at ASC
+    `).all(q.id, ...allowedVis);
+  }
+
+  // Timeline Events
+  const timeline = db.prepare(`
+    SELECT * FROM profile_timeline_events
+    WHERE user_id = ? AND visibility IN (${visPlaceholders})
+    ORDER BY sort_order ASC, created_at ASC
+  `).all(userId, ...allowedVis);
+
+  // Thoughts & Writings
+  const thoughtStatusCondition = isOwner ? '' : "AND status = 'published'";
+  const thoughts = db.prepare(`
+    SELECT * FROM profile_thoughts
+    WHERE user_id = ? AND visibility IN (${visPlaceholders}) ${thoughtStatusCondition}
+    ORDER BY is_pinned DESC, created_at DESC
+  `).all(userId, ...allowedVis);
+
+  const accessLevel = isOwner 
+    ? 'owner' 
+    : allowedVis.includes('friends') 
+      ? 'friends' 
+      : allowedVis.includes('matches') 
+        ? 'matches' 
+        : 'public';
+
+  res.json({
+    success: true,
+    user,
+    viewerId,
+    accessLevel,
+    sections,
+    questions,
+    timeline,
+    thoughts
+  });
+});
+
+// 2. Sections CRUD
+app.post('/api/v1/profile/sections', (req, res) => {
+  const { userId = 'usr_me', title, description = '', section_type = 'custom', icon = '✨', visibility = 'public', is_pinned = 0 } = req.body;
+  if (!title || !title.trim()) return res.status(400).json({ error: 'Title is required' });
+
+  const id = `sec_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as m FROM profile_sections WHERE user_id = ?').get(userId) as any;
+  const sort_order = (maxOrder?.m || 0) + 1;
+
+  db.prepare(`
+    INSERT INTO profile_sections (id, user_id, title, description, section_type, icon, sort_order, visibility, is_pinned, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, userId, title.trim(), description.trim(), section_type, icon, sort_order, visibility, is_pinned ? 1 : 0, now, now);
+
+  const section = db.prepare('SELECT * FROM profile_sections WHERE id = ?').get(id);
+  res.json({ success: true, section });
+});
+
+app.put('/api/v1/profile/sections/:id', (req, res) => {
+  const { id } = req.params;
+  const { title, description, icon, visibility, is_pinned, is_archived } = req.body;
+  const existing = db.prepare('SELECT * FROM profile_sections WHERE id = ?').get(id);
+  if (!existing) return res.status(404).json({ error: 'Section not found' });
+
+  db.prepare(`
+    UPDATE profile_sections SET
+      title = COALESCE(?, title),
+      description = COALESCE(?, description),
+      icon = COALESCE(?, icon),
+      visibility = COALESCE(?, visibility),
+      is_pinned = COALESCE(?, is_pinned),
+      is_archived = COALESCE(?, is_archived),
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    title !== undefined ? title : null,
+    description !== undefined ? description : null,
+    icon !== undefined ? icon : null,
+    visibility !== undefined ? visibility : null,
+    is_pinned !== undefined ? (is_pinned ? 1 : 0) : null,
+    is_archived !== undefined ? (is_archived ? 1 : 0) : null,
+    Date.now(),
+    id
+  );
+
+  const updated = db.prepare('SELECT * FROM profile_sections WHERE id = ?').get(id);
+  res.json({ success: true, section: updated });
+});
+
+app.delete('/api/v1/profile/sections/:id', (req, res) => {
+  const { id } = req.params;
+  db.prepare('DELETE FROM profile_sections WHERE id = ?').run(id);
+  res.json({ success: true, deletedId: id });
+});
+
+app.post('/api/v1/profile/sections/reorder', (req, res) => {
+  const { sectionIds } = req.body;
+  if (!Array.isArray(sectionIds)) return res.status(400).json({ error: 'sectionIds array required' });
+
+  const update = db.prepare('UPDATE profile_sections SET sort_order = ? WHERE id = ?');
+  const tx = db.transaction(() => {
+    sectionIds.forEach((id, index) => {
+      update.run(index + 1, id);
+    });
+  });
+  tx();
+  res.json({ success: true });
+});
+
+// 3. Entries CRUD
+app.post('/api/v1/profile/entries', (req, res) => {
+  const { sectionId, userId = 'usr_me', entry_type = 'text', title = '', content, structured_content = null, visibility = 'public', is_pinned = 0, status = 'published' } = req.body;
+  if (!sectionId || !content || !content.trim()) return res.status(400).json({ error: 'sectionId and content are required' });
+  if (content.length > 5000) {
+    return res.status(400).json({ error: 'Content exceeds maximum limit of 5,000 characters.', characterCount: content.length, maxLimit: 5000 });
+  }
+
+  const id = `ent_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as m FROM profile_entries WHERE section_id = ?').get(sectionId) as any;
+  const sort_order = (maxOrder?.m || 0) + 1;
+
+  db.prepare(`
+    INSERT INTO profile_entries (id, section_id, user_id, entry_type, title, content, structured_content, visibility, sort_order, is_pinned, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, sectionId, userId, entry_type, title.trim(), content.trim(), structured_content ? (typeof structured_content === 'string' ? structured_content : JSON.stringify(structured_content)) : null, visibility, sort_order, is_pinned ? 1 : 0, status, now, now);
+
+  const entry = db.prepare('SELECT * FROM profile_entries WHERE id = ?').get(id);
+  res.json({ success: true, entry });
+});
+
+app.put('/api/v1/profile/entries/:id', (req, res) => {
+  const { id } = req.params;
+  const { title, content, structured_content, visibility, is_pinned, status } = req.body;
+  const existing = db.prepare('SELECT * FROM profile_entries WHERE id = ?').get(id);
+  if (!existing) return res.status(404).json({ error: 'Entry not found' });
+
+  db.prepare(`
+    UPDATE profile_entries SET
+      title = COALESCE(?, title),
+      content = COALESCE(?, content),
+      structured_content = COALESCE(?, structured_content),
+      visibility = COALESCE(?, visibility),
+      is_pinned = COALESCE(?, is_pinned),
+      status = COALESCE(?, status),
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    title !== undefined ? title : null,
+    content !== undefined ? content : null,
+    structured_content !== undefined ? (typeof structured_content === 'string' ? structured_content : JSON.stringify(structured_content)) : null,
+    visibility !== undefined ? visibility : null,
+    is_pinned !== undefined ? (is_pinned ? 1 : 0) : null,
+    status !== undefined ? status : null,
+    Date.now(),
+    id
+  );
+
+  const updated = db.prepare('SELECT * FROM profile_entries WHERE id = ?').get(id);
+  res.json({ success: true, entry: updated });
+});
+
+app.delete('/api/v1/profile/entries/:id', (req, res) => {
+  const { id } = req.params;
+  db.prepare('DELETE FROM profile_entries WHERE id = ?').run(id);
+  res.json({ success: true, deletedId: id });
+});
+
+// 4. Questions & Answers CRUD
+app.post('/api/v1/profile/questions', (req, res) => {
+  const { userId = 'usr_me', sectionId = null, question, description = '', answer_type = 'long_text', options = null, visibility = 'public', allow_responses = 0 } = req.body;
+  if (!question || !question.trim()) return res.status(400).json({ error: 'Question is required' });
+
+  const id = `q_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as m FROM profile_questions WHERE user_id = ?').get(userId) as any;
+  const sort_order = (maxOrder?.m || 0) + 1;
+
+  db.prepare(`
+    INSERT INTO profile_questions (id, user_id, section_id, question, description, answer_type, options, visibility, allow_responses, sort_order, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, userId, sectionId, question.trim(), description.trim(), answer_type, options ? JSON.stringify(options) : null, visibility, allow_responses ? 1 : 0, sort_order, now, now);
+
+  const created = db.prepare('SELECT * FROM profile_questions WHERE id = ?').get(id);
+  res.json({ success: true, question: created });
+});
+
+app.post('/api/v1/profile/questions/:id/answer', (req, res) => {
+  const { id: question_id } = req.params;
+  const { userId = 'usr_me', answer_content, structured_answer = null, visibility = 'public' } = req.body;
+  if (!answer_content || !answer_content.trim()) return res.status(400).json({ error: 'Answer content is required' });
+
+  const ansId = `ans_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO profile_answers (id, question_id, user_id, answer_content, structured_answer, visibility, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(ansId, question_id, userId, answer_content.trim(), structured_answer ? JSON.stringify(structured_answer) : null, visibility, now, now);
+
+  const answer = db.prepare('SELECT * FROM profile_answers WHERE id = ?').get(ansId);
+  res.json({ success: true, answer });
+});
+
+app.delete('/api/v1/profile/questions/:id', (req, res) => {
+  const { id } = req.params;
+  db.prepare('DELETE FROM profile_questions WHERE id = ?').run(id);
+  res.json({ success: true, deletedId: id });
+});
+
+// 5. Timeline Events CRUD
+app.post('/api/v1/profile/timeline', (req, res) => {
+  const { userId = 'usr_me', title, description, event_date = '', date_precision = 'approximate', category = 'milestone', personal_significance = '', lessons_learned = '', media_url = null, visibility = 'public' } = req.body;
+  if (!title || !description) return res.status(400).json({ error: 'Title and description are required' });
+
+  const id = `time_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as m FROM profile_timeline_events WHERE user_id = ?').get(userId) as any;
+  const sort_order = (maxOrder?.m || 0) + 1;
+
+  db.prepare(`
+    INSERT INTO profile_timeline_events (id, user_id, title, description, event_date, date_precision, category, personal_significance, lessons_learned, media_url, visibility, sort_order, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, userId, title.trim(), description.trim(), event_date, date_precision, category, personal_significance, lessons_learned, media_url, visibility, sort_order, now, now);
+
+  const event = db.prepare('SELECT * FROM profile_timeline_events WHERE id = ?').get(id);
+  res.json({ success: true, event });
+});
+
+app.put('/api/v1/profile/timeline/:id', (req, res) => {
+  const { id } = req.params;
+  const { title, description, event_date, date_precision, category, personal_significance, lessons_learned, visibility } = req.body;
+
+  db.prepare(`
+    UPDATE profile_timeline_events SET
+      title = COALESCE(?, title),
+      description = COALESCE(?, description),
+      event_date = COALESCE(?, event_date),
+      date_precision = COALESCE(?, date_precision),
+      category = COALESCE(?, category),
+      personal_significance = COALESCE(?, personal_significance),
+      lessons_learned = COALESCE(?, lessons_learned),
+      visibility = COALESCE(?, visibility),
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    title !== undefined ? title : null,
+    description !== undefined ? description : null,
+    event_date !== undefined ? event_date : null,
+    date_precision !== undefined ? date_precision : null,
+    category !== undefined ? category : null,
+    personal_significance !== undefined ? personal_significance : null,
+    lessons_learned !== undefined ? lessons_learned : null,
+    visibility !== undefined ? visibility : null,
+    Date.now(),
+    id
+  );
+
+  const updated = db.prepare('SELECT * FROM profile_timeline_events WHERE id = ?').get(id);
+  res.json({ success: true, event: updated });
+});
+
+app.delete('/api/v1/profile/timeline/:id', (req, res) => {
+  const { id } = req.params;
+  db.prepare('DELETE FROM profile_timeline_events WHERE id = ?').run(id);
+  res.json({ success: true, deletedId: id });
+});
+
+// 6. Thoughts & Personal Writing CRUD
+app.post('/api/v1/profile/thoughts', (req, res) => {
+  const { userId = 'usr_me', title = '', content, thought_type = 'thought', tags = '', is_pinned = 0, status = 'published', visibility = 'public' } = req.body;
+  if (!content || !content.trim()) return res.status(400).json({ error: 'Content is required' });
+  if (content.length > 5000) {
+    return res.status(400).json({ error: 'Content exceeds maximum limit of 5,000 characters.', characterCount: content.length, maxLimit: 5000 });
+  }
+
+  const id = `tht_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO profile_thoughts (id, user_id, title, content, thought_type, tags, is_pinned, status, visibility, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, userId, title.trim(), content.trim(), thought_type, tags, is_pinned ? 1 : 0, status, visibility, now, now);
+
+  const thought = db.prepare('SELECT * FROM profile_thoughts WHERE id = ?').get(id);
+  res.json({ success: true, thought });
+});
+
+app.put('/api/v1/profile/thoughts/:id', (req, res) => {
+  const { id } = req.params;
+  const { title, content, thought_type, tags, is_pinned, status, visibility } = req.body;
+
+  db.prepare(`
+    UPDATE profile_thoughts SET
+      title = COALESCE(?, title),
+      content = COALESCE(?, content),
+      thought_type = COALESCE(?, thought_type),
+      tags = COALESCE(?, tags),
+      is_pinned = COALESCE(?, is_pinned),
+      status = COALESCE(?, status),
+      visibility = COALESCE(?, visibility),
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    title !== undefined ? title : null,
+    content !== undefined ? content : null,
+    thought_type !== undefined ? thought_type : null,
+    tags !== undefined ? tags : null,
+    is_pinned !== undefined ? (is_pinned ? 1 : 0) : null,
+    status !== undefined ? status : null,
+    visibility !== undefined ? visibility : null,
+    Date.now(),
+    id
+  );
+
+  const updated = db.prepare('SELECT * FROM profile_thoughts WHERE id = ?').get(id);
+  res.json({ success: true, thought: updated });
+});
+
+app.delete('/api/v1/profile/thoughts/:id', (req, res) => {
+  const { id } = req.params;
+  db.prepare('DELETE FROM profile_thoughts WHERE id = ?').run(id);
+  res.json({ success: true, deletedId: id });
+});
+
+// 7. AI-Assisted Profile Tools (User-Initiated Only)
+app.post('/api/v1/profile/ai/assist', (req, res) => {
+  const { tool, content = '', context = '' } = req.body;
+
+  let suggestion = '';
+  if (tool === 'polish') {
+    suggestion = content.trim().length > 0
+      ? `"${content.trim()} I value depth over surface interactions, and I appreciate when people are comfortable being their unpolished, genuine selves."`
+      : 'I find quiet conversations over coffee far more engaging than noisy rooms.';
+  } else if (tool === 'suggest_questions') {
+    suggestion = JSON.stringify([
+      "What is something you learned this year that completely altered your worldview?",
+      "When was the last time you felt completely understood by another person?",
+      "What is a simple pleasure that never fails to calm your nervous system?",
+      "What is an opinion you used to defend passionately that you now find naive?",
+      "What does emotional safety look like to you in everyday communication?"
+    ]);
+  } else if (tool === 'turn_into_bio') {
+    suggestion = `Curious explorer of first principles and slow living. Architect by craft, philosopher by evening. I thrive in deep one-on-one dialogues, quiet nature hikes, and honest laughter.`;
+  } else if (tool === 'summarize') {
+    suggestion = `Thoughtful and introspective; prioritizes authentic emotional safety, intellectual humility, and intentional offline connection over performative socializing.`;
+  } else {
+    suggestion = content;
+  }
+
+  res.json({
+    success: true,
+    tool,
+    suggestion,
+    disclaimer: 'AI-assisted draft for your personal review. Inspect and edit before saving.'
+  });
+});
+
+// 8. Data Export & Permanent Deletion
+app.get('/api/v1/profile/export', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const sections = db.prepare('SELECT * FROM profile_sections WHERE user_id = ?').all(userId);
+  const entries = db.prepare('SELECT * FROM profile_entries WHERE user_id = ?').all(userId);
+  const questions = db.prepare('SELECT * FROM profile_questions WHERE user_id = ?').all(userId);
+  const answers = db.prepare('SELECT * FROM profile_answers WHERE user_id = ?').all(userId);
+  const timeline = db.prepare('SELECT * FROM profile_timeline_events WHERE user_id = ?').all(userId);
+  const thoughts = db.prepare('SELECT * FROM profile_thoughts WHERE user_id = ?').all(userId);
+
+  res.json({
+    success: true,
+    exported_at: new Date().toISOString(),
+    user,
+    sections,
+    entries,
+    questions,
+    answers,
+    timeline,
+    thoughts
+  });
+});
+
+app.delete('/api/v1/profile/data', (req, res) => {
+  const userId = (req.body.userId as string) || (req.query.userId as string) || 'usr_me';
+  
+  const tx = db.transaction(() => {
+    db.prepare('DELETE FROM profile_entries WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM profile_sections WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM profile_answers WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM profile_questions WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM profile_timeline_events WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM profile_thoughts WHERE user_id = ?').run(userId);
+  });
+  tx();
+
+  res.json({ success: true, message: 'All custom profile data permanently deleted' });
+});
+
+// ============================================================================
+// YEAR-BY-YEAR LIFE TIMELINE & PERSONAL HISTORY ENDPOINTS
+// ============================================================================
+
+// 1. Get All Years for a User
+app.get('/api/v1/timeline/years/:userId', (req, res) => {
+  const { userId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+
+  if (checkUserBlocked(userId, viewerId)) {
+    return res.status(403).json({ error: 'Access denied: relationship blocked' });
+  }
+
+  const allowedVis = getAllowedVisibilities(viewerId, userId);
+  const visPlaceholders = allowedVis.map(() => '?').join(',');
+
+  const years = db.prepare(`
+    SELECT y.*, 
+      (SELECT COUNT(*) FROM life_events e WHERE e.user_id = y.user_id AND e.year_number = y.year_number AND e.visibility IN (${visPlaceholders})) as event_count,
+      (SELECT COUNT(*) FROM life_reflections r WHERE r.user_id = y.user_id AND r.year_number = y.year_number AND r.reflection_type = 'year_end_review' AND r.visibility IN (${visPlaceholders})) as has_review
+    FROM life_years y
+    WHERE y.user_id = ? AND y.visibility IN (${visPlaceholders})
+    ORDER BY y.year_number ASC
+  `).all(...allowedVis, ...allowedVis, userId, ...allowedVis);
+
+  res.json({ success: true, years });
+});
+
+// 2. Get Single Year Chapter Details
+app.get('/api/v1/timeline/year/:userId/:yearNumber', (req, res) => {
+  const { userId, yearNumber } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+
+  if (checkUserBlocked(userId, viewerId)) {
+    return res.status(403).json({ error: 'Access denied: relationship blocked' });
+  }
+
+  const allowedVis = getAllowedVisibilities(viewerId, userId);
+  const visPlaceholders = allowedVis.map(() => '?').join(',');
+
+  const year = db.prepare(`
+    SELECT * FROM life_years 
+    WHERE user_id = ? AND year_number = ? AND visibility IN (${visPlaceholders})
+  `).get(userId, parseInt(yearNumber, 10), ...allowedVis) as any;
+
+  if (!year) {
+    return res.status(404).json({ error: 'Year not found or restricted' });
+  }
+
+  const events = db.prepare(`
+    SELECT e.*, c.title as chapter_title, c.icon as chapter_icon
+    FROM life_events e
+    LEFT JOIN life_chapters c ON e.chapter_id = c.id
+    WHERE e.user_id = ? AND e.year_number = ? AND e.visibility IN (${visPlaceholders})
+    ORDER BY e.is_milestone DESC, e.sort_order ASC, e.created_at ASC
+  `).all(userId, parseInt(yearNumber, 10), ...allowedVis);
+
+  const review = db.prepare(`
+    SELECT * FROM life_reflections
+    WHERE user_id = ? AND year_number = ? AND reflection_type = 'year_end_review' AND visibility IN (${visPlaceholders})
+  `).get(userId, parseInt(yearNumber, 10), ...allowedVis);
+
+  res.json({
+    success: true,
+    year,
+    events,
+    review: review || null
+  });
+});
+
+// 3. Create or Update Life Year
+app.post('/api/v1/timeline/years', (req, res) => {
+  const { userId = 'usr_me', year_number, chapter_title = '', summary = '', cover_image_url = null, is_future_year = 0, visibility = 'public' } = req.body;
+  if (!year_number) return res.status(400).json({ error: 'year_number is required' });
+
+  const id = `yr_${userId}_${year_number}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO life_years (id, user_id, year_number, chapter_title, summary, cover_image_url, is_future_year, visibility, sort_order, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, year_number) DO UPDATE SET
+      chapter_title = excluded.chapter_title,
+      summary = excluded.summary,
+      cover_image_url = excluded.cover_image_url,
+      is_future_year = excluded.is_future_year,
+      visibility = excluded.visibility,
+      updated_at = excluded.updated_at
+  `).run(id, userId, parseInt(year_number, 10), chapter_title, summary, cover_image_url, is_future_year ? 1 : 0, visibility, parseInt(year_number, 10), now, now);
+
+  const year = db.prepare('SELECT * FROM life_years WHERE id = ?').get(id);
+  res.json({ success: true, year });
+});
+
+// 4. Multi-Year Chapters
+app.get('/api/v1/timeline/chapters/:userId', (req, res) => {
+  const { userId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+
+  if (checkUserBlocked(userId, viewerId)) {
+    return res.status(403).json({ error: 'Access denied: relationship blocked' });
+  }
+
+  const allowedVis = getAllowedVisibilities(viewerId, userId);
+  const visPlaceholders = allowedVis.map(() => '?').join(',');
+
+  const chapters = db.prepare(`
+    SELECT c.*, 
+      (SELECT COUNT(*) FROM life_events e WHERE e.chapter_id = c.id AND e.visibility IN (${visPlaceholders})) as event_count
+    FROM life_chapters c
+    WHERE c.user_id = ? AND c.visibility IN (${visPlaceholders})
+    ORDER BY c.start_year ASC
+  `).all(...allowedVis, userId, ...allowedVis);
+
+  res.json({ success: true, chapters });
+});
+
+app.post('/api/v1/timeline/chapters', (req, res) => {
+  const { userId = 'usr_me', title, description = '', start_year, end_year = null, icon = '📖', cover_image_url = null, visibility = 'public' } = req.body;
+  if (!title || !start_year) return res.status(400).json({ error: 'Title and start_year are required' });
+
+  const id = `chap_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO life_chapters (id, user_id, title, description, start_year, end_year, icon, cover_image_url, visibility, sort_order, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, userId, title.trim(), description.trim(), parseInt(start_year, 10), end_year ? parseInt(end_year, 10) : null, icon, cover_image_url, visibility, parseInt(start_year, 10), now, now);
+
+  const chapter = db.prepare('SELECT * FROM life_chapters WHERE id = ?').get(id);
+  res.json({ success: true, chapter });
+});
+
+app.delete('/api/v1/timeline/chapters/:id', (req, res) => {
+  const { id } = req.params;
+  db.prepare('DELETE FROM life_chapters WHERE id = ?').run(id);
+  res.json({ success: true, deletedId: id });
+});
+
+// 5. Life Events & Memories
+app.get('/api/v1/timeline/events/:userId', (req, res) => {
+  const { userId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+  const category = req.query.category as string;
+  const isMilestone = req.query.isMilestone === '1';
+  const year = req.query.year ? parseInt(req.query.year as string, 10) : null;
+  const search = (req.query.search as string) || '';
+
+  if (checkUserBlocked(userId, viewerId)) {
+    return res.status(403).json({ error: 'Access denied: relationship blocked' });
+  }
+
+  const allowedVis = getAllowedVisibilities(viewerId, userId);
+  const visPlaceholders = allowedVis.map(() => '?').join(',');
+
+  let query = `
+    SELECT e.*, c.title as chapter_title, c.icon as chapter_icon
+    FROM life_events e
+    LEFT JOIN life_chapters c ON e.chapter_id = c.id
+    WHERE e.user_id = ? AND e.visibility IN (${visPlaceholders})
+  `;
+  const params: any[] = [userId, ...allowedVis];
+
+  if (year) {
+    query += ' AND e.year_number = ?';
+    params.push(year);
+  }
+  if (category) {
+    query += ' AND e.category = ?';
+    params.push(category);
+  }
+  if (isMilestone) {
+    query += ' AND e.is_milestone = 1';
+  }
+  if (search.trim()) {
+    query += ' AND (e.title LIKE ? OR e.description LIKE ? OR e.tags LIKE ?)';
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
+
+  query += ' ORDER BY e.year_number ASC, e.sort_order ASC, e.created_at ASC';
+
+  const events = db.prepare(query).all(...params);
+  res.json({ success: true, events });
+});
+
+app.post('/api/v1/timeline/events', (req, res) => {
+  const {
+    userId = 'usr_me',
+    year_number,
+    chapter_id = null,
+    title,
+    description,
+    date_display = '',
+    date_precision = 'approximate',
+    is_planned = 0,
+    is_milestone = 0,
+    category = 'other',
+    tags = '',
+    location = '',
+    people_involved = '',
+    personal_significance = '',
+    lessons_learned = '',
+    emotional_reflection = '',
+    media_urls = null,
+    visibility = 'public'
+  } = req.body;
+
+  if (!year_number || !title || !description) {
+    return res.status(400).json({ error: 'year_number, title, and description are required' });
+  }
+
+  const id = `evt_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as m FROM life_events WHERE user_id = ? AND year_number = ?').get(userId, parseInt(year_number, 10)) as any;
+  const sort_order = (maxOrder?.m || 0) + 1;
+
+  // Auto-create year record if not existing
+  db.prepare(`
+    INSERT OR IGNORE INTO life_years (id, user_id, year_number, chapter_title, summary, is_future_year, visibility, sort_order, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(`yr_${userId}_${year_number}`, userId, parseInt(year_number, 10), `${year_number} Chapter`, `Chronological memories of ${year_number}`, is_planned ? 1 : 0, visibility, parseInt(year_number, 10), now, now);
+
+  db.prepare(`
+    INSERT INTO life_events (
+      id, user_id, year_number, chapter_id, title, description, date_display, date_precision,
+      is_planned, is_milestone, category, tags, location, people_involved, personal_significance,
+      lessons_learned, emotional_reflection, media_urls, visibility, sort_order, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id, userId, parseInt(year_number, 10), chapter_id, title.trim(), description.trim(), date_display, date_precision,
+    is_planned ? 1 : 0, is_milestone ? 1 : 0, category, tags, location, people_involved, personal_significance,
+    lessons_learned, emotional_reflection, media_urls ? (typeof media_urls === 'string' ? media_urls : JSON.stringify(media_urls)) : null,
+    visibility, sort_order, now, now
+  );
+
+  const event = db.prepare('SELECT * FROM life_events WHERE id = ?').get(id);
+  res.json({ success: true, event });
+});
+
+app.put('/api/v1/timeline/events/:id', (req, res) => {
+  const { id } = req.params;
+  const {
+    title, description, date_display, date_precision, is_planned, is_milestone,
+    category, tags, location, people_involved, personal_significance,
+    lessons_learned, emotional_reflection, media_urls, visibility, status
+  } = req.body;
+
+  db.prepare(`
+    UPDATE life_events SET
+      title = COALESCE(?, title),
+      description = COALESCE(?, description),
+      date_display = COALESCE(?, date_display),
+      date_precision = COALESCE(?, date_precision),
+      is_planned = COALESCE(?, is_planned),
+      is_milestone = COALESCE(?, is_milestone),
+      category = COALESCE(?, category),
+      tags = COALESCE(?, tags),
+      location = COALESCE(?, location),
+      people_involved = COALESCE(?, people_involved),
+      personal_significance = COALESCE(?, personal_significance),
+      lessons_learned = COALESCE(?, lessons_learned),
+      emotional_reflection = COALESCE(?, emotional_reflection),
+      media_urls = COALESCE(?, media_urls),
+      visibility = COALESCE(?, visibility),
+      status = COALESCE(?, status),
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    title !== undefined ? title : null,
+    description !== undefined ? description : null,
+    date_display !== undefined ? date_display : null,
+    date_precision !== undefined ? date_precision : null,
+    is_planned !== undefined ? (is_planned ? 1 : 0) : null,
+    is_milestone !== undefined ? (is_milestone ? 1 : 0) : null,
+    category !== undefined ? category : null,
+    tags !== undefined ? tags : null,
+    location !== undefined ? location : null,
+    people_involved !== undefined ? people_involved : null,
+    personal_significance !== undefined ? personal_significance : null,
+    lessons_learned !== undefined ? lessons_learned : null,
+    emotional_reflection !== undefined ? emotional_reflection : null,
+    media_urls !== undefined ? (typeof media_urls === 'string' ? media_urls : JSON.stringify(media_urls)) : null,
+    visibility !== undefined ? visibility : null,
+    status !== undefined ? status : null,
+    Date.now(),
+    id
+  );
+
+  const updated = db.prepare('SELECT * FROM life_events WHERE id = ?').get(id);
+  res.json({ success: true, event: updated });
+});
+
+app.delete('/api/v1/timeline/events/:id', (req, res) => {
+  const { id } = req.params;
+  db.prepare('DELETE FROM life_events WHERE id = ?').run(id);
+  res.json({ success: true, deletedId: id });
+});
+
+// 6. Annual Reviews & Then-vs-Now Comparisons
+app.get('/api/v1/timeline/reflections/:userId', (req, res) => {
+  const { userId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+  const type = req.query.type as string; // 'year_end_review' | 'then_vs_now'
+
+  if (checkUserBlocked(userId, viewerId)) {
+    return res.status(403).json({ error: 'Access denied: relationship blocked' });
+  }
+
+  const allowedVis = getAllowedVisibilities(viewerId, userId);
+  const visPlaceholders = allowedVis.map(() => '?').join(',');
+
+  let query = `
+    SELECT * FROM life_reflections
+    WHERE user_id = ? AND visibility IN (${visPlaceholders})
+  `;
+  const params: any[] = [userId, ...allowedVis];
+
+  if (type) {
+    query += ' AND reflection_type = ?';
+    params.push(type);
+  }
+
+  query += ' ORDER BY created_at DESC';
+
+  const reflections = db.prepare(query).all(...params);
+  res.json({ success: true, reflections });
+});
+
+app.post('/api/v1/timeline/reflections', (req, res) => {
+  const {
+    userId = 'usr_me',
+    reflection_type,
+    year_number = null,
+    compare_year_a = null,
+    compare_year_b = null,
+    title,
+    content_json,
+    visibility = 'public'
+  } = req.body;
+
+  if (!reflection_type || !title || !content_json) {
+    return res.status(400).json({ error: 'reflection_type, title, and content_json are required' });
+  }
+
+  const id = `ref_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO life_reflections (
+      id, user_id, reflection_type, year_number, compare_year_a, compare_year_b,
+      title, content_json, visibility, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id, userId, reflection_type,
+    year_number ? parseInt(year_number, 10) : null,
+    compare_year_a ? parseInt(compare_year_a, 10) : null,
+    compare_year_b ? parseInt(compare_year_b, 10) : null,
+    title.trim(),
+    typeof content_json === 'string' ? content_json : JSON.stringify(content_json),
+    visibility, now, now
+  );
+
+  const created = db.prepare('SELECT * FROM life_reflections WHERE id = ?').get(id);
+  res.json({ success: true, reflection: created });
+});
+
+app.delete('/api/v1/timeline/reflections/:id', (req, res) => {
+  const { id } = req.params;
+  db.prepare('DELETE FROM life_reflections WHERE id = ?').run(id);
+  res.json({ success: true, deletedId: id });
+});
+
+// ============================================================================
+// GITHUB-FLAVORED MARKDOWN PROFILE MANIFESTO (5,000 CHARACTER LIMIT)
+// ============================================================================
+
+// 1. Get Markdown Document for a User
+app.get('/api/v1/profile/markdown/:userId', (req, res) => {
+  const { userId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+
+  if (checkUserBlocked(viewerId, userId)) {
+    return res.status(403).json({ error: 'You do not have permission to view this profile' });
+  }
+
+  const allowedVisibilities = getAllowedVisibilities(viewerId, userId);
+  const row = db.prepare('SELECT * FROM profile_markdowns WHERE user_id = ?').get(userId) as any;
+
+  if (!row) {
+    return res.json({ success: true, markdown: null, isOwner: viewerId === userId });
+  }
+
+  if (allowedVisibilities.includes(row.visibility)) {
+    return res.json({
+      success: true,
+      markdown: row,
+      characterCount: row.content.length,
+      maxLimit: 5000,
+      isOwner: viewerId === userId,
+      allowed: true
+    });
+  }
+
+  return res.json({
+    success: true,
+    markdown: null,
+    isRestricted: true,
+    requiredVisibility: row.visibility,
+    isOwner: false,
+    allowed: false
+  });
+});
+
+// 2. Create or Update Markdown Document (Strict 5,000 character limit enforcement)
+app.post('/api/v1/profile/markdown', (req, res) => {
+  const {
+    userId = 'usr_me',
+    title = 'README.md',
+    content,
+    visibility = 'public'
+  } = req.body;
+
+  if (content === undefined || content === null) {
+    return res.status(400).json({ error: 'Markdown content is required' });
+  }
+
+  if (typeof content !== 'string') {
+    return res.status(400).json({ error: 'Markdown content must be a string' });
+  }
+
+  // Strict 5,000 character limit enforcement
+  if (content.length > 5000) {
+    return res.status(400).json({
+      error: 'Content exceeds the maximum limit of 5,000 characters.',
+      characterCount: content.length,
+      maxLimit: 5000
+    });
+  }
+
+  const validVisibilities = ['public', 'matches', 'friends', 'selected', 'private'];
+  const safeVisibility = validVisibilities.includes(visibility) ? visibility : 'public';
+  const cleanTitle = (title && typeof title === 'string' && title.trim()) ? title.trim() : 'README.md';
+
+  const now = Date.now();
+  const existing = db.prepare('SELECT id FROM profile_markdowns WHERE user_id = ?').get(userId) as any;
+
+  if (existing) {
+    db.prepare(`
+      UPDATE profile_markdowns
+      SET title = ?, content = ?, visibility = ?, updated_at = ?
+      WHERE user_id = ?
+    `).run(cleanTitle, content, safeVisibility, now, userId);
+  } else {
+    const id = `md_${uuidv4().slice(0, 8)}`;
+    db.prepare(`
+      INSERT INTO profile_markdowns (id, user_id, title, content, visibility, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(id, userId, cleanTitle, content, safeVisibility, now, now);
+  }
+
+  const saved = db.prepare('SELECT * FROM profile_markdowns WHERE user_id = ?').get(userId);
+  res.json({
+    success: true,
+    markdown: saved,
+    characterCount: content.length,
+    remainingCharacters: 5000 - content.length,
+    maxLimit: 5000
+  });
+});
+
+// 3. Delete Markdown Document
+app.delete('/api/v1/profile/markdown/:userId', (req, res) => {
+  const { userId } = req.params;
+  db.prepare('DELETE FROM profile_markdowns WHERE user_id = ?').run(userId);
+  res.json({ success: true, message: 'Markdown profile cleared successfully' });
+});
+
+// ============================================================================
+// PROFILE WORLDS: MULTI-DIMENSIONAL IDENTITY & SELF-EXPRESSION ENDPOINTS
+// ============================================================================
+
+// 1. Get All Profile Worlds for a User
+app.get('/api/v1/worlds/user/:userId', (req, res) => {
+  const { userId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+
+  if (checkUserBlocked(viewerId, userId)) {
+    return res.status(403).json({ error: 'You do not have permission to view this user\'s worlds' });
+  }
+
+  const isOwner = viewerId === userId;
+  const allowedVisibilities = getAllowedVisibilities(viewerId, userId);
+
+  let query = 'SELECT * FROM profile_worlds WHERE user_id = ?';
+  const params: any[] = [userId];
+
+  if (!isOwner) {
+    query += ` AND status = 'published' AND visibility IN (${allowedVisibilities.map(() => '?').join(',')})`;
+    params.push(...allowedVisibilities);
+  }
+
+  query += ' ORDER BY is_default DESC, sort_order ASC, created_at ASC';
+
+  const worlds = db.prepare(query).all(...params) as any[];
+
+  // Augment with entry count and section count
+  const augmented = worlds.map(w => {
+    const sectionCount = db.prepare('SELECT COUNT(*) as c FROM profile_world_sections WHERE world_id = ?').get(w.id) as any;
+    const entryCount = db.prepare('SELECT COUNT(*) as c FROM profile_world_entries WHERE world_id = ?').get(w.id) as any;
+    return {
+      ...w,
+      theme_config: w.theme_config ? (typeof w.theme_config === 'string' ? JSON.parse(w.theme_config) : w.theme_config) : null,
+      section_count: sectionCount?.c || 0,
+      entry_count: entryCount?.c || 0
+    };
+  });
+
+  res.json({
+    success: true,
+    worlds: augmented,
+    isOwner
+  });
+});
+
+// 2. Get Details of a Specific Profile World (Sections, Entries, Relations)
+app.get('/api/v1/worlds/:worldId', (req, res) => {
+  const { worldId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+
+  const world = db.prepare('SELECT * FROM profile_worlds WHERE id = ?').get(worldId) as any;
+  if (!world) {
+    return res.status(404).json({ error: 'Profile world not found' });
+  }
+
+  if (checkUserBlocked(viewerId, world.user_id)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const isOwner = viewerId === world.user_id;
+  const allowedVisibilities = getAllowedVisibilities(viewerId, world.user_id);
+
+  if (!isOwner) {
+    if (world.status !== 'published' || !allowedVisibilities.includes(world.visibility)) {
+      return res.status(403).json({
+        error: 'This profile world is private or restricted to this audience',
+        isRestricted: true,
+        requiredVisibility: world.visibility
+      });
+    }
+  }
+
+  // Fetch sections
+  let secQuery = 'SELECT * FROM profile_world_sections WHERE world_id = ?';
+  const secParams: any[] = [worldId];
+  if (!isOwner) {
+    secQuery += ` AND visibility IN (${allowedVisibilities.map(() => '?').join(',')})`;
+    secParams.push(...allowedVisibilities);
+  }
+  secQuery += ' ORDER BY sort_order ASC, created_at ASC';
+  const sections = db.prepare(secQuery).all(...secParams) as any[];
+
+  // Fetch entries
+  let entQuery = 'SELECT * FROM profile_world_entries WHERE world_id = ?';
+  const entParams: any[] = [worldId];
+  if (!isOwner) {
+    entQuery += ` AND status = 'published' AND visibility IN (${allowedVisibilities.map(() => '?').join(',')})`;
+    entParams.push(...allowedVisibilities);
+  }
+  entQuery += ' ORDER BY sort_order ASC, created_at ASC';
+  const entries = db.prepare(entQuery).all(...entParams) as any[];
+
+  // Fetch linked relations
+  const relations = db.prepare(`
+    SELECT r.*, e.title as entry_title, e.reality_classification, w.name as target_world_name
+    FROM profile_world_entry_relations r
+    LEFT JOIN profile_world_entries e ON r.source_entry_id = e.id
+    LEFT JOIN profile_worlds w ON r.target_world_id = w.id
+    WHERE r.source_world_id = ? OR r.target_world_id = ?
+  `).all(worldId, worldId);
+
+  res.json({
+    success: true,
+    world: {
+      ...world,
+      theme_config: world.theme_config ? (typeof world.theme_config === 'string' ? JSON.parse(world.theme_config) : world.theme_config) : null
+    },
+    sections,
+    entries: entries.map(e => ({
+      ...e,
+      structured_content: e.structured_content ? (typeof e.structured_content === 'string' ? JSON.parse(e.structured_content) : e.structured_content) : null
+    })),
+    relations,
+    isOwner
+  });
+});
+
+// 3. Create a New Profile World
+app.post('/api/v1/worlds', (req, res) => {
+  const {
+    userId = 'usr_me',
+    name,
+    slug,
+    description = '',
+    world_type = 'custom',
+    cover_image_url = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+    avatar_url = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    theme_config = null,
+    layout_type = 'cinematic',
+    ambient_sound_url = null,
+    visibility = 'public',
+    status = 'published',
+    is_default = 0,
+    template_id = null
+  } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'World name is required' });
+  }
+
+  const cleanName = name.trim();
+  const cleanSlug = (slug && slug.trim()) ? slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-') : `${cleanName.toLowerCase().replace(/[^a-z0-9-]/g, '-')}-${Date.now().toString().slice(-4)}`;
+  const worldId = `wld_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as m FROM profile_worlds WHERE user_id = ?').get(userId) as any;
+  const sort_order = (maxOrder?.m || 0) + 1;
+
+  const defaultTheme = theme_config ? (typeof theme_config === 'string' ? theme_config : JSON.stringify(theme_config)) : JSON.stringify({
+    theme: 'velvet_wine',
+    primaryColor: '#FF0D69',
+    ambientGlow: 'rgba(255, 13, 105, 0.25)',
+    fontPreset: 'editorial_sans',
+    layoutStyle: layout_type
+  });
+
+  const tx = db.transaction(() => {
+    if (is_default) {
+      db.prepare('UPDATE profile_worlds SET is_default = 0 WHERE user_id = ?').run(userId);
+    }
+
+    db.prepare(`
+      INSERT INTO profile_worlds (
+        id, user_id, name, slug, description, world_type, cover_image_url, avatar_url,
+        theme_config, layout_type, ambient_sound_url, visibility, status, is_default, sort_order, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      worldId, userId, cleanName, cleanSlug, description.trim(), world_type, cover_image_url, avatar_url,
+      defaultTheme, layout_type, ambient_sound_url, visibility, status, is_default ? 1 : 0, sort_order, now, now
+    );
+
+    // If template was selected, seed initial sections
+    if (template_id === 'cinematic_life') {
+      const s1 = `sec_${uuidv4().slice(0, 8)}`;
+      db.prepare('INSERT INTO profile_world_sections (id, world_id, title, description, section_type, icon, visibility, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(s1, worldId, 'Main Character Dossier', 'Protagonist traits, signature theme song, and aesthetic', 'character', '🎬', 'public', 1, now, now);
+      db.prepare('INSERT INTO profile_world_entries (id, world_id, section_id, user_id, title, content, reality_classification, visibility, status, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(`ent_${uuidv4().slice(0, 8)}`, worldId, s1, userId, 'Character Archetype & Theme Song', 'The solitary wanderer looking for signal in a noisy metropolis.', 'cinematic', 'public', 'published', 1, now, now);
+    } else if (template_id === 'future_self') {
+      const s1 = `sec_${uuidv4().slice(0, 8)}`;
+      db.prepare('INSERT INTO profile_world_sections (id, world_id, title, description, section_type, icon, visibility, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(s1, worldId, 'Ten-Year Vision & Aspirations', 'Planned milestones and desired future reality', 'future_goals', '🚀', 'public', 1, now, now);
+      db.prepare('INSERT INTO profile_world_entries (id, world_id, section_id, user_id, title, content, reality_classification, visibility, status, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(`ent_${uuidv4().slice(0, 8)}`, worldId, s1, userId, 'The Sovereign 2030 Vision', 'Designing an independent life with total creative autonomy.', 'aspirational', 'public', 'published', 1, now, now);
+    } else {
+      // Default initial section
+      const s1 = `sec_${uuidv4().slice(0, 8)}`;
+      db.prepare('INSERT INTO profile_world_sections (id, world_id, title, description, section_type, icon, visibility, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(s1, worldId, 'Overview & Manifesto', 'Introduction to this dimension of identity', 'overview', '✨', 'public', 1, now, now);
+    }
+  });
+
+  tx();
+
+  const created = db.prepare('SELECT * FROM profile_worlds WHERE id = ?').get(worldId) as any;
+  res.json({
+    success: true,
+    world: {
+      ...created,
+      theme_config: created.theme_config ? JSON.parse(created.theme_config) : null
+    }
+  });
+});
+
+// 4. Update Profile World
+app.put('/api/v1/worlds/:worldId', (req, res) => {
+  const { worldId } = req.params;
+  const {
+    name,
+    slug,
+    description,
+    world_type,
+    cover_image_url,
+    avatar_url,
+    theme_config,
+    layout_type,
+    ambient_sound_url,
+    visibility,
+    status,
+    is_default
+  } = req.body;
+
+  const existing = db.prepare('SELECT * FROM profile_worlds WHERE id = ?').get(worldId) as any;
+  if (!existing) return res.status(404).json({ error: 'World not found' });
+
+  const now = Date.now();
+
+  if (is_default === 1) {
+    db.prepare('UPDATE profile_worlds SET is_default = 0 WHERE user_id = ?').run(existing.user_id);
+  }
+
+  db.prepare(`
+    UPDATE profile_worlds SET
+      name = COALESCE(?, name),
+      slug = COALESCE(?, slug),
+      description = COALESCE(?, description),
+      world_type = COALESCE(?, world_type),
+      cover_image_url = COALESCE(?, cover_image_url),
+      avatar_url = COALESCE(?, avatar_url),
+      theme_config = COALESCE(?, theme_config),
+      layout_type = COALESCE(?, layout_type),
+      ambient_sound_url = COALESCE(?, ambient_sound_url),
+      visibility = COALESCE(?, visibility),
+      status = COALESCE(?, status),
+      is_default = COALESCE(?, is_default),
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    name !== undefined ? name.trim() : null,
+    slug !== undefined ? slug.trim() : null,
+    description !== undefined ? description.trim() : null,
+    world_type !== undefined ? world_type : null,
+    cover_image_url !== undefined ? cover_image_url : null,
+    avatar_url !== undefined ? avatar_url : null,
+    theme_config !== undefined ? (typeof theme_config === 'string' ? theme_config : JSON.stringify(theme_config)) : null,
+    layout_type !== undefined ? layout_type : null,
+    ambient_sound_url !== undefined ? ambient_sound_url : null,
+    visibility !== undefined ? visibility : null,
+    status !== undefined ? status : null,
+    is_default !== undefined ? (is_default ? 1 : 0) : null,
+    now,
+    worldId
+  );
+
+  const updated = db.prepare('SELECT * FROM profile_worlds WHERE id = ?').get(worldId) as any;
+  res.json({
+    success: true,
+    world: {
+      ...updated,
+      theme_config: updated.theme_config ? JSON.parse(updated.theme_config) : null
+    }
+  });
+});
+
+// 5. Duplicate a Profile World
+app.post('/api/v1/worlds/:worldId/duplicate', (req, res) => {
+  const { worldId } = req.params;
+  const original = db.prepare('SELECT * FROM profile_worlds WHERE id = ?').get(worldId) as any;
+  if (!original) return res.status(404).json({ error: 'Original world not found' });
+
+  const newWorldId = `wld_${uuidv4().slice(0, 8)}`;
+  const newName = `${original.name} (Copy)`;
+  const newSlug = `${original.slug}-copy-${Date.now().toString().slice(-4)}`;
+  const now = Date.now();
+
+  const tx = db.transaction(() => {
+    db.prepare(`
+      INSERT INTO profile_worlds (
+        id, user_id, name, slug, description, world_type, cover_image_url, avatar_url,
+        theme_config, layout_type, ambient_sound_url, visibility, status, is_default, sort_order, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      newWorldId, original.user_id, newName, newSlug, original.description, original.world_type,
+      original.cover_image_url, original.avatar_url, original.theme_config, original.layout_type,
+      original.ambient_sound_url, original.visibility, 'draft', 0, original.sort_order + 1, now, now
+    );
+
+    // Duplicate sections and entries
+    const sections = db.prepare('SELECT * FROM profile_world_sections WHERE world_id = ?').all(worldId) as any[];
+    for (const sec of sections) {
+      const newSecId = `sec_${uuidv4().slice(0, 8)}`;
+      db.prepare(`
+        INSERT INTO profile_world_sections (id, world_id, parent_section_id, title, description, section_type, icon, visibility, sort_order, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(newSecId, newWorldId, null, sec.title, sec.description, sec.section_type, sec.icon, sec.visibility, sec.sort_order, now, now);
+
+      const entries = db.prepare('SELECT * FROM profile_world_entries WHERE section_id = ?').all(sec.id) as any[];
+      for (const ent of entries) {
+        const newEntId = `ent_${uuidv4().slice(0, 8)}`;
+        db.prepare(`
+          INSERT INTO profile_world_entries (id, world_id, section_id, user_id, entry_type, title, content, structured_content, reality_classification, visibility, status, sort_order, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          newEntId, newWorldId, newSecId, ent.user_id, ent.entry_type, ent.title, ent.content,
+          ent.structured_content, ent.reality_classification, ent.visibility, ent.status, ent.sort_order, now, now
+        );
+      }
+    }
+  });
+
+  tx();
+
+  const duplicated = db.prepare('SELECT * FROM profile_worlds WHERE id = ?').get(newWorldId) as any;
+  res.json({
+    success: true,
+    world: {
+      ...duplicated,
+      theme_config: duplicated.theme_config ? JSON.parse(duplicated.theme_config) : null
+    }
+  });
+});
+
+// 6. Delete Profile World
+app.delete('/api/v1/worlds/:worldId', (req, res) => {
+  const { worldId } = req.params;
+  db.prepare('DELETE FROM profile_worlds WHERE id = ?').run(worldId);
+  res.json({ success: true, deletedId: worldId });
+});
+
+// 7. Sections CRUD
+app.post('/api/v1/worlds/:worldId/sections', (req, res) => {
+  const { worldId } = req.params;
+  const { title, description = '', section_type = 'general', icon = '✨', visibility = 'public' } = req.body;
+  if (!title || !title.trim()) return res.status(400).json({ error: 'Section title is required' });
+
+  const id = `sec_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as m FROM profile_world_sections WHERE world_id = ?').get(worldId) as any;
+  const sort_order = (maxOrder?.m || 0) + 1;
+
+  db.prepare(`
+    INSERT INTO profile_world_sections (id, world_id, parent_section_id, title, description, section_type, icon, visibility, sort_order, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, worldId, null, title.trim(), description.trim(), section_type, icon, visibility, sort_order, now, now);
+
+  const section = db.prepare('SELECT * FROM profile_world_sections WHERE id = ?').get(id);
+  res.json({ success: true, section });
+});
+
+app.delete('/api/v1/worlds/sections/:sectionId', (req, res) => {
+  const { sectionId } = req.params;
+  db.prepare('DELETE FROM profile_world_sections WHERE id = ?').run(sectionId);
+  res.json({ success: true, deletedId: sectionId });
+});
+
+// 8. Entries CRUD (with strict 5,000 char limit & reality classification)
+app.post('/api/v1/worlds/:worldId/entries', (req, res) => {
+  const { worldId } = req.params;
+  const {
+    sectionId,
+    userId = 'usr_me',
+    entry_type = 'text',
+    title = '',
+    content,
+    structured_content = null,
+    reality_classification = 'actual',
+    visibility = 'public',
+    status = 'published'
+  } = req.body;
+
+  if (!sectionId || !content || !content.trim()) {
+    return res.status(400).json({ error: 'sectionId and content are required' });
+  }
+
+  // Strict 5,000 character limit enforcement
+  if (content.length > 5000) {
+    return res.status(400).json({
+      error: 'Content exceeds the maximum limit of 5,000 characters.',
+      characterCount: content.length,
+      maxLimit: 5000
+    });
+  }
+
+  const validClassifications = [
+    'actual', 'historical', 'current', 'planned', 'aspirational', 'hypothetical',
+    'imaginary', 'fictional', 'cinematic', 'dream', 'roleplay', 'alternate_reality', 'uncertain'
+  ];
+  const safeClassification = validClassifications.includes(reality_classification) ? reality_classification : 'actual';
+
+  const id = `ent_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as m FROM profile_world_entries WHERE section_id = ?').get(sectionId) as any;
+  const sort_order = (maxOrder?.m || 0) + 1;
+
+  db.prepare(`
+    INSERT INTO profile_world_entries (
+      id, world_id, section_id, user_id, entry_type, title, content, structured_content,
+      reality_classification, visibility, status, sort_order, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id, worldId, sectionId, userId, entry_type, title.trim(), content.trim(),
+    structured_content ? (typeof structured_content === 'string' ? structured_content : JSON.stringify(structured_content)) : null,
+    safeClassification, visibility, status, sort_order, now, now
+  );
+
+  const entry = db.prepare('SELECT * FROM profile_world_entries WHERE id = ?').get(id) as any;
+  res.json({
+    success: true,
+    entry: {
+      ...entry,
+      structured_content: entry.structured_content ? JSON.parse(entry.structured_content) : null
+    }
+  });
+});
+
+app.delete('/api/v1/worlds/entries/:entryId', (req, res) => {
+  const { entryId } = req.params;
+  db.prepare('DELETE FROM profile_world_entries WHERE id = ?').run(entryId);
+  res.json({ success: true, deletedId: entryId });
+});
+
+// 9. Cross-World Entry Referencing
+app.post('/api/v1/worlds/entries/reference', (req, res) => {
+  const { sourceWorldId, sourceEntryId, targetWorldId, relationType = 'reference' } = req.body;
+  if (!sourceWorldId || !sourceEntryId || !targetWorldId) {
+    return res.status(400).json({ error: 'sourceWorldId, sourceEntryId, and targetWorldId are required' });
+  }
+
+  const id = `rel_${uuidv4().slice(0, 8)}`;
+  db.prepare(`
+    INSERT INTO profile_world_entry_relations (id, source_world_id, source_entry_id, target_world_id, relation_type, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(id, sourceWorldId, sourceEntryId, targetWorldId, relationType, Date.now());
+
+  res.json({ success: true, relationId: id });
+});
+
 
 
 const PORT = 3001;

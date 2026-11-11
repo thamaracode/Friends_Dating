@@ -13,10 +13,15 @@ import {
   Calendar,
   Layers,
   Dices,
-  Film
+  Film,
+  Globe2,
+  FileText,
+  BookOpen,
+  History
 } from 'lucide-react';
 import { CURRENT_USER } from '../mockData';
 import { DigitalLifeHub } from './DigitalLifeHub';
+import { GitHubMarkdownEditor } from './GitHubMarkdownEditor';
 import type { ExperienceTab } from '../types';
 
 interface MyProfileHubProps {
@@ -28,6 +33,7 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
 }) => {
   const [profile] = useState(CURRENT_USER);
   const [isIncognito, setIsIncognito] = useState(false);
+  const [isReadmeModalOpen, setIsReadmeModalOpen] = useState(false);
 
   return (
     <div className="w-full max-w-md mx-auto min-h-[calc(100dvh-5.5rem)] flex flex-col space-y-4 px-3 pt-2 pb-24">
@@ -92,6 +98,85 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
       {/* Digital Life: Social & Creator Profiles */}
       <div className="rounded-3xl glass-panel-elevated p-3 border border-[#FF78A8]/25 shadow-xl">
         <DigitalLifeHub userId={profile.id} isOwner={true} />
+      </div>
+
+      {/* MULTI-DIMENSIONAL IDENTITY & PROFILE WORLDS */}
+      <div className="space-y-2">
+        <span className="text-[10px] uppercase font-bold text-[#FFB4CE] tracking-wider px-1">Multi-Dimensional Identity</span>
+
+        <div className="rounded-3xl glass-panel-elevated divide-y divide-[#FF78A8]/10 overflow-hidden border border-[#FF78A8]/20">
+          {/* Profile Worlds Hub */}
+          <div 
+            onClick={() => onNavigateSubsystem('profile_worlds')}
+            className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group bg-gradient-to-r from-[#FF0D69]/15 via-transparent to-transparent"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FF0D69] to-[#FF3B88] flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
+                <Globe2 className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-black text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">
+                    Profile Worlds
+                  </h4>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#FF4F87]/20 text-[#FFD6E3] border border-[#FF4F87]/40">
+                    5 Dimensions
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#B9A8B3] mt-0.5">Real Life, Cinematic Noir, Inner World, 2030 Future & Fantasy</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+          </div>
+
+          {/* Personal README.md (GitHub Markdown • 5000 Chars) */}
+          <div 
+            onClick={() => setIsReadmeModalOpen(true)}
+            className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#26061D] to-[#12020E] border border-[#FF4F87]/40 flex items-center justify-center text-[#FF4F87] shadow-md group-hover:scale-105 transition-transform">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">
+                    Personal README.md
+                  </h4>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    5,000 Chars Max
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#B9A8B3] mt-0.5">GitHub Markdown manifesto, checklists, tables & code</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+          </div>
+
+          {/* Living Identity Autobiography & Life Timeline */}
+          <div 
+            onClick={() => onNavigateSubsystem('living_profile')}
+            className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87] shadow-md group-hover:scale-105 transition-transform">
+                <History className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">
+                    Living Identity & Year Memoir
+                  </h4>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    Chronological
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#B9A8B3] mt-0.5">Custom sections, Q&As, timeline eras & Then-vs-Now analysis</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </div>
       </div>
 
       {/* Personality & Entertainment Systems */}
@@ -282,6 +367,19 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
           </button>
         </div>
       </div>
+
+      {/* GitHub Markdown README.md Modal */}
+      {isReadmeModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 animate-fadeIn">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-hidden">
+            <GitHubMarkdownEditor 
+              userId={profile.id}
+              isOwner={true}
+              onClose={() => setIsReadmeModalOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

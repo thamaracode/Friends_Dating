@@ -21,6 +21,8 @@ export type ExperienceTab =
   | 'friends' 
   | 'dating' 
   | 'talk'
+  | 'profile_worlds'
+  | 'living_profile'
   | 'admin';
 
 export type MainNavTab = 'home' | 'discover' | 'likes' | 'messages' | 'profile';

@@ -362,4 +362,493 @@ describe('FRIENDS Master Messaging Engine Comprehensive Test Suite', () => {
     });
     expect(resEmoji.status).toBe(200);
   });
+
+  // ==========================================================================
+  // LIVING IDENTITY PROFILE TESTS
+  // ==========================================================================
+
+  it('enforces multi-tier privacy on Living Identity Profile (owner vs match vs public)', async () => {
+    // 1. Fetch as Owner (usr_me)
+    const resOwner = await fetch(`${API_URL}/profile/living/usr_me?viewerId=usr_me`);
+    expect(resOwner.status).toBe(200);
+    const dataOwner = await resOwner.json();
+    expect(dataOwner.success).toBe(true);
+    expect(dataOwner.accessLevel).toBe('owner');
+    
+    // Owner sees all sections including private journal
+    const secTitlesOwner = dataOwner.sections.map((s: any) => s.title);
+    expect(secTitlesOwner).toContain('Personal Philosophy & Worldview');
+    expect(secTitlesOwner).toContain('Psychological Patterns & Emotional Life');
+    expect(secTitlesOwner).toContain('Private Journal & Raw Musings');
+
+    // Owner sees private draft thoughts
+    const hasPrivateThought = dataOwner.thoughts.some((t: any) => t.visibility === 'private');
+    expect(hasPrivateThought).toBe(true);
+
+    // 2. Fetch as Match (usr_alex)
+    const resMatch = await fetch(`${API_URL}/profile/living/usr_me?viewerId=usr_alex`);
+    expect(resMatch.status).toBe(200);
+    const dataMatch = await resMatch.json();
+    expect(dataMatch.accessLevel).toBe('matches');
+
+    const secTitlesMatch = dataMatch.sections.map((s: any) => s.title);
+    expect(secTitlesMatch).toContain('Personal Philosophy & Worldview'); // public
+    expect(secTitlesMatch).toContain('Psychological Patterns & Emotional Life'); // matches
+    expect(secTitlesMatch).not.toContain('Private Journal & Raw Musings'); // private is completely omitted!
+
+    // Match NEVER sees private thoughts
+    const matchHasPrivateThought = dataMatch.thoughts.some((t: any) => t.visibility === 'private');
+    expect(matchHasPrivateThought).toBe(false);
+
+    // 3. Fetch as Public Visitor (usr_tara - not matched)
+    const resPublic = await fetch(`${API_URL}/profile/living/usr_me?viewerId=usr_tara`);
+    expect(resPublic.status).toBe(200);
+    const dataPublic = await resPublic.json();
+    expect(dataPublic.accessLevel).toBe('public');
+
+    const secTitlesPublic = dataPublic.sections.map((s: any) => s.title);
+    expect(secTitlesPublic).toContain('Personal Philosophy & Worldview'); // public
+    expect(secTitlesPublic).not.toContain('Psychological Patterns & Emotional Life'); // matches-only omitted!
+    expect(secTitlesPublic).not.toContain('Private Journal & Raw Musings'); // private omitted!
+  });
+
+  it('creates custom sections, adds rich entries, and reorders them', async () => {
+    // 1. Create a brand new custom section
+    const resSec = await fetch(`${API_URL}/profile/sections`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        title: 'My Unusual Obsessions & Artifacts',
+        description: 'Niche curiosities and vintage electronics I restore.',
+        section_type: 'interests',
+        icon: '📻',
+        visibility: 'public'
+      })
+    });
+    expect(resSec.status).toBe(200);
+    const dataSec = await resSec.json();
+    expect(dataSec.success).toBe(true);
+    const newSecId = dataSec.section.id;
+
+    // 2. Add an entry to this section
+    const resEntry = await fetch(`${API_URL}/profile/entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sectionId: newSecId,
+        userId: 'usr_me',
+        entry_type: 'text',
+        title: 'Restoring 1970s Braun Audio Synthesizers',
+        content: 'There is something deeply meditative about replacing electrolytic capacitors on German circuit boards.',
+        visibility: 'public'
+      })
+    });
+    expect(resEntry.status).toBe(200);
+    const dataEntry = await resEntry.json();
+    expect(dataEntry.success).toBe(true);
+    expect(dataEntry.entry.section_id).toBe(newSecId);
+
+    // 3. Reorder sections
+    const resReorder = await fetch(`${API_URL}/profile/sections/reorder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sectionIds: [newSecId, 'sec_philosophy', 'sec_contradictions']
+      })
+    });
+    expect(resReorder.status).toBe(200);
+  });
+
+  it('creates user-defined questions, answers them, and adds timeline events', async () => {
+    // 1. Create user question
+    const resQ = await fetch(`${API_URL}/profile/questions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        question: 'What is a book that changed the trajectory of your thinking?',
+        description: 'Literature & Philosophy',
+        answer_type: 'long_text',
+        visibility: 'public',
+        allow_responses: 1
+      })
+    });
+    expect(resQ.status).toBe(200);
+    const dataQ = await resQ.json();
+    const qId = dataQ.question.id;
+
+    // 2. Answer question
+    const resAns = await fetch(`${API_URL}/profile/questions/${qId}/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        answer_content: '"Gödel, Escher, Bach" by Douglas Hofstadter. It showed me how consciousness emerges from self-referential loops.',
+        visibility: 'public'
+      })
+    });
+    expect(resAns.status).toBe(200);
+    const dataAns = await resAns.json();
+    expect(dataAns.success).toBe(true);
+    expect(dataAns.answer.question_id).toBe(qId);
+
+    // 3. Add timeline event
+    const resTime = await fetch(`${API_URL}/profile/timeline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        title: 'Built Autonomous Solar Powered Sensor Node',
+        description: 'Installed a continuous environmental monitor in Sinharaja rainforest canopy.',
+        event_date: 'Autumn 2023',
+        date_precision: 'approximate',
+        category: 'achievement',
+        personal_significance: 'Combined IoT embedded hardware with ecological preservation.',
+        lessons_learned: 'Nature is resilient; humidity is ruthless.',
+        visibility: 'public'
+      })
+    });
+    expect(resTime.status).toBe(200);
+    const dataTime = await resTime.json();
+    expect(dataTime.success).toBe(true);
+    expect(dataTime.event.title).toContain('Solar Powered');
+  });
+
+  it('tests AI-assisted profile enhancement tools', async () => {
+    // Polish
+    const resPolish = await fetch(`${API_URL}/profile/ai/assist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tool: 'polish',
+        content: 'i like walking in quiet places and reading old books'
+      })
+    });
+    expect(resPolish.status).toBe(200);
+    const dataPolish = await resPolish.json();
+    expect(dataPolish.success).toBe(true);
+    expect(dataPolish.suggestion).toContain('quiet');
+
+    // Suggest questions
+    const resSugQ = await fetch(`${API_URL}/profile/ai/assist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tool: 'suggest_questions' })
+    });
+    expect(resSugQ.status).toBe(200);
+    const dataSugQ = await resSugQ.json();
+    const parsedQuestions = JSON.parse(dataSugQ.suggestion);
+    expect(Array.isArray(parsedQuestions)).toBe(true);
+    expect(parsedQuestions.length).toBeGreaterThan(0);
+  });
+
+  it('exports user profile archive and verifies full data snapshot', async () => {
+    const resExport = await fetch(`${API_URL}/profile/export?userId=usr_me`);
+    expect(resExport.status).toBe(200);
+    const dataExport = await resExport.json();
+    expect(dataExport.success).toBe(true);
+    expect(dataExport.user.id).toBe('usr_me');
+    expect(Array.isArray(dataExport.sections)).toBe(true);
+    expect(Array.isArray(dataExport.entries)).toBe(true);
+    expect(Array.isArray(dataExport.questions)).toBe(true);
+    expect(Array.isArray(dataExport.answers)).toBe(true);
+    expect(Array.isArray(dataExport.timeline)).toBe(true);
+    expect(Array.isArray(dataExport.thoughts)).toBe(true);
+  });
+
+  // ==========================================================================
+  // YEAR-BY-YEAR LIFE TIMELINE & PERSONAL HISTORY TESTS
+  // ==========================================================================
+
+  it('verifies year-by-year timeline structure, multi-year chapters, and privacy enforcement', async () => {
+    // 1. Fetch all years for usr_me
+    const resYears = await fetch(`${API_URL}/timeline/years/usr_me?viewerId=usr_me`);
+    expect(resYears.status).toBe(200);
+    const dataYears = await resYears.json();
+    expect(dataYears.success).toBe(true);
+    expect(Array.isArray(dataYears.years)).toBe(true);
+    
+    const yearNums = dataYears.years.map((y: any) => y.year_number);
+    expect(yearNums).toContain(2019);
+    expect(yearNums).toContain(2022);
+    expect(yearNums).toContain(2026); // future year
+
+    // 2. Fetch single year chapter (2022) with events and review
+    const res2022Owner = await fetch(`${API_URL}/timeline/year/usr_me/2022?viewerId=usr_me`);
+    expect(res2022Owner.status).toBe(200);
+    const data2022Owner = await res2022Owner.json();
+    expect(data2022Owner.success).toBe(true);
+    expect(data2022Owner.year.year_number).toBe(2022);
+    expect(data2022Owner.review).toBeDefined();
+    expect(data2022Owner.review.title).toContain('2022 Annual Review');
+
+    // Owner sees private event
+    const ownerHasPrivateEvt = data2022Owner.events.some((e: any) => e.visibility === 'private');
+    expect(ownerHasPrivateEvt).toBe(true);
+
+    // 3. Fetch single year chapter (2022) as Public Visitor (usr_tara)
+    const res2022Pub = await fetch(`${API_URL}/timeline/year/usr_me/2022?viewerId=usr_tara`);
+    expect(res2022Pub.status).toBe(200);
+    const data2022Pub = await res2022Pub.json();
+    expect(data2022Pub.success).toBe(true);
+    // Public visitor NEVER receives private event
+    const pubHasPrivateEvt = data2022Pub.events.some((e: any) => e.visibility === 'private');
+    expect(pubHasPrivateEvt).toBe(false);
+
+    // 4. Fetch multi-year chapters
+    const resChapters = await fetch(`${API_URL}/timeline/chapters/usr_me?viewerId=usr_me`);
+    expect(resChapters.status).toBe(200);
+    const dataChapters = await resChapters.json();
+    expect(dataChapters.success).toBe(true);
+    const chapTitles = dataChapters.chapters.map((c: any) => c.title);
+    expect(chapTitles).toContain('University & Systems Foundations');
+    expect(chapTitles).toContain('Autonomous Craft & Slow Living');
+  });
+
+  it('creates new historical life events, annual reviews, and Then-vs-Now comparisons', async () => {
+    // 1. Add historical event to year 2017
+    const resNewEvt = await fetch(`${API_URL}/timeline/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        year_number: 2017,
+        title: 'Built Solar Powered Micro-Hydro Sensor',
+        description: 'First embedded IoT project testing water flow in stream.',
+        date_display: 'September 2017',
+        category: 'Creative projects',
+        personal_significance: 'First time hardware connected to the internet.',
+        lessons_learned: 'Waterproofing is harder than coding.',
+        visibility: 'public'
+      })
+    });
+    expect(resNewEvt.status).toBe(200);
+    const dataNewEvt = await resNewEvt.json();
+    expect(dataNewEvt.success).toBe(true);
+    expect(dataNewEvt.event.year_number).toBe(2017);
+
+    // 2. Fetch "Then vs Now" self-comparison
+    const resComp = await fetch(`${API_URL}/timeline/reflections/usr_me?type=then_vs_now&viewerId=usr_me`);
+    expect(resComp.status).toBe(200);
+    const dataComp = await resComp.json();
+    expect(dataComp.success).toBe(true);
+    expect(dataComp.reflections.length).toBeGreaterThanOrEqual(1);
+
+    const comp = dataComp.reflections[0];
+    const parsed = JSON.parse(comp.content_json);
+    expect(parsed.personality).toBeDefined();
+    expect(parsed.personality.then).toBeDefined();
+    expect(parsed.personality.now).toBeDefined();
+
+    // 3. Create a new year-end review
+    const resReview = await fetch(`${API_URL}/timeline/reflections`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        reflection_type: 'year_end_review',
+        year_number: 2024,
+        title: '2024 Review: Reclaiming Agency',
+        content_json: {
+          best_memory: 'First morning waking up with zero corporate emails.',
+          biggest_achievement: 'Surpassed 1000 daily readers on independent essays.',
+          biggest_lesson: 'Autonomy is non-negotiable.'
+        },
+        visibility: 'public'
+      })
+    });
+    expect(resReview.status).toBe(200);
+    const dataReview = await resReview.json();
+    expect(dataReview.success).toBe(true);
+    expect(dataReview.reflection.year_number).toBe(2024);
+  });
+
+  it('handles GitHub-Flavored Markdown profile text inputs with strict 5,000 character limit', async () => {
+    // 1. Fetch default seeded GitHub markdown manifesto
+    const resGet = await fetch(`${API_URL}/profile/markdown/usr_me?viewerId=usr_me`);
+    expect(resGet.status).toBe(200);
+    const dataGet = await resGet.json();
+    expect(dataGet.success).toBe(true);
+    expect(dataGet.markdown).toBeDefined();
+    expect(dataGet.markdown.title).toBe('README.md');
+    expect(dataGet.markdown.content).toContain('# 🚀 Kavindu Senanayake / README.md');
+    expect(dataGet.markdown.content).toContain('- [x]');
+    expect(dataGet.characterCount).toBeLessThanOrEqual(5000);
+    expect(dataGet.maxLimit).toBe(5000);
+
+    // 2. Reject markdown input exceeding 5,000 characters
+    const oversizedContent = '# Excessive Markdown\n' + 'a'.repeat(5050);
+    const resOversized = await fetch(`${API_URL}/profile/markdown`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        title: 'README.md',
+        content: oversizedContent,
+        visibility: 'public'
+      })
+    });
+    expect(resOversized.status).toBe(400);
+    const dataOversized = await resOversized.json();
+    expect(dataOversized.error).toContain('5,000 characters');
+    expect(dataOversized.characterCount).toBe(oversizedContent.length);
+
+    // 3. Save valid GitHub markdown within 5,000 character limit
+    const validMarkdown = `# 🌌 Custom User Manifesto
+
+> *"The mind is not a vessel to be filled, but a fire to be kindled."* — Plutarch
+
+### 🎯 2026 Goals:
+- [x] Master local-first architecture
+- [ ] Read 40 non-fiction books
+- [ ] Climb the western ridge
+
+| Skill | Experience | Passion |
+|---|---|---|
+| Distributed Systems | 7 Years | Maximum |
+| Minimalist UI | 5 Years | Obsession |
+`;
+    const resSave = await fetch(`${API_URL}/profile/markdown`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        title: 'README.md',
+        content: validMarkdown,
+        visibility: 'private'
+      })
+    });
+    expect(resSave.status).toBe(200);
+    const dataSave = await resSave.json();
+    expect(dataSave.success).toBe(true);
+    expect(dataSave.characterCount).toBe(validMarkdown.length);
+    expect(dataSave.remainingCharacters).toBe(5000 - validMarkdown.length);
+
+    // 4. Privacy enforcement: Private markdown is hidden from strangers
+    const resStranger = await fetch(`${API_URL}/profile/markdown/usr_me?viewerId=usr_stranger`);
+    expect(resStranger.status).toBe(200);
+    const dataStranger = await resStranger.json();
+    expect(dataStranger.success).toBe(true);
+    expect(dataStranger.markdown).toBeNull();
+    expect(dataStranger.isRestricted).toBe(true);
+    expect(dataStranger.requiredVisibility).toBe('private');
+
+    // 5. Owner can still see their own private markdown
+    const resOwner = await fetch(`${API_URL}/profile/markdown/usr_me?viewerId=usr_me`);
+    expect(resOwner.status).toBe(200);
+    const dataOwner = await resOwner.json();
+    expect(dataOwner.success).toBe(true);
+    expect(dataOwner.markdown).toBeDefined();
+    expect(dataOwner.markdown.content).toContain('Custom User Manifesto');
+
+    // Restore original public markdown for UI experience
+    await fetch(`${API_URL}/profile/markdown`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        title: 'README.md',
+        content: dataGet.markdown.content,
+        visibility: 'public'
+      })
+    });
+  });
+
+  it('manages Profile Worlds with multi-dimensional identities, templates, and reality classifications', async () => {
+    // 1. Fetch all profile worlds for usr_me as owner
+    const resOwner = await fetch(`${API_URL}/worlds/user/usr_me?viewerId=usr_me`);
+    expect(resOwner.status).toBe(200);
+    const dataOwner = await resOwner.json();
+    expect(dataOwner.success).toBe(true);
+    expect(dataOwner.worlds.length).toBeGreaterThanOrEqual(5);
+
+    const defaultWorld = dataOwner.worlds.find((w: any) => w.is_default === 1);
+    expect(defaultWorld).toBeDefined();
+    expect(defaultWorld.name).toBe("The Architect's Journal");
+    expect(defaultWorld.world_type).toBe('real_life');
+
+    // 2. Audience Privacy Enforcement: Stranger cannot see 'matches' world (Sanctuary of Silent Thoughts)
+    const resStranger = await fetch(`${API_URL}/worlds/user/usr_me?viewerId=usr_stranger`);
+    expect(resStranger.status).toBe(200);
+    const dataStranger = await resStranger.json();
+    expect(dataStranger.success).toBe(true);
+    const innerWorldForStranger = dataStranger.worlds.find((w: any) => w.id === 'wld_inner_kavindu');
+    expect(innerWorldForStranger).toBeUndefined(); // Strictly filtered out for strangers
+
+    // 3. Match Audience: Alex (mutual match) CAN see Inner World
+    const resMatch = await fetch(`${API_URL}/worlds/user/usr_me?viewerId=usr_alex`);
+    expect(resMatch.status).toBe(200);
+    const dataMatch = await resMatch.json();
+    const innerWorldForMatch = dataMatch.worlds.find((w: any) => w.id === 'wld_inner_kavindu');
+    expect(innerWorldForMatch).toBeDefined();
+    expect(innerWorldForMatch.visibility).toBe('matches');
+
+    // 4. Fetch details of Cinematic Life world with reality classifications
+    const resCine = await fetch(`${API_URL}/worlds/wld_cine_kavindu?viewerId=usr_me`);
+    expect(resCine.status).toBe(200);
+    const dataCine = await resCine.json();
+    expect(dataCine.success).toBe(true);
+    expect(dataCine.world.layout_type).toBe('cinematic');
+    expect(dataCine.sections.length).toBeGreaterThanOrEqual(1);
+    expect(dataCine.entries.length).toBeGreaterThanOrEqual(1);
+
+    const cineEntry = dataCine.entries.find((e: any) => e.reality_classification === 'cinematic');
+    expect(cineEntry).toBeDefined();
+    expect(cineEntry.title).toContain('Character Archetype');
+
+    // Check cross-world reference relations
+    expect(Array.isArray(dataCine.relations)).toBe(true);
+
+    // 5. Create a new custom world with Cinematic template
+    const resCreate = await fetch(`${API_URL}/worlds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        name: 'The Cyberpunk Noir Era',
+        slug: `cyberpunk-noir-${Date.now()}`,
+        description: 'Testing template instantiation and section seeding',
+        world_type: 'cinematic_life',
+        template_id: 'cinematic_life',
+        visibility: 'public'
+      })
+    });
+    expect(resCreate.status).toBe(200);
+    const dataCreate = await resCreate.json();
+    expect(dataCreate.success).toBe(true);
+    expect(dataCreate.world.name).toBe('The Cyberpunk Noir Era');
+    const newWorldId = dataCreate.world.id;
+
+    // 6. Test 5,000 character limit enforcement on world entry creation
+    const oversizedContent = 'x'.repeat(5001);
+    const resOversized = await fetch(`${API_URL}/worlds/${newWorldId}/entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sectionId: 'sec_fake',
+        userId: 'usr_me',
+        title: 'Too long',
+        content: oversizedContent,
+        reality_classification: 'cinematic'
+      })
+    });
+    expect(resOversized.status).toBe(400);
+    const dataOversized = await resOversized.json();
+    expect(dataOversized.error).toContain('5,000 characters');
+
+    // 7. Duplicate world
+    const resDup = await fetch(`${API_URL}/worlds/${newWorldId}/duplicate`, {
+      method: 'POST'
+    });
+    expect(resDup.status).toBe(200);
+    const dataDup = await resDup.json();
+    expect(dataDup.success).toBe(true);
+    expect(dataDup.world.name).toContain('(Copy)');
+    expect(dataDup.world.status).toBe('draft');
+
+    // Clean up temporary worlds
+    await fetch(`${API_URL}/worlds/${newWorldId}`, { method: 'DELETE' });
+    await fetch(`${API_URL}/worlds/${dataDup.world.id}`, { method: 'DELETE' });
+  });
 });

@@ -45,6 +45,8 @@ import { SelfDiscoveryHub } from './components/SelfDiscoveryHub';
 import { TalkSomeoneView } from './components/TalkSomeoneView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { CrisisSupportModal } from './components/CrisisSupportModal';
+import { ProfileWorldsHub } from './components/ProfileWorldsHub';
+import { LivingIdentityProfileView } from './components/LivingIdentityProfileView';
 
 import type { MainNavTab, ExperienceTab, UserProfile } from './types';
 
@@ -192,6 +194,8 @@ export function App() {
             {activeSubsystem === 'privacy_centre' && <PrivacyCentreHub />}
             {activeSubsystem === 'self_discovery' && <SelfDiscoveryHub />}
             {activeSubsystem === 'talk' && <TalkSomeoneView onOpenCrisisModal={() => setIsCrisisModalOpen(true)} />}
+            {activeSubsystem === 'profile_worlds' && <ProfileWorldsHub isOwner={true} onClose={() => setActiveSubsystem(null)} />}
+            {activeSubsystem === 'living_profile' && <LivingIdentityProfileView isOwner={true} onClose={() => setActiveSubsystem(null)} />}
             {activeSubsystem === 'admin' && <AdminDashboard />}
           </div>
         ) : (

@@ -23,6 +23,10 @@ import {
 } from 'lucide-react';
 import { CURRENT_USER } from '../mockData';
 import { DigitalLifeHub } from './DigitalLifeHub';
+import { ProfileWorldsHub } from './ProfileWorldsHub';
+import { GitHubMarkdownRenderer } from './GitHubMarkdownRenderer';
+import { markdownProfileClient } from '../services/markdownProfileApiClient';
+import type { ProfileMarkdown } from '../types/markdownProfile';
 import type { UserProfile } from '../types';
 
 interface ProfileDetailSheetProps {
@@ -41,7 +45,16 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
   if (!profile) return null;
 
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
-  const [activeLayer, setActiveLayer] = useState<'public' | 'dating' | 'private'>('public');
+  const [activeLayer, setActiveLayer] = useState<'public' | 'worlds' | 'readme' | 'dating' | 'private'>('public');
+  const [profileMarkdown, setProfileMarkdown] = useState<ProfileMarkdown | null>(null);
+
+  React.useEffect(() => {
+    if (profile?.id) {
+      markdownProfileClient.getMarkdown(profile.id, 'usr_me').then(res => {
+        if (res.markdown) setProfileMarkdown(res.markdown);
+      }).catch(console.error);
+    }
+  }, [profile?.id]);
 
   const photos = profile.photos && profile.photos.length > 0 
     ? profile.photos 
@@ -138,18 +151,36 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
           </div>
 
           {/* Privacy Layer Switcher */}
-          <div className="flex p-1 rounded-2xl glass-panel">
+          <div className="flex p-1 rounded-2xl glass-panel gap-1 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveLayer('public')}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 activeLayer === 'public' ? 'bg-[#FF4F87] text-[#FFF1F3]' : 'text-[#B9A8B3]'
               }`}
             >
               Public Story
             </button>
             <button
+              onClick={() => setActiveLayer('worlds')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${
+                activeLayer === 'worlds' ? 'bg-[#FF4F87] text-[#FFF1F3]' : 'text-[#B9A8B3]'
+              }`}
+            >
+              <span>🪐</span>
+              <span>Worlds</span>
+            </button>
+            <button
+              onClick={() => setActiveLayer('readme')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${
+                activeLayer === 'readme' ? 'bg-[#FF4F87] text-[#FFF1F3]' : 'text-[#B9A8B3]'
+              }`}
+            >
+              <span>📄</span>
+              <span>README.md</span>
+            </button>
+            <button
               onClick={() => setActiveLayer('dating')}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 activeLayer === 'dating' ? 'bg-[#FF4F87] text-[#FFF1F3]' : 'text-[#B9A8B3]'
               }`}
             >
@@ -157,13 +188,41 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
             </button>
             <button
               onClick={() => setActiveLayer('private')}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 activeLayer === 'private' ? 'bg-[#FF4F87] text-[#FFF1F3]' : 'text-[#B9A8B3]'
               }`}
             >
               Private Layer
             </button>
           </div>
+
+          {/* LAYER: PROFILE WORLDS */}
+          {activeLayer === 'worlds' && (
+            <div className="space-y-4 animate-fadeIn">
+              <ProfileWorldsHub 
+                userId={profile.id} 
+                isOwner={profile.id === 'usr_me'} 
+                viewerId="usr_me" 
+              />
+            </div>
+          )}
+
+          {/* LAYER: GITHUB MARKDOWN README */}
+          {activeLayer === 'readme' && (
+            <div className="p-4 rounded-3xl glass-panel-elevated border border-[#FF78A8]/30 space-y-3 shadow-xl animate-fadeIn">
+              <div className="flex items-center justify-between pb-2 border-b border-[#FF78A8]/20 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-[#FFB4CE]">@{profile.username} / README.md</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono">
+                  GFM v0.29
+                </span>
+              </div>
+              <GitHubMarkdownRenderer 
+                content={profileMarkdown?.content || `# 🌌 ${profile.name} / README.md\n\n> *"Expressing identity through high-craft systems and quiet depth."*\n\nThis user describes themselves in extraordinary detail across their Profile Worlds.\n\n- [x] Profile Verified\n- [ ] Ready for meaningful connection`} 
+              />
+            </div>
+          )}
 
           {/* LAYER 1: PUBLIC STORY */}
           {activeLayer === 'public' && (
