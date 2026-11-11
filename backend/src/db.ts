@@ -52,7 +52,7 @@ export function initDatabase() {
       sender_id TEXT NOT NULL,
       client_message_id TEXT UNIQUE NOT NULL,
       sequence_number INTEGER NOT NULL,
-      message_type TEXT NOT NULL CHECK(message_type IN ('text', 'voice', 'photo', 'video', 'file', 'game_event', 'dice_event', 'gift_event')),
+      message_type TEXT NOT NULL CHECK(message_type IN ('text', 'voice', 'photo', 'video', 'file', 'game_event', 'dice_event', 'slot_event', 'coin_event', 'gift_event', 'sticker', 'custom_emoji')),
       text_content TEXT,
       media_url TEXT,
       voice_duration INTEGER,
@@ -191,15 +191,96 @@ export function initDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    -- Sticker Categories table
+    CREATE TABLE IF NOT EXISTS sticker_categories (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      sort_order INTEGER DEFAULT 0
+    );
+
+    -- Sticker Packs table
+    CREATE TABLE IF NOT EXISTS sticker_packs (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      description TEXT,
+      cover_icon TEXT NOT NULL,
+      category_id TEXT,
+      sticker_count INTEGER DEFAULT 0,
+      creator_name TEXT DEFAULT 'FRIENDS Official',
+      is_official INTEGER DEFAULT 1,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (category_id) REFERENCES sticker_categories(id)
+    );
+
+    -- Stickers table
+    CREATE TABLE IF NOT EXISTS stickers (
+      id TEXT PRIMARY KEY,
+      pack_id TEXT NOT NULL,
+      asset_url TEXT NOT NULL,
+      emoji_association TEXT NOT NULL,
+      keywords TEXT,
+      sort_order INTEGER DEFAULT 0,
+      is_animated INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (pack_id) REFERENCES sticker_packs(id) ON DELETE CASCADE
+    );
+
+    -- User Installed Sticker Packs table
+    CREATE TABLE IF NOT EXISTS user_sticker_packs (
+      user_id TEXT NOT NULL,
+      pack_id TEXT NOT NULL,
+      installed_at INTEGER NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      PRIMARY KEY (user_id, pack_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (pack_id) REFERENCES sticker_packs(id) ON DELETE CASCADE
+    );
+
+    -- User Favorite Stickers table
+    CREATE TABLE IF NOT EXISTS user_favorite_stickers (
+      user_id TEXT NOT NULL,
+      sticker_id TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, sticker_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (sticker_id) REFERENCES stickers(id) ON DELETE CASCADE
+    );
+
+    -- User Recent Stickers table
+    CREATE TABLE IF NOT EXISTS user_recent_stickers (
+      user_id TEXT NOT NULL,
+      sticker_id TEXT NOT NULL,
+      last_used_at INTEGER NOT NULL,
+      usage_count INTEGER DEFAULT 1,
+      PRIMARY KEY (user_id, sticker_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (sticker_id) REFERENCES stickers(id) ON DELETE CASCADE
+    );
+
+    -- User Recent Emojis table (Preserved across devices)
+    CREATE TABLE IF NOT EXISTS user_recent_emojis (
+      user_id TEXT NOT NULL,
+      emoji TEXT NOT NULL,
+      last_used_at INTEGER NOT NULL,
+      usage_count INTEGER DEFAULT 1,
+      PRIMARY KEY (user_id, emoji),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     -- Indexes for sub-millisecond timeline and profile queries
     CREATE INDEX IF NOT EXISTS idx_messages_conv_seq ON messages(conversation_id, sequence_number);
     CREATE INDEX IF NOT EXISTS idx_members_user ON conversation_members(user_id);
     CREATE INDEX IF NOT EXISTS idx_reactions_msg ON message_reactions(message_id);
     CREATE INDEX IF NOT EXISTS idx_sched_time ON scheduled_messages(scheduled_for, status);
     CREATE INDEX IF NOT EXISTS idx_social_user_vis ON user_social_links(user_id, visibility, sort_order);
+    CREATE INDEX IF NOT EXISTS idx_stickers_pack ON stickers(pack_id, sort_order);
+    CREATE INDEX IF NOT EXISTS idx_stickers_emoji ON stickers(emoji_association);
   `);
 
   seedInitialData();
+  seedStickerEcosystem();
 }
 
 function seedInitialData() {
@@ -258,4 +339,81 @@ function seedInitialData() {
     INSERT INTO message_reactions (id, message_id, user_id, emoji, created_at)
     VALUES ('rx_1', 'm_1', 'usr_me', '🔥', ?)
   `).run(Date.now());
+
+  // Seed Initial Sticker Categories & Packs
+  seedStickerEcosystem();
+}
+
+function seedStickerEcosystem() {
+  const count = db.prepare('SELECT COUNT(*) as count FROM sticker_packs').get() as { count: number };
+  if (count.count > 0) return;
+
+  // Insert categories
+  const insertCat = db.prepare('INSERT INTO sticker_categories (id, name, slug, sort_order) VALUES (?, ?, ?, ?)');
+  insertCat.run('cat_love', 'Love & Romance', 'love', 1);
+  insertCat.run('cat_dating', 'Flirting & Chemistry', 'flirting', 2);
+  insertCat.run('cat_memes', 'Memes & Reactions', 'memes', 3);
+  insertCat.run('cat_luck', 'Luck & Gaming', 'luck', 4);
+
+  // Insert Packs
+  const insertPack = db.prepare(`
+    INSERT INTO sticker_packs (id, name, slug, description, cover_icon, category_id, sticker_count, creator_name, is_official, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+  `);
+
+  insertPack.run(
+    'pack_romantic_rose',
+    'Romantic Rose & Vows',
+    'romantic-rose',
+    'Affectionate stickers for romantic chemistry and late night talks.',
+    '🌹',
+    'cat_love',
+    6,
+    'FRIENDS Studio',
+    Date.now()
+  );
+
+  insertPack.run(
+    'pack_luck_casino',
+    'Telegram Luck & Dice',
+    'luck-casino',
+    'Animated luck stickers with interactive dice, casino slots, and flipping coins.',
+    '🎰',
+    'cat_luck',
+    6,
+    'Telegram Org Inspired',
+    Date.now()
+  );
+
+  insertPack.run(
+    'pack_flirty_vibes',
+    'Flirty Whispers',
+    'flirty-vibes',
+    'Playful and teasing expressions for your matches.',
+    '✨',
+    'cat_dating',
+    6,
+    'FRIENDS Studio',
+    Date.now()
+  );
+
+  // Insert Stickers for Romantic Rose
+  const insertSticker = db.prepare(`
+    INSERT INTO stickers (id, pack_id, asset_url, emoji_association, keywords, sort_order, is_animated, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertSticker.run('stk_rose_1', 'pack_romantic_rose', 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=200&q=80', '🌹', 'rose flower love romance', 1, 0, Date.now());
+  insertSticker.run('stk_rose_2', 'pack_romantic_rose', 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=200&q=80', '❤️', 'heart love soulmate', 2, 1, Date.now());
+  insertSticker.run('stk_rose_3', 'pack_romantic_rose', 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=200&q=80', '💌', 'love letter kiss note', 3, 0, Date.now());
+  insertSticker.run('stk_rose_4', 'pack_romantic_rose', 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=200&q=80', '🥰', 'hug sweet cherish', 4, 1, Date.now());
+
+  // Insert Stickers for Luck Casino
+  insertSticker.run('stk_luck_1', 'pack_luck_casino', 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=200&q=80', '🎲', 'dice luck roll random 3d', 1, 1, Date.now());
+  insertSticker.run('stk_luck_2', 'pack_luck_casino', 'https://images.unsplash.com/photo-1596838132731-3301c3fd4317?auto=format&fit=crop&w=200&q=80', '🎰', 'slot machine casino jackpot 777', 2, 1, Date.now());
+  insertSticker.run('stk_luck_3', 'pack_luck_casino', 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80', '🪙', 'coin flip heads tails eagle', 3, 1, Date.now());
+
+  // Auto-install default packs for usr_me
+  db.prepare('INSERT OR IGNORE INTO user_sticker_packs (user_id, pack_id, installed_at, sort_order) VALUES (?, ?, ?, ?)').run('usr_me', 'pack_romantic_rose', Date.now(), 1);
+  db.prepare('INSERT OR IGNORE INTO user_sticker_packs (user_id, pack_id, installed_at, sort_order) VALUES (?, ?, ?, ?)').run('usr_me', 'pack_luck_casino', Date.now(), 2);
 }

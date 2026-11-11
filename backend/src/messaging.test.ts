@@ -288,4 +288,78 @@ describe('FRIENDS Master Messaging Engine Comprehensive Test Suite', () => {
     });
     expect(resDel.status).toBe(200);
   });
+
+  it('manages sticker packs and delivers standalone luck emojis', async () => {
+    // 1. Fetch available sticker packs
+    const resPacks = await fetch(`${API_URL}/stickers/packs?userId=usr_me`);
+    expect(resPacks.status).toBe(200);
+    const dataPacks = await resPacks.json();
+    expect(dataPacks.success).toBe(true);
+    expect(dataPacks.packs.length).toBeGreaterThanOrEqual(1);
+
+    // 2. Fetch user's installed sticker packs
+    const resMyPacks = await fetch(`${API_URL}/stickers/my-packs?userId=usr_me`);
+    expect(resMyPacks.status).toBe(200);
+    const dataMyPacks = await resMyPacks.json();
+    expect(dataMyPacks.success).toBe(true);
+    expect(dataMyPacks.packs.length).toBeGreaterThanOrEqual(1);
+
+    // 3. Send Telegram Luck Dice message
+    const clientMessageId = `luck_dice_${Date.now()}`;
+    const resSendDice = await fetch(`${API_URL}/conversations/conv_alex/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientMessageId,
+        senderId: 'usr_me',
+        type: 'dice_event',
+        text: '🎲',
+        mediaUrl: 'dice_5'
+      })
+    });
+    expect(resSendDice.status).toBe(201);
+    const dataSendDice = await resSendDice.json();
+    expect(dataSendDice.success).toBe(true);
+    expect(dataSendDice.message.type).toBe('dice_event');
+
+    // 4. Send Telegram Casino Slot Machine message
+    const resSendSlot = await fetch(`${API_URL}/conversations/conv_alex/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientMessageId: `luck_slot_${Date.now()}`,
+        senderId: 'usr_me',
+        type: 'slot_event',
+        text: '🎰',
+        mediaUrl: 'slot_7_7_7'
+      })
+    });
+    expect(resSendSlot.status).toBe(201);
+    const dataSendSlot = await resSendSlot.json();
+    expect(dataSendSlot.message.type).toBe('slot_event');
+
+    // 5. Send Telegram Flipping Coin message
+    const resSendCoin = await fetch(`${API_URL}/conversations/conv_alex/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientMessageId: `luck_coin_${Date.now()}`,
+        senderId: 'usr_me',
+        type: 'coin_event',
+        text: '🪙',
+        mediaUrl: 'coin_heads'
+      })
+    });
+    expect(resSendCoin.status).toBe(201);
+    const dataSendCoin = await resSendCoin.json();
+    expect(dataSendCoin.message.type).toBe('coin_event');
+
+    // 6. Record recent emoji
+    const resEmoji = await fetch(`${API_URL}/emojis/recents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: 'usr_me', emoji: '🎰' })
+    });
+    expect(resEmoji.status).toBe(200);
+  });
 });

@@ -326,6 +326,56 @@ export class ChatApiClient {
     const data = await res.json();
     return data.links || [];
   }
+
+  // -------------------------------------------------------------
+  // Stickers & Animated Emoji Methods
+  // -------------------------------------------------------------
+
+  public async getStickerPacks() {
+    const res = await fetch(`${API_BASE}/stickers/packs?userId=${this.currentUserId}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.packs || [];
+  }
+
+  public async getMyInstalledStickerPacks() {
+    const res = await fetch(`${API_BASE}/stickers/my-packs?userId=${this.currentUserId}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.packs || [];
+  }
+
+  public async installStickerPack(packId: string) {
+    const res = await fetch(`${API_BASE}/stickers/packs/${packId}/install`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: this.currentUserId })
+    });
+    return await res.json();
+  }
+
+  public async uninstallStickerPack(packId: string) {
+    const res = await fetch(`${API_BASE}/stickers/packs/${packId}/install?userId=${this.currentUserId}`, {
+      method: 'DELETE'
+    });
+    return await res.json();
+  }
+
+  public async recordRecentEmoji(emoji: string) {
+    const res = await fetch(`${API_BASE}/emojis/recents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: this.currentUserId, emoji })
+    });
+    return await res.json();
+  }
+
+  public async getRecentEmojis() {
+    const res = await fetch(`${API_BASE}/emojis/recents?userId=${this.currentUserId}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.recents || [];
+  }
 }
 
 export const chatClient = new ChatApiClient('usr_me');

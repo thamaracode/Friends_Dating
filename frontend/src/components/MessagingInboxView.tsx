@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 import { MOCK_PROFILES, CURRENT_USER } from '../mockData';
 import { VoiceWaveformPlayer } from './VoiceWaveformPlayer';
+import { TelegramLuckEmoji } from './TelegramLuckEmoji';
 import { chatClient } from '../services/chatApiClient';
 import type { UserProfile } from '../types';
 import type { 
@@ -127,7 +128,14 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
   // Emoji / Sticker / GIF picker drawer state
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [pickerTab, setPickerTab] = useState<'emoji' | 'stickers' | 'gifs'>('emoji');
+  const [pickerTab, setPickerTab] = useState<'emoji' | 'stickers' | 'luck'>('luck');
+  const [installedPacks, setInstalledPacks] = useState<any[]>([]);
+
+  useEffect(() => {
+    chatClient.getMyInstalledStickerPacks().then(packs => {
+      setInstalledPacks(packs);
+    });
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const composerInputRef = useRef<HTMLInputElement | null>(null);
@@ -443,9 +451,35 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     chatClient.saveDraft(activeConversationId, text);
   };
 
-  const handleSendMessage = async (customText?: string, type: ChatMessage['type'] = 'text') => {
-    const textToSend = customText || inputMessage;
-    if (!textToSend.trim() || !activeConversationId) return;
+  const handleSendMessage = async (customText?: string, type: ChatMessage['type'] = 'text', mediaUrl?: string) => {
+    let textToSend = customText || inputMessage;
+    if (!textToSend.trim() && !mediaUrl) return;
+    if (!activeConversationId) return;
+
+    // Detect Telegram Luck Emojis when sent as standalone text!
+    let determinedType: ChatMessage['type'] = type;
+    let determinedMedia = mediaUrl;
+
+    const trimmed = textToSend.trim();
+    if (trimmed === '🎲') {
+      determinedType = 'dice_event';
+      const roll = Math.floor(Math.random() * 6) + 1;
+      determinedMedia = `dice_${roll}`;
+    } else if (trimmed === '🎰') {
+      determinedType = 'slot_event';
+      const slotIcons = ['7', 'BAR', '🍇', '🍒', '🍋'];
+      const jackpot = Math.random() < 0.25;
+      const reels = jackpot ? ['7', '7', '7'] : [
+        slotIcons[Math.floor(Math.random() * slotIcons.length)],
+        slotIcons[Math.floor(Math.random() * slotIcons.length)],
+        slotIcons[Math.floor(Math.random() * slotIcons.length)]
+      ];
+      determinedMedia = `slot_${reels.join('_')}`;
+    } else if (trimmed === '🪙') {
+      determinedType = 'coin_event';
+      const flip = Math.random() < 0.5 ? 'heads' : 'tails';
+      determinedMedia = `coin_${flip}`;
+    }
 
     if (editingMessage) {
       try {
@@ -464,7 +498,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       await chatClient.sendMessage({
         conversationId: activeConversationId,
         text: textToSend,
-        type,
+        type: determinedType,
+        mediaUrl: determinedMedia,
         replyToMessageId: replyingTo ? replyingTo.id : undefined
       });
 
@@ -959,53 +994,87 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                     </div>
                   )}
 
-                  {/* Main Bubble */}
-                  <div
-                    onClick={() => setSelectedMessageForMenu(msg)}
-                    className={`relative max-w-[80%] p-3 text-xs space-y-1 shadow-md cursor-pointer transition-transform active:scale-[0.98] ${cornerClass} ${
-                      msg.isOutgoing
-                        ? 'bg-gradient-to-tr from-[#FF4F87] to-[#FF78A8] text-[#FFF1F3] shadow-[0_4px_16px_rgba(255,79,135,0.35)]'
-                        : 'glass-panel-elevated text-[#FFF1F3] border border-[#FF78A8]/20'
-                    }`}
-                  >
-                    {/* Media Image Attachment with Lightbox Viewer */}
-                    {msg.mediaUrl && msg.type !== 'voice' && (
-                      <div 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMediaViewerUrl(msg.mediaUrl!);
-                        }}
-                        className="rounded-2xl overflow-hidden mb-1 border border-white/20 group/media relative"
-                      >
-                        <img 
-                          src={msg.mediaUrl} 
-                          alt="Attachment" 
-                          className="w-full max-h-60 object-cover hover:scale-105 transition-transform" 
-                        />
-                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/media:opacity-100 flex items-center justify-center transition-opacity">
-                          <Maximize2 className="w-5 h-5 text-white drop-shadow-md" />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Voice Waveform Player */}
-                    {msg.type === 'voice' ? (
-                      <VoiceWaveformPlayer 
-                        durationSeconds={msg.voiceDurationSeconds || 8}
-                        waveformAmplitudes={msg.voiceWaveform}
-                        isOutgoing={msg.isOutgoing}
+                  {/* TELEGRAM LUCK EMOJIS: Large borderless element with floating time pill */}
+                  {msg.type === 'dice_event' || msg.type === 'slot_event' || msg.type === 'coin_event' ? (
+                    <div 
+                      onClick={() => setSelectedMessageForMenu(msg)}
+                      className="relative p-1 my-1 flex flex-col items-center cursor-pointer group/luck"
+                    >
+                      <TelegramLuckEmoji 
+                        type={msg.type === 'dice_event' ? 'dice' : msg.type === 'slot_event' ? 'slot' : 'coin'} 
+                        seedValue={msg.mediaUrl}
                       />
-                    ) : (
-                      <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                    )}
-
-                    {/* Metadata: Time, Status, Edited */}
-                    <div className={`flex items-center justify-end gap-1.5 text-[9px] ${msg.isOutgoing ? 'text-white/70' : 'text-[#B9A8B3]'}`}>
-                      {msg.isEdited && <span>edited</span>}
-                      <span>{msg.timestamp}</span>
-                      {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-white" />}
+                      {/* Floating Translucent Pill (Telegram Authenticity) */}
+                      <div className="absolute bottom-0 right-0 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white/90 shadow-md">
+                        <span>{msg.timestamp}</span>
+                        {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FF4F87]" />}
+                      </div>
                     </div>
-                  </div>
+                  ) : msg.type === 'sticker' ? (
+                    /* STICKER: Borderless enlarged sticker with floating time pill */
+                    <div 
+                      onClick={() => setSelectedMessageForMenu(msg)}
+                      className="relative p-1 my-1 cursor-pointer group/sticker"
+                    >
+                      <img 
+                        src={msg.mediaUrl} 
+                        alt="Sticker" 
+                        className="w-32 h-32 object-contain hover:scale-105 transition-transform drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]" 
+                      />
+                      <div className="absolute bottom-1 right-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white/90 shadow-md">
+                        <span>{msg.timestamp}</span>
+                        {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FF4F87]" />}
+                      </div>
+                    </div>
+                  ) : (
+                    /* Standard Message Bubble */
+                    <div
+                      onClick={() => setSelectedMessageForMenu(msg)}
+                      className={`relative max-w-[80%] p-3 text-xs space-y-1 shadow-md cursor-pointer transition-transform active:scale-[0.98] ${cornerClass} ${
+                        msg.isOutgoing
+                          ? 'bg-gradient-to-tr from-[#FF4F87] to-[#FF78A8] text-[#FFF1F3] shadow-[0_4px_16px_rgba(255,79,135,0.35)]'
+                          : 'glass-panel-elevated text-[#FFF1F3] border border-[#FF78A8]/20'
+                      }`}
+                    >
+                      {/* Media Image Attachment with Lightbox Viewer */}
+                      {msg.mediaUrl && msg.type !== 'voice' && (
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMediaViewerUrl(msg.mediaUrl!);
+                          }}
+                          className="rounded-2xl overflow-hidden mb-1 border border-white/20 group/media relative"
+                        >
+                          <img 
+                            src={msg.mediaUrl} 
+                            alt="Attachment" 
+                            className="w-full max-h-60 object-cover hover:scale-105 transition-transform" 
+                          />
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/media:opacity-100 flex items-center justify-center transition-opacity">
+                            <Maximize2 className="w-5 h-5 text-white drop-shadow-md" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Voice Waveform Player */}
+                      {msg.type === 'voice' ? (
+                        <VoiceWaveformPlayer 
+                          durationSeconds={msg.voiceDurationSeconds || 8}
+                          waveformAmplitudes={msg.voiceWaveform}
+                          isOutgoing={msg.isOutgoing}
+                        />
+                      ) : (
+                        <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                      )}
+
+                      {/* Metadata: Time, Status, Edited */}
+                      <div className={`flex items-center justify-end gap-1.5 text-[9px] ${msg.isOutgoing ? 'text-white/70' : 'text-[#B9A8B3]'}`}>
+                        {msg.isEdited && <span>edited</span>}
+                        <span>{msg.timestamp}</span>
+                        {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-white" />}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Emoji Reactions ribbon */}
                   {msg.reactions && msg.reactions.length > 0 && (
@@ -1061,41 +1130,102 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
           </div>
         )}
 
-        {/* Emoji / Sticker / GIF Drawer (Telegram Web K Benchmark) */}
+        {/* Emoji / Sticker / Luck Drawer (Telegram Benchmark) */}
         {isEmojiPickerOpen && (
-          <div className="h-48 bg-[#1B121D] border-t border-[#FF78A8]/20 flex flex-col animate-fadeIn">
+          <div className="h-56 bg-[#1B121D] border-t border-[#FF78A8]/20 flex flex-col animate-fadeIn select-none">
+            {/* Header Tabs */}
             <div className="flex items-center justify-around border-b border-[#FF78A8]/10 py-1.5 text-xs font-bold">
               <button 
-                onClick={() => setPickerTab('emoji')} 
-                className={`px-3 py-1 rounded-full cursor-pointer ${pickerTab === 'emoji' ? 'bg-[#FF4F87] text-white' : 'text-[#B9A8B3]'}`}
+                onClick={() => setPickerTab('luck')} 
+                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'luck' ? 'bg-[#FF4F87] text-white shadow-md' : 'text-[#B9A8B3] hover:text-white'}`}
               >
-                Emoji
+                <span>🎰 Telegram Luck</span>
+              </button>
+              <button 
+                onClick={() => setPickerTab('emoji')} 
+                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'emoji' ? 'bg-[#FF4F87] text-white shadow-md' : 'text-[#B9A8B3] hover:text-white'}`}
+              >
+                <span>😀 Emojis</span>
               </button>
               <button 
                 onClick={() => setPickerTab('stickers')} 
-                className={`px-3 py-1 rounded-full cursor-pointer ${pickerTab === 'stickers' ? 'bg-[#FF4F87] text-white' : 'text-[#B9A8B3]'}`}
+                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'stickers' ? 'bg-[#FF4F87] text-white shadow-md' : 'text-[#B9A8B3] hover:text-white'}`}
               >
-                Stickers
-              </button>
-              <button 
-                onClick={() => setPickerTab('gifs')} 
-                className={`px-3 py-1 rounded-full cursor-pointer ${pickerTab === 'gifs' ? 'bg-[#FF4F87] text-white' : 'text-[#B9A8B3]'}`}
-              >
-                GIFs
+                <span>🌟 Stickers</span>
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 grid grid-cols-8 gap-2 text-2xl no-scrollbar">
-              {['❤️', '🔥', '✨', '🌹', '😂', '😍', '😘', '🥺', '🎉', '🌟', '🧁', '🥂', '💌', '🌸', '💖', '🥰', '🌙', '💫', '🎶', '🎀', '💎', '🍓', '🍰', '🕊️'].map(e => (
-                <button 
-                  key={e} 
-                  onClick={() => handleSendMessage(e, 'text')} 
-                  className="hover:scale-125 transition-transform cursor-pointer"
+            {/* TAB 1: TELEGRAM LUCK EMOJIS (🎰, 🎲, 🪙) */}
+            {pickerTab === 'luck' && (
+              <div className="flex-1 p-3 flex items-center justify-around overflow-x-auto no-scrollbar">
+                {/* 1. Slot Machine */}
+                <button
+                  onClick={() => handleSendMessage('🎰')}
+                  className="p-2.5 rounded-2xl glass-panel-elevated border border-[#FF78A8]/30 hover:border-[#FF4F87] flex flex-col items-center gap-1 text-center cursor-pointer hover:scale-105 transition-all shadow-md group"
                 >
-                  {e}
+                  <div className="text-3xl filter drop-shadow">🎰</div>
+                  <span className="text-[10px] font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE]">Slot Machine</span>
+                  <span className="text-[8px] text-[#7A6975]">Jackpot 777</span>
                 </button>
-              ))}
-            </div>
+
+                {/* 2. 3D Dice */}
+                <button
+                  onClick={() => handleSendMessage('🎲')}
+                  className="p-2.5 rounded-2xl glass-panel-elevated border border-[#FF78A8]/30 hover:border-[#FF4F87] flex flex-col items-center gap-1 text-center cursor-pointer hover:scale-105 transition-all shadow-md group"
+                >
+                  <div className="text-3xl filter drop-shadow">🎲</div>
+                  <span className="text-[10px] font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE]">Rolling Dice</span>
+                  <span className="text-[8px] text-[#7A6975]">1 to 6 roll</span>
+                </button>
+
+                {/* 3. Flipping Coin */}
+                <button
+                  onClick={() => handleSendMessage('🪙')}
+                  className="p-2.5 rounded-2xl glass-panel-elevated border border-[#FF78A8]/30 hover:border-[#FF4F87] flex flex-col items-center gap-1 text-center cursor-pointer hover:scale-105 transition-all shadow-md group"
+                >
+                  <div className="text-3xl filter drop-shadow">🪙</div>
+                  <span className="text-[10px] font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE]">Coin Toss</span>
+                  <span className="text-[8px] text-[#7A6975]">Heads or Tails</span>
+                </button>
+              </div>
+            )}
+
+            {/* TAB 2: UNICODE EMOJIS */}
+            {pickerTab === 'emoji' && (
+              <div className="flex-1 overflow-y-auto p-3 grid grid-cols-8 gap-2 text-2xl no-scrollbar">
+                {['❤️', '🔥', '✨', '🌹', '😂', '😍', '😘', '🥺', '🎉', '🌟', '🧁', '🥂', '💌', '🌸', '💖', '🥰', '🌙', '💫', '🎶', '🎀', '💎', '🍓', '🍰', '🕊️'].map(e => (
+                  <button 
+                    key={e} 
+                    onClick={() => handleSendMessage(e, 'text')} 
+                    className="hover:scale-125 transition-transform cursor-pointer"
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* TAB 3: STICKERS FROM INSTALLED PACKS */}
+            {pickerTab === 'stickers' && (
+              <div className="flex-1 overflow-y-auto p-2 no-scrollbar space-y-3">
+                {installedPacks.map((pack: any) => (
+                  <div key={pack.id} className="space-y-1">
+                    <span className="text-[10px] font-bold text-[#FFB4CE] px-1">{pack.name}</span>
+                    <div className="grid grid-cols-4 gap-2">
+                      {pack.stickers?.map((stk: any) => (
+                        <button
+                          key={stk.id}
+                          onClick={() => handleSendMessage(stk.emoji_association, 'sticker', stk.asset_url)}
+                          className="p-1 rounded-xl glass-panel hover:border-[#FF4F87]/60 flex items-center justify-center cursor-pointer hover:scale-105 transition-all"
+                        >
+                          <img src={stk.asset_url} alt="Sticker" className="w-12 h-12 rounded-lg object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

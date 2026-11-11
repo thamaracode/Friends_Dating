@@ -767,6 +767,114 @@ app.get('/api/v1/profile/social-links', (req, res) => {
   res.json({ success: true, links });
 });
 
+// -------------------------------------------------------------
+// 17. STICKER & ANIMATED EMOJI ECOSYSTEM ENDPOINTS
+// -------------------------------------------------------------
+
+// Discover all sticker packs
+app.get('/api/v1/stickers/packs', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+
+  const packs = db.prepare(`
+    SELECT p.*, 
+           CASE WHEN usp.pack_id IS NOT NULL THEN 1 ELSE 0 END as is_installed
+    FROM sticker_packs p
+    LEFT JOIN user_sticker_packs usp ON p.id = usp.pack_id AND usp.user_id = ?
+    ORDER BY p.is_official DESC, p.created_at DESC
+  `).all(userId) as any[];
+
+  res.json({ success: true, packs });
+});
+
+// Get user's installed sticker packs with stickers
+app.get('/api/v1/stickers/my-packs', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+
+  const packs = db.prepare(`
+    SELECT p.*, usp.sort_order as user_sort_order
+    FROM sticker_packs p
+    JOIN user_sticker_packs usp ON p.id = usp.pack_id
+    WHERE usp.user_id = ?
+    ORDER BY usp.sort_order ASC, usp.installed_at DESC
+  `).all(userId) as any[];
+
+  const stickerStmt = db.prepare('SELECT * FROM stickers WHERE pack_id = ? ORDER BY sort_order ASC');
+  const result = packs.map(p => ({
+    ...p,
+    stickers: stickerStmt.all(p.id)
+  }));
+
+  res.json({ success: true, packs: result });
+});
+
+// Install sticker pack
+app.post('/api/v1/stickers/packs/:id/install', (req, res) => {
+  const { id } = req.params;
+  const { userId = 'usr_me' } = req.body;
+
+  db.prepare(`
+    INSERT OR IGNORE INTO user_sticker_packs (user_id, pack_id, installed_at, sort_order)
+    VALUES (?, ?, ?, 0)
+  `).run(userId, id, Date.now());
+
+  res.json({ success: true, installed: true });
+});
+
+// Uninstall sticker pack
+app.delete('/api/v1/stickers/packs/:id/install', (req, res) => {
+  const { id } = req.params;
+  const userId = (req.query.userId as string) || 'usr_me';
+
+  db.prepare('DELETE FROM user_sticker_packs WHERE user_id = ? AND pack_id = ?').run(userId, id);
+  res.json({ success: true, installed: false });
+});
+
+// Search stickers by emoji or keyword
+app.get('/api/v1/stickers/search', (req, res) => {
+  const q = (req.query.q as string) || '';
+  if (!q.trim()) return res.json({ success: true, stickers: [] });
+
+  const stickers = db.prepare(`
+    SELECT s.*, p.name as pack_name
+    FROM stickers s
+    JOIN sticker_packs p ON s.pack_id = p.id
+    WHERE s.emoji_association LIKE ? OR s.keywords LIKE ?
+    LIMIT 30
+  `).all(`%${q}%`, `%${q}%`);
+
+  res.json({ success: true, stickers });
+});
+
+// User Recent Emojis (Sync across devices)
+app.get('/api/v1/emojis/recents', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+  const rows = db.prepare(`
+    SELECT emoji, last_used_at, usage_count 
+    FROM user_recent_emojis 
+    WHERE user_id = ? 
+    ORDER BY last_used_at DESC 
+    LIMIT 32
+  `).all(userId);
+
+  res.json({ success: true, recents: rows.map((r: any) => r.emoji) });
+});
+
+app.post('/api/v1/emojis/recents', (req, res) => {
+  const { userId = 'usr_me', emoji } = req.body;
+  if (!emoji) return res.status(400).json({ error: 'Emoji is required' });
+
+  db.prepare(`
+    INSERT INTO user_recent_emojis (user_id, emoji, last_used_at, usage_count)
+    VALUES (?, ?, ?, 1)
+    ON CONFLICT(user_id, emoji) DO UPDATE SET 
+      last_used_at = excluded.last_used_at,
+      usage_count = usage_count + 1
+  `).run(userId, emoji, Date.now());
+
+  res.json({ success: true });
+});
+
+
 // Add Social Link
 app.post('/api/v1/profile/social-links', (req, res) => {
   const { 
@@ -947,6 +1055,114 @@ app.get('/api/v1/users/:userId/social-links', (req, res) => {
 
   res.json({ success: true, links });
 });
+
+// -------------------------------------------------------------
+// 17. STICKER & ANIMATED EMOJI ECOSYSTEM ENDPOINTS
+// -------------------------------------------------------------
+
+// Discover all sticker packs
+app.get('/api/v1/stickers/packs', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+
+  const packs = db.prepare(`
+    SELECT p.*, 
+           CASE WHEN usp.pack_id IS NOT NULL THEN 1 ELSE 0 END as is_installed
+    FROM sticker_packs p
+    LEFT JOIN user_sticker_packs usp ON p.id = usp.pack_id AND usp.user_id = ?
+    ORDER BY p.is_official DESC, p.created_at DESC
+  `).all(userId) as any[];
+
+  res.json({ success: true, packs });
+});
+
+// Get user's installed sticker packs with stickers
+app.get('/api/v1/stickers/my-packs', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+
+  const packs = db.prepare(`
+    SELECT p.*, usp.sort_order as user_sort_order
+    FROM sticker_packs p
+    JOIN user_sticker_packs usp ON p.id = usp.pack_id
+    WHERE usp.user_id = ?
+    ORDER BY usp.sort_order ASC, usp.installed_at DESC
+  `).all(userId) as any[];
+
+  const stickerStmt = db.prepare('SELECT * FROM stickers WHERE pack_id = ? ORDER BY sort_order ASC');
+  const result = packs.map(p => ({
+    ...p,
+    stickers: stickerStmt.all(p.id)
+  }));
+
+  res.json({ success: true, packs: result });
+});
+
+// Install sticker pack
+app.post('/api/v1/stickers/packs/:id/install', (req, res) => {
+  const { id } = req.params;
+  const { userId = 'usr_me' } = req.body;
+
+  db.prepare(`
+    INSERT OR IGNORE INTO user_sticker_packs (user_id, pack_id, installed_at, sort_order)
+    VALUES (?, ?, ?, 0)
+  `).run(userId, id, Date.now());
+
+  res.json({ success: true, installed: true });
+});
+
+// Uninstall sticker pack
+app.delete('/api/v1/stickers/packs/:id/install', (req, res) => {
+  const { id } = req.params;
+  const userId = (req.query.userId as string) || 'usr_me';
+
+  db.prepare('DELETE FROM user_sticker_packs WHERE user_id = ? AND pack_id = ?').run(userId, id);
+  res.json({ success: true, installed: false });
+});
+
+// Search stickers by emoji or keyword
+app.get('/api/v1/stickers/search', (req, res) => {
+  const q = (req.query.q as string) || '';
+  if (!q.trim()) return res.json({ success: true, stickers: [] });
+
+  const stickers = db.prepare(`
+    SELECT s.*, p.name as pack_name
+    FROM stickers s
+    JOIN sticker_packs p ON s.pack_id = p.id
+    WHERE s.emoji_association LIKE ? OR s.keywords LIKE ?
+    LIMIT 30
+  `).all(`%${q}%`, `%${q}%`);
+
+  res.json({ success: true, stickers });
+});
+
+// User Recent Emojis (Sync across devices)
+app.get('/api/v1/emojis/recents', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+  const rows = db.prepare(`
+    SELECT emoji, last_used_at, usage_count 
+    FROM user_recent_emojis 
+    WHERE user_id = ? 
+    ORDER BY last_used_at DESC 
+    LIMIT 32
+  `).all(userId);
+
+  res.json({ success: true, recents: rows.map((r: any) => r.emoji) });
+});
+
+app.post('/api/v1/emojis/recents', (req, res) => {
+  const { userId = 'usr_me', emoji } = req.body;
+  if (!emoji) return res.status(400).json({ error: 'Emoji is required' });
+
+  db.prepare(`
+    INSERT INTO user_recent_emojis (user_id, emoji, last_used_at, usage_count)
+    VALUES (?, ?, ?, 1)
+    ON CONFLICT(user_id, emoji) DO UPDATE SET 
+      last_used_at = excluded.last_used_at,
+      usage_count = usage_count + 1
+  `).run(userId, emoji, Date.now());
+
+  res.json({ success: true });
+});
+
 
 
 const PORT = 3001;

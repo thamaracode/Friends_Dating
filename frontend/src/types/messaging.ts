@@ -6,6 +6,10 @@ export type MessageType =
   | 'file'
   | 'game_event'
   | 'dice_event'
+  | 'slot_event'
+  | 'coin_event'
+  | 'sticker'
+  | 'custom_emoji'
   | 'gift_event'
   | 'system';
 
