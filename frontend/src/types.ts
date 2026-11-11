@@ -1,3 +1,17 @@
+export type SoulverseRoute = 
+  | 'home'
+  | 'discover'
+  | 'connections'
+  | 'messages'
+  | 'profile'
+  | 'worlds'
+  | 'timeline'
+  | 'collections'
+  | 'account'
+  | 'settings'
+  | 'more'
+  | 'journal';
+
 export type ExperienceTab = 
   | 'home'
   | 'discover'
