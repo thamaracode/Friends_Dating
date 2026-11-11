@@ -661,6 +661,19 @@ app.post('/api/v1/users/:id/block', (req, res) => {
   }
 });
 
+app.post('/api/v1/blocks', (req, res) => {
+  const { blockerId = 'usr_me', blockedId } = req.body;
+  if (!blockedId) return res.status(400).json({ error: 'blockedId is required' });
+
+  try {
+    db.prepare('INSERT OR IGNORE INTO user_blocks (blocker_id, blocked_id, created_at) VALUES (?, ?, ?)')
+      .run(blockerId, blockedId, Date.now());
+    res.json({ success: true, blocked: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.delete('/api/v1/users/:id/block', (req, res) => {
   const { id: blockedId } = req.params;
   const { blockerId = 'usr_me' } = req.body;
@@ -686,6 +699,26 @@ app.post('/api/v1/reports', (req, res) => {
 });
 
 // 15. Dating-Specific Interactive Games (Server-Authoritative State Machine)
+app.post('/api/v1/conversations/:id/games', (req, res) => {
+  const { id: conversationId } = req.params;
+  const { gameType, initiatorId = 'usr_me', currentUserId = initiatorId, initialState = {} } = req.body;
+
+  const id = `game_${uuidv4().slice(0, 8)}`;
+  const state = {
+    turn: 1,
+    scores: { [currentUserId]: 0 },
+    history: [],
+    ...initialState
+  };
+
+  db.prepare(`
+    INSERT INTO game_sessions (id, conversation_id, game_type, current_turn_user_id, state_json, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, 'active', ?, ?)
+  `).run(id, conversationId, gameType, currentUserId, JSON.stringify(state), Date.now(), Date.now());
+
+  res.json({ success: true, session: { id, game_type: gameType, status: 'active', state } });
+});
+
 app.post('/api/v1/games/start', (req, res) => {
   const { conversationId, gameType, currentUserId = 'usr_me' } = req.body;
   if (!conversationId || !gameType) {
@@ -770,6 +803,11 @@ app.get('/api/v1/profile/social-links', (req, res) => {
 // -------------------------------------------------------------
 // 17. STICKER & ANIMATED EMOJI ECOSYSTEM ENDPOINTS
 // -------------------------------------------------------------
+
+app.get('/api/v1/stickers/categories', (_req, res) => {
+  const categories = db.prepare('SELECT * FROM sticker_categories ORDER BY sort_order ASC').all();
+  res.json({ success: true, categories });
+});
 
 // Discover all sticker packs
 app.get('/api/v1/stickers/packs', (req, res) => {
@@ -1059,6 +1097,11 @@ app.get('/api/v1/users/:userId/social-links', (req, res) => {
 // -------------------------------------------------------------
 // 17. STICKER & ANIMATED EMOJI ECOSYSTEM ENDPOINTS
 // -------------------------------------------------------------
+
+app.get('/api/v1/stickers/categories', (_req, res) => {
+  const categories = db.prepare('SELECT * FROM sticker_categories ORDER BY sort_order ASC').all();
+  res.json({ success: true, categories });
+});
 
 // Discover all sticker packs
 app.get('/api/v1/stickers/packs', (req, res) => {
@@ -3004,6 +3047,779 @@ app.post('/api/v1/daily-content/admin/create', (req, res) => {
   );
 
   res.json({ success: true, contentId: id });
+});
+
+// ============================================================================
+// SOULVERSE PRODUCT EXPANSION: IDENTITY UNIVERSE & MULTIPLE PERSONAS
+// ============================================================================
+
+// 1. List User Identities with Strict Server-Side Visibility Enforcement
+app.get('/api/v1/identities/user/:userId', (req, res) => {
+  const { userId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+  const isOwner = viewerId === userId;
+
+  let query = 'SELECT * FROM user_identities WHERE user_id = ?';
+  const params: any[] = [userId];
+
+  if (!isOwner) {
+    // Check relationship between viewer and target
+    const rels = db.prepare('SELECT relationship_type FROM user_relationships WHERE user_id = ? AND target_user_id = ?').all(viewerId, userId) as Array<{ relationship_type: string }>;
+    const relTypes = rels.map(r => r.relationship_type);
+    const isFriend = relTypes.includes('friend');
+    const isMatch = relTypes.includes('match');
+
+    if (isFriend && isMatch) {
+      query += " AND status = 'published' AND visibility IN ('public', 'matches', 'friends')";
+    } else if (isFriend) {
+      query += " AND status = 'published' AND visibility IN ('public', 'friends')";
+    } else if (isMatch) {
+      query += " AND status = 'published' AND visibility IN ('public', 'matches')";
+    } else {
+      query += " AND status = 'published' AND visibility = 'public'";
+    }
+  }
+
+  query += ' ORDER BY is_primary DESC, created_at ASC';
+  const identities = db.prepare(query).all(...params) as any[];
+
+  // Parse JSON traits, interests, skills
+  const formatted = identities.map(id => ({
+    ...id,
+    personality_traits: id.personality_traits ? JSON.parse(id.personality_traits) : [],
+    interests: id.interests ? JSON.parse(id.interests) : [],
+    skills: id.skills ? JSON.parse(id.skills) : [],
+    theme_config: id.theme_config ? JSON.parse(id.theme_config) : null
+  }));
+
+  res.json({ success: true, identities: formatted, isOwner });
+});
+
+// 2. Get Single Identity with Server-Side Visibility Checks
+app.get('/api/v1/identities/:identityId', (req, res) => {
+  const { identityId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+
+  const identity = db.prepare('SELECT * FROM user_identities WHERE id = ?').get(identityId) as any;
+  if (!identity) {
+    return res.status(404).json({ error: 'Identity not found' });
+  }
+
+  const isOwner = identity.user_id === viewerId;
+  if (!isOwner && identity.visibility === 'private') {
+    return res.status(403).json({ error: 'Access denied to private identity' });
+  }
+
+  res.json({
+    success: true,
+    identity: {
+      ...identity,
+      personality_traits: identity.personality_traits ? JSON.parse(identity.personality_traits) : [],
+      interests: identity.interests ? JSON.parse(identity.interests) : [],
+      skills: identity.skills ? JSON.parse(identity.skills) : [],
+      theme_config: identity.theme_config ? JSON.parse(identity.theme_config) : null
+    },
+    isOwner
+  });
+});
+
+// 3. Create Identity
+app.post('/api/v1/identities', (req, res) => {
+  const {
+    userId = 'usr_me',
+    name,
+    displayTitle = '',
+    classification = 'custom',
+    avatarUrl = null,
+    coverImageUrl = null,
+    description = '',
+    biography = '',
+    personalityTraits = [],
+    interests = [],
+    skills = [],
+    universeId = null,
+    layout = 'standard',
+    themeConfig = null,
+    isPrimary = 0,
+    visibility = 'public',
+    status = 'published'
+  } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: 'Identity name is required' });
+  }
+
+  const id = `id_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  if (isPrimary) {
+    db.prepare('UPDATE user_identities SET is_primary = 0 WHERE user_id = ?').run(userId);
+  }
+
+  db.prepare(`
+    INSERT INTO user_identities (
+      id, user_id, name, display_title, classification, avatar_url, cover_image_url,
+      description, biography, personality_traits, interests, skills, universe_id,
+      layout, theme_config, is_primary, visibility, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id, userId, name.trim(), displayTitle.trim(), classification, avatarUrl, coverImageUrl,
+    description.trim(), biography.trim(), JSON.stringify(personalityTraits),
+    JSON.stringify(interests), JSON.stringify(skills), universeId, layout,
+    themeConfig ? JSON.stringify(themeConfig) : null, isPrimary ? 1 : 0,
+    visibility, status, now, now
+  );
+
+  const created = db.prepare('SELECT * FROM user_identities WHERE id = ?').get(id) as any;
+  res.json({
+    success: true,
+    identity: {
+      ...created,
+      personality_traits: personalityTraits,
+      interests,
+      skills,
+      theme_config: themeConfig
+    }
+  });
+});
+
+// 4. Update Identity (Ownership checked)
+app.put('/api/v1/identities/:identityId', (req, res) => {
+  const { identityId } = req.params;
+  const userId = req.body.userId || 'usr_me';
+
+  const existing = db.prepare('SELECT * FROM user_identities WHERE id = ?').get(identityId) as any;
+  if (!existing) return res.status(404).json({ error: 'Identity not found' });
+  if (existing.user_id !== userId) return res.status(403).json({ error: 'Ownership required' });
+
+  const {
+    name = existing.name,
+    displayTitle = existing.display_title,
+    classification = existing.classification,
+    avatarUrl = existing.avatar_url,
+    coverImageUrl = existing.cover_image_url,
+    description = existing.description,
+    biography = existing.biography,
+    personalityTraits = existing.personality_traits ? JSON.parse(existing.personality_traits) : [],
+    interests = existing.interests ? JSON.parse(existing.interests) : [],
+    skills = existing.skills ? JSON.parse(existing.skills) : [],
+    universeId = existing.universe_id,
+    layout = existing.layout,
+    themeConfig = existing.theme_config ? JSON.parse(existing.theme_config) : null,
+    isPrimary = existing.is_primary,
+    visibility = existing.visibility,
+    status = existing.status
+  } = req.body;
+
+  const now = Date.now();
+
+  if (isPrimary && !existing.is_primary) {
+    db.prepare('UPDATE user_identities SET is_primary = 0 WHERE user_id = ?').run(userId);
+  }
+
+  db.prepare(`
+    UPDATE user_identities SET
+      name = ?, display_title = ?, classification = ?, avatar_url = ?, cover_image_url = ?,
+      description = ?, biography = ?, personality_traits = ?, interests = ?, skills = ?,
+      universe_id = ?, layout = ?, theme_config = ?, is_primary = ?, visibility = ?,
+      status = ?, updated_at = ?
+    WHERE id = ?
+  `).run(
+    name.trim(), displayTitle.trim(), classification, avatarUrl, coverImageUrl,
+    description.trim(), biography.trim(), JSON.stringify(personalityTraits),
+    JSON.stringify(interests), JSON.stringify(skills), universeId, layout,
+    themeConfig ? JSON.stringify(themeConfig) : null, isPrimary ? 1 : 0,
+    visibility, status, now, identityId
+  );
+
+  res.json({ success: true, message: 'Identity updated' });
+});
+
+// 5. Duplicate Identity
+app.post('/api/v1/identities/:identityId/duplicate', (req, res) => {
+  const { identityId } = req.params;
+  const userId = req.body.userId || 'usr_me';
+
+  const orig = db.prepare('SELECT * FROM user_identities WHERE id = ?').get(identityId) as any;
+  if (!orig) return res.status(404).json({ error: 'Identity not found' });
+  if (orig.user_id !== userId) return res.status(403).json({ error: 'Ownership required' });
+
+  const newId = `id_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO user_identities (
+      id, user_id, name, display_title, classification, avatar_url, cover_image_url,
+      description, biography, personality_traits, interests, skills, universe_id,
+      layout, theme_config, is_primary, visibility, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 'draft', ?, ?)
+  `).run(
+    newId, userId, `${orig.name} (Copy)`, orig.display_title, orig.classification,
+    orig.avatar_url, orig.cover_image_url, orig.description, orig.biography,
+    orig.personality_traits, orig.interests, orig.skills, orig.universe_id,
+    orig.layout, orig.theme_config, orig.visibility, now, now
+  );
+
+  const duplicated = db.prepare('SELECT * FROM user_identities WHERE id = ?').get(newId);
+  res.json({ success: true, identity: duplicated });
+});
+
+// 6. Delete Identity
+app.delete('/api/v1/identities/:identityId', (req, res) => {
+  const { identityId } = req.params;
+  const userId = (req.query.userId as string) || req.body.userId || 'usr_me';
+
+  const orig = db.prepare('SELECT * FROM user_identities WHERE id = ?').get(identityId) as any;
+  if (!orig) return res.status(404).json({ error: 'Identity not found' });
+  if (orig.user_id !== userId) return res.status(403).json({ error: 'Ownership required' });
+
+  db.prepare('DELETE FROM user_identities WHERE id = ?').run(identityId);
+  res.json({ success: true, message: 'Identity deleted' });
+});
+
+// ============================================================================
+// FICTIONAL UNIVERSES & WORLD CREATION
+// ============================================================================
+
+app.get('/api/v1/universes', (req, res) => {
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+  const universes = db.prepare(`
+    SELECT * FROM fictional_universes 
+    WHERE visibility = 'public' OR creator_id = ?
+    ORDER BY created_at DESC
+  `).all(viewerId);
+
+  res.json({ success: true, universes });
+});
+
+app.get('/api/v1/universes/:universeId', (req, res) => {
+  const { universeId } = req.params;
+  const universe = db.prepare('SELECT * FROM fictional_universes WHERE id = ?').get(universeId) as any;
+  if (!universe) return res.status(404).json({ error: 'Universe not found' });
+
+  const characters = db.prepare('SELECT * FROM universe_characters WHERE universe_id = ?').all(universeId);
+  res.json({ success: true, universe, characters });
+});
+
+app.post('/api/v1/universes', (req, res) => {
+  const {
+    creatorId = 'usr_me',
+    name,
+    slug,
+    description = '',
+    genre = 'fantasy',
+    lore = '',
+    rulesOfUniverse = '',
+    coverImageUrl = null,
+    ambientSoundUrl = null,
+    isCollaborative = 0,
+    visibility = 'public'
+  } = req.body;
+
+  if (!name || !slug) return res.status(400).json({ error: 'Name and slug are required' });
+
+  const id = `uni_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO fictional_universes (
+      id, creator_id, name, slug, description, genre, lore, rules_of_universe,
+      cover_image_url, ambient_sound_url, is_collaborative, visibility, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?)
+  `).run(
+    id, creatorId, name.trim(), slug.trim().toLowerCase(), description.trim(),
+    genre, lore.trim(), rulesOfUniverse.trim(), coverImageUrl, ambientSoundUrl,
+    isCollaborative ? 1 : 0, visibility, now, now
+  );
+
+  const created = db.prepare('SELECT * FROM fictional_universes WHERE id = ?').get(id);
+  res.json({ success: true, universe: created });
+});
+
+// ============================================================================
+// UNIVERSAL LIFE TIMELINE (BCE, Astronomical, Fictional, Arbitrary Scales)
+// ============================================================================
+
+app.get('/api/v1/universal-timeline/user/:userId', (req, res) => {
+  const { userId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+  const identityId = req.query.identityId as string;
+  const universeId = req.query.universeId as string;
+  const timeType = req.query.timeType as string;
+  const order = req.query.order === 'asc' ? 'ASC' : 'DESC';
+
+  const isOwner = viewerId === userId;
+  let query = 'SELECT * FROM universal_timeline_events WHERE user_id = ?';
+  const params: any[] = [userId];
+
+  if (!isOwner) {
+    query += " AND visibility = 'public'";
+  }
+
+  if (identityId) {
+    query += ' AND identity_id = ?';
+    params.push(identityId);
+  }
+
+  if (universeId) {
+    query += ' AND universe_id = ?';
+    params.push(universeId);
+  }
+
+  if (timeType) {
+    query += ' AND time_type = ?';
+    params.push(timeType);
+  }
+
+  query += ` ORDER BY sort_order ${order}, created_at ${order}`;
+  const events = db.prepare(query).all(...params);
+
+  res.json({ success: true, events, isOwner });
+});
+
+app.post('/api/v1/universal-timeline', (req, res) => {
+  const {
+    userId = 'usr_me',
+    identityId = null,
+    universeId = null,
+    timeType,
+    yearValue,
+    yearScale = 'years',
+    eraLabel = null,
+    displayLabel,
+    title,
+    shortDescription,
+    detailedDescription = '',
+    imageUrl = null,
+    eventCategory = 'milestone',
+    isFictional = 0,
+    precision = 'approximate',
+    calendarSystem = 'gregorian',
+    tags = '',
+    visibility = 'public'
+  } = req.body;
+
+  if (!timeType || !yearValue || !displayLabel || !title || !shortDescription) {
+    return res.status(400).json({ error: 'timeType, yearValue, displayLabel, title, and shortDescription are required' });
+  }
+
+  const id = `ute_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO universal_timeline_events (
+      id, user_id, identity_id, universe_id, time_type, year_value, year_scale,
+      era_label, display_label, title, short_description, detailed_description,
+      image_url, event_category, is_fictional, precision, calendar_system, tags,
+      visibility, sort_order, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+  `).run(
+    id, userId, identityId, universeId, timeType, String(yearValue).trim(),
+    yearScale, eraLabel, displayLabel.trim(), title.trim(), shortDescription.trim(),
+    detailedDescription.trim(), imageUrl, eventCategory, isFictional ? 1 : 0,
+    precision, calendarSystem, tags, visibility, now, now
+  );
+
+  const event = db.prepare('SELECT * FROM universal_timeline_events WHERE id = ?').get(id);
+  res.json({ success: true, event });
+});
+
+// ============================================================================
+// PRIVATE VIEWER NOTES (Telegram-Inspired Contact Notes - Author Only Access)
+// ============================================================================
+
+app.get('/api/v1/viewer-notes/:targetUserId', (req, res) => {
+  const { targetUserId } = req.params;
+  const viewerId = (req.headers['x-user-id'] as string) || (req.query.viewerId as string) || 'usr_me';
+
+  // STRICT PRIVACY: Target user CANNOT see viewer's private note on them
+  const note = db.prepare(`
+    SELECT * FROM private_viewer_notes 
+    WHERE viewer_id = ? AND target_user_id = ?
+  `).get(viewerId, targetUserId);
+
+  res.json({ success: true, note: note || null });
+});
+
+app.post('/api/v1/viewer-notes/:targetUserId', (req, res) => {
+  const { targetUserId } = req.params;
+  const viewerId = (req.headers['x-user-id'] as string) || req.body.viewerId || 'usr_me';
+  const { noteContent } = req.body;
+
+  if (!noteContent || !noteContent.trim()) {
+    return res.status(400).json({ error: 'noteContent is required' });
+  }
+
+  const id = `pvn_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO private_viewer_notes (id, viewer_id, target_user_id, note_content, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(viewer_id, target_user_id) DO UPDATE SET
+      note_content = excluded.note_content,
+      updated_at = excluded.updated_at
+  `).run(id, viewerId, targetUserId, noteContent.trim(), now, now);
+
+  const updatedNote = db.prepare(`
+    SELECT * FROM private_viewer_notes WHERE viewer_id = ? AND target_user_id = ?
+  `).get(viewerId, targetUserId);
+
+  res.json({ success: true, note: updatedNote });
+});
+
+app.delete('/api/v1/viewer-notes/:targetUserId', (req, res) => {
+  const { targetUserId } = req.params;
+  const viewerId = (req.headers['x-user-id'] as string) || (req.query.viewerId as string) || 'usr_me';
+
+  db.prepare('DELETE FROM private_viewer_notes WHERE viewer_id = ? AND target_user_id = ?').run(viewerId, targetUserId);
+  res.json({ success: true, message: 'Note deleted' });
+});
+
+// ============================================================================
+// SOCIAL FEEDBACK & COMMUNITY TRAIT VOTING (Like/Dislike, Red/Green Flags)
+// ============================================================================
+
+app.get('/api/v1/social-feedback/:targetUserId', (req, res) => {
+  const { targetUserId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+
+  const likesCount = (db.prepare("SELECT COUNT(*) as count FROM profile_votes WHERE target_user_id = ? AND vote_type = 'like'").get(targetUserId) as any).count;
+  const dislikesCount = (db.prepare("SELECT COUNT(*) as count FROM profile_votes WHERE target_user_id = ? AND vote_type = 'dislike'").get(targetUserId) as any).count;
+
+  const userVoteRow = db.prepare('SELECT vote_type FROM profile_votes WHERE voter_id = ? AND target_user_id = ?').get(viewerId, targetUserId) as any;
+  const userVote = userVoteRow ? userVoteRow.vote_type : null;
+
+  const traits = db.prepare(`
+    SELECT trait_slug, COUNT(*) as count 
+    FROM profile_trait_votes 
+    WHERE target_user_id = ? 
+    GROUP BY trait_slug
+  `).all(targetUserId) as Array<{ trait_slug: string; count: number }>;
+
+  const userTraits = db.prepare(`
+    SELECT trait_slug FROM profile_trait_votes WHERE voter_id = ? AND target_user_id = ?
+  `).all(viewerId, targetUserId) as Array<{ trait_slug: string }>;
+  const userSelectedTraits = userTraits.map(t => t.trait_slug);
+
+  res.json({
+    success: true,
+    likesCount,
+    dislikesCount,
+    userVote,
+    traits: traits.map(t => ({
+      trait_slug: t.trait_slug,
+      count: t.count,
+      userSelected: userSelectedTraits.includes(t.trait_slug)
+    }))
+  });
+});
+
+app.post('/api/v1/social-feedback/vote', (req, res) => {
+  const { voterId = 'usr_me', targetUserId, voteType } = req.body;
+
+  if (!targetUserId || !voteType || !['like', 'dislike'].includes(voteType)) {
+    return res.status(400).json({ error: 'targetUserId and valid voteType (like/dislike) required' });
+  }
+
+  if (voterId === targetUserId) {
+    return res.status(400).json({ error: 'Self-voting is not allowed' });
+  }
+
+  const existing = db.prepare('SELECT * FROM profile_votes WHERE voter_id = ? AND target_user_id = ?').get(voterId, targetUserId) as any;
+  const now = Date.now();
+
+  if (existing) {
+    if (existing.vote_type === voteType) {
+      // Toggle off
+      db.prepare('DELETE FROM profile_votes WHERE voter_id = ? AND target_user_id = ?').run(voterId, targetUserId);
+      return res.json({ success: true, activeVote: null });
+    } else {
+      // Change vote
+      db.prepare('UPDATE profile_votes SET vote_type = ?, created_at = ? WHERE voter_id = ? AND target_user_id = ?').run(voteType, now, voterId, targetUserId);
+      return res.json({ success: true, activeVote: voteType });
+    }
+  } else {
+    const id = `pv_${uuidv4().slice(0, 8)}`;
+    db.prepare('INSERT INTO profile_votes (id, voter_id, target_user_id, vote_type, created_at) VALUES (?, ?, ?, ?, ?)').run(id, voterId, targetUserId, voteType, now);
+    return res.json({ success: true, activeVote: voteType });
+  }
+});
+
+app.post('/api/v1/social-feedback/trait', (req, res) => {
+  const { voterId = 'usr_me', targetUserId, traitSlug } = req.body;
+
+  if (!targetUserId || !traitSlug) {
+    return res.status(400).json({ error: 'targetUserId and traitSlug required' });
+  }
+
+  if (voterId === targetUserId) {
+    return res.status(400).json({ error: 'Self-trait voting is not allowed' });
+  }
+
+  const existing = db.prepare('SELECT * FROM profile_trait_votes WHERE voter_id = ? AND target_user_id = ? AND trait_slug = ?').get(voterId, targetUserId, traitSlug);
+
+  if (existing) {
+    db.prepare('DELETE FROM profile_trait_votes WHERE voter_id = ? AND target_user_id = ? AND trait_slug = ?').run(voterId, targetUserId, traitSlug);
+    res.json({ success: true, active: false });
+  } else {
+    const id = `ptv_${uuidv4().slice(0, 8)}`;
+    db.prepare('INSERT INTO profile_trait_votes (id, voter_id, target_user_id, trait_slug, created_at) VALUES (?, ?, ?, ?, ?)').run(id, voterId, targetUserId, traitSlug, Date.now());
+    res.json({ success: true, active: true });
+  }
+});
+
+// ============================================================================
+// TESTIMONIALS & REVIEWS (With 100+ Message Eligibility Check & Recipient Approval)
+// ============================================================================
+
+app.get('/api/v1/reviews/user/:targetUserId', (req, res) => {
+  const { targetUserId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+  const isTarget = viewerId === targetUserId;
+
+  let query = `
+    SELECT r.*, u.name as author_name, u.avatar_url as author_avatar
+    FROM user_reviews r
+    JOIN users u ON r.author_id = u.id
+    WHERE r.target_user_id = ?
+  `;
+
+  if (!isTarget) {
+    query += " AND (r.visibility = 'approved' OR r.author_id = ?)";
+    const reviews = db.prepare(query).all(targetUserId, viewerId);
+    return res.json({ success: true, reviews });
+  } else {
+    const reviews = db.prepare(query).all(targetUserId);
+    return res.json({ success: true, reviews });
+  }
+});
+
+app.post('/api/v1/reviews', (req, res) => {
+  const { authorId = 'usr_me', targetUserId, reviewText, category = 'general' } = req.body;
+
+  if (!targetUserId || !reviewText || !reviewText.trim()) {
+    return res.status(400).json({ error: 'targetUserId and reviewText are required' });
+  }
+
+  if (authorId === targetUserId) {
+    return res.status(400).json({ error: 'Cannot review your own account' });
+  }
+
+  // Count exchanged messages
+  const msgCount = (db.prepare(`
+    SELECT COUNT(*) as count 
+    FROM messages m
+    JOIN conversation_members cm1 ON m.conversation_id = cm1.conversation_id AND cm1.user_id = ?
+    JOIN conversation_members cm2 ON m.conversation_id = cm2.conversation_id AND cm2.user_id = ?
+  `).get(authorId, targetUserId) as any).count;
+
+  // Enforce 100+ message threshold (or established connection)
+  const isEligible = msgCount >= 100;
+  if (!isEligible) {
+    return res.status(403).json({
+      error: 'Review eligibility requires an established interaction history (100+ messages exchanged).',
+      messagesExchanged: msgCount,
+      required: 100
+    });
+  }
+
+  const id = `rev_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO user_reviews (
+      id, author_id, target_user_id, category, review_text, is_approved_by_target, visibility, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, 0, 'pending', ?, ?)
+    ON CONFLICT(author_id, target_user_id) DO UPDATE SET
+      review_text = excluded.review_text,
+      category = excluded.category,
+      visibility = 'pending',
+      is_approved_by_target = 0,
+      updated_at = excluded.updated_at
+  `).run(id, authorId, targetUserId, category, reviewText.trim(), now, now);
+
+  res.json({ success: true, message: 'Review submitted for recipient approval', reviewId: id });
+});
+
+app.post('/api/v1/reviews/:reviewId/approve', (req, res) => {
+  const { reviewId } = req.params;
+  const userId = req.body.userId || 'usr_me';
+
+  const review = db.prepare('SELECT * FROM user_reviews WHERE id = ?').get(reviewId) as any;
+  if (!review) return res.status(404).json({ error: 'Review not found' });
+  if (review.target_user_id !== userId) return res.status(403).json({ error: 'Only recipient can approve review' });
+
+  db.prepare("UPDATE user_reviews SET is_approved_by_target = 1, visibility = 'approved', updated_at = ? WHERE id = ?").run(Date.now(), reviewId);
+  res.json({ success: true, message: 'Review approved and published' });
+});
+
+// ============================================================================
+// RELATIONSHIP INTERACTION METRICS & VOLUNTARY PROGRESSIVE DISCOVERY
+// ============================================================================
+
+app.get('/api/v1/relationship-metrics/:otherUserId', (req, res) => {
+  const { otherUserId } = req.params;
+  const viewerId = (req.query.viewerId as string) || 'usr_me';
+
+  const msgCount = (db.prepare(`
+    SELECT COUNT(*) as count 
+    FROM messages m
+    JOIN conversation_members cm1 ON m.conversation_id = cm1.conversation_id AND cm1.user_id = ?
+    JOIN conversation_members cm2 ON m.conversation_id = cm2.conversation_id AND cm2.user_id = ?
+  `).get(viewerId, otherUserId) as any).count;
+
+  const firstMsg = db.prepare(`
+    SELECT MIN(m.created_at) as first_time
+    FROM messages m
+    JOIN conversation_members cm1 ON m.conversation_id = cm1.conversation_id AND cm1.user_id = ?
+    JOIN conversation_members cm2 ON m.conversation_id = cm2.conversation_id AND cm2.user_id = ?
+  `).get(viewerId, otherUserId) as any;
+
+  const daysConnected = firstMsg && firstMsg.first_time 
+    ? Math.max(1, Math.floor((Date.now() - firstMsg.first_time) / (1000 * 60 * 60 * 24)))
+    : 0;
+
+  // Celebratory milestones
+  const milestoneThresholds = [10, 50, 100, 250, 500, 1000];
+  const achievedMilestones = milestoneThresholds.filter(m => msgCount >= m);
+
+  // Voluntarily shared secrets/items (explicit owner permission only)
+  const sharedItems = db.prepare(`
+    SELECT * FROM relationship_voluntary_shares
+    WHERE (owner_id = ? AND recipient_id = ?) OR (owner_id = ? AND recipient_id = ?)
+  `).all(viewerId, otherUserId, otherUserId, viewerId);
+
+  res.json({
+    success: true,
+    metrics: {
+      messagesCount: msgCount,
+      daysConnected,
+      achievedMilestones,
+      nextMilestone: milestoneThresholds.find(m => m > msgCount) || null,
+      voluntarilySharedCount: sharedItems.length,
+      sharedItems
+    }
+  });
+});
+
+app.post('/api/v1/relationship-metrics/voluntary-share', (req, res) => {
+  const { ownerId = 'usr_me', recipientId, itemType, itemId } = req.body;
+
+  if (!recipientId || !itemType || !itemId) {
+    return res.status(400).json({ error: 'recipientId, itemType, and itemId are required' });
+  }
+
+  const id = `vs_${uuidv4().slice(0, 8)}`;
+  db.prepare(`
+    INSERT OR IGNORE INTO relationship_voluntary_shares (
+      id, owner_id, recipient_id, item_type, item_id, unlocked_at
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `).run(id, ownerId, recipientId, itemType, itemId, Date.now());
+
+  res.json({ success: true, message: 'Item voluntarily shared with connection' });
+});
+
+// ============================================================================
+// CONVERSATION & ACTIVITY PREFERENCES (Aggregated Coarse Windows)
+// ============================================================================
+
+app.get('/api/v1/activity-preferences/:userId', (req, res) => {
+  const { userId } = req.params;
+  const prefs = db.prepare('SELECT * FROM user_activity_preferences WHERE user_id = ?').get(userId);
+
+  res.json({
+    success: true,
+    preferences: prefs || {
+      user_id: userId,
+      share_peak_activity: 1,
+      peak_window: 'evening',
+      communication_style: 'loves_deep_conversations',
+      chatty_indicator: 'meaningful_discussions',
+      avg_response_range: 'within_few_hours',
+      preferred_message_format: 'thoughtful_text'
+    }
+  });
+});
+
+app.put('/api/v1/activity-preferences', (req, res) => {
+  const userId = req.body.userId || 'usr_me';
+  const {
+    sharePeakActivity = 1,
+    peakWindow = 'evening',
+    communicationStyle = 'loves_deep_conversations',
+    chattyIndicator = 'meaningful_discussions',
+    avgResponseRange = 'within_few_hours',
+    preferredMessageFormat = 'thoughtful_text'
+  } = req.body;
+
+  db.prepare(`
+    INSERT INTO user_activity_preferences (
+      user_id, share_peak_activity, peak_window, communication_style,
+      chatty_indicator, avg_response_range, preferred_message_format, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(user_id) DO UPDATE SET
+      share_peak_activity = excluded.share_peak_activity,
+      peak_window = excluded.peak_window,
+      communication_style = excluded.communication_style,
+      chatty_indicator = excluded.chatty_indicator,
+      avg_response_range = excluded.avg_response_range,
+      preferred_message_format = excluded.preferred_message_format,
+      updated_at = excluded.updated_at
+  `).run(
+    userId, sharePeakActivity ? 1 : 0, peakWindow, communicationStyle,
+    chattyIndicator, avgResponseRange, preferredMessageFormat, Date.now()
+  );
+
+  res.json({ success: true, message: 'Preferences updated' });
+});
+
+// ============================================================================
+// EXTERNAL MINI-GAMES & SECURE EMBEDDING REGISTRY
+// ============================================================================
+
+app.get('/api/v1/games/external', (_req, res) => {
+  const games = db.prepare("SELECT * FROM registered_external_games WHERE is_approved = 1").all();
+  res.json({ success: true, games });
+});
+
+app.post('/api/v1/games/external/register', (req, res) => {
+  const {
+    providerName,
+    gameTitle,
+    gameUrl,
+    allowedOrigin,
+    category = 'trivia',
+    description = '',
+    thumbnailUrl = null,
+    registeredBy = 'usr_me'
+  } = req.body;
+
+  if (!providerName || !gameTitle || !gameUrl || !allowedOrigin) {
+    return res.status(400).json({ error: 'providerName, gameTitle, gameUrl, and allowedOrigin are required' });
+  }
+
+  // Validate URL format
+  try {
+    new URL(gameUrl);
+    new URL(allowedOrigin);
+  } catch {
+    return res.status(400).json({ error: 'Valid gameUrl and allowedOrigin URLs are required' });
+  }
+
+  const id = `ext_${uuidv4().slice(0, 8)}`;
+  db.prepare(`
+    INSERT INTO registered_external_games (
+      id, provider_name, game_title, game_url, allowed_origin, category, description,
+      thumbnail_url, is_approved, sandbox_attributes, registered_by, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'allow-scripts allow-same-origin allow-popups', ?, ?)
+  `).run(
+    id, providerName.trim(), gameTitle.trim(), gameUrl.trim(), allowedOrigin.trim(),
+    category, description.trim(), thumbnailUrl, registeredBy, Date.now()
+  );
+
+  const registered = db.prepare('SELECT * FROM registered_external_games WHERE id = ?').get(id);
+  res.json({ success: true, game: registered });
 });
 
 

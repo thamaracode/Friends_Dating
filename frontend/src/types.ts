@@ -5,6 +5,7 @@ export type SoulverseRoute =
   | 'connections'
   | 'messages'
   | 'profile'
+  | 'identities'
   | 'worlds'
   | 'timeline'
   | 'collections'

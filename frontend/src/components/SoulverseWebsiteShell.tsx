@@ -48,6 +48,7 @@ import { SoulverseAccountPage } from './SoulverseAccountPage';
 import { SoulverseSettingsPage } from './SoulverseSettingsPage';
 import { SoulverseMorePage } from './SoulverseMorePage';
 import { DailyConnectionHub } from './DailyConnectionHub';
+import { IdentityUniverseHub } from './IdentityUniverseHub';
 
 // Established Feature Subsystems
 import { MessagingInboxView } from './MessagingInboxView';
@@ -82,7 +83,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       const hash = window.location.hash.replace('#', '') as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
         'home', 'daily', 'discover', 'connections', 'messages', 'profile', 
-        'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal'
+        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal'
       ];
       if (validRoutes.includes(hash)) {
         setCurrentRoute(hash);
@@ -123,6 +124,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const navItems = [
     { id: 'home' as SoulverseRoute, label: 'Home', icon: Home },
     { id: 'daily' as SoulverseRoute, label: 'Daily Connection', icon: Flame, badge: 'Daily' },
+    { id: 'identities' as SoulverseRoute, label: 'Identity Universe', icon: Sparkles },
     { id: 'discover' as SoulverseRoute, label: 'Discover', icon: Compass },
     { id: 'messages' as SoulverseRoute, label: 'Messages', icon: MessageCircle, badge: '12' },
     { id: 'connections' as SoulverseRoute, label: 'Matches', icon: Heart },
@@ -428,6 +430,16 @@ export const SoulverseWebsiteShell: React.FC = () => {
               }}
               onOpenWorld={handleOpenWorld}
               onOpenReadme={() => setIsReadmeModalOpen(true)}
+            />
+          )}
+
+          {/* PAGE 5.5: IDENTITY UNIVERSE (Multiple Personas, Universal Timeline, Universes, Games) */}
+          {currentRoute === 'identities' && (
+            <IdentityUniverseHub
+              userId="usr_me"
+              isOwner={true}
+              viewerId="usr_me"
+              onClose={() => navigateTo('profile')}
             />
           )}
 

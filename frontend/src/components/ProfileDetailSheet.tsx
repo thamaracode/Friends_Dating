@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -19,14 +19,20 @@ import {
   Lock, 
   Volume2,
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  Flag,
+  FileText,
+  Save,
+  Check
 } from 'lucide-react';
 import { CURRENT_USER } from '../mockData';
 import { DigitalLifeHub } from './DigitalLifeHub';
 import { ProfileWorldsHub } from './ProfileWorldsHub';
 import { GitHubMarkdownRenderer } from './GitHubMarkdownRenderer';
 import { markdownProfileClient } from '../services/markdownProfileApiClient';
+import { identityUniverseClient } from '../services/identityUniverseApiClient';
 import type { ProfileMarkdown } from '../types/markdownProfile';
+import type { ProfileSocialFeedback } from '../types/identityUniverse';
 import type { UserProfile } from '../types';
 
 interface ProfileDetailSheetProps {
@@ -48,13 +54,109 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
   const [activeLayer, setActiveLayer] = useState<'public' | 'worlds' | 'readme' | 'dating' | 'private'>('public');
   const [profileMarkdown, setProfileMarkdown] = useState<ProfileMarkdown | null>(null);
 
-  React.useEffect(() => {
+  // Private Viewer Note State (Telegram Contact Notes)
+  const [privateNote, setPrivateNote] = useState('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [noteSavedFeedback, setNoteSavedFeedback] = useState(false);
+
+  // Social Feedback & Community Traits State
+  const [socialFeedback, setSocialFeedback] = useState<ProfileSocialFeedback>({
+    likesCount: 0,
+    dislikesCount: 0,
+    userVote: null,
+    traits: []
+  });
+
+  const isSelf = profile.id === CURRENT_USER.id;
+
+  useEffect(() => {
     if (profile?.id) {
+      // 1. Fetch GitHub Markdown Profile
       markdownProfileClient.getMarkdown(profile.id, 'usr_me').then(res => {
         if (res.markdown) setProfileMarkdown(res.markdown);
       }).catch(console.error);
+
+      // 2. Fetch Private Viewer Note if viewing another user
+      if (!isSelf) {
+        identityUniverseClient.getViewerNote(profile.id, 'usr_me').then(note => {
+          if (note) setPrivateNote(note.note_content);
+        }).catch(console.error);
+
+        // 3. Fetch Social Feedback & Community Trait Votes
+        identityUniverseClient.getSocialFeedback(profile.id, 'usr_me').then(fb => {
+          if (fb) setSocialFeedback(fb);
+        }).catch(console.error);
+      }
     }
-  }, [profile?.id]);
+  }, [profile?.id, isSelf]);
+
+  const handleSavePrivateNote = async () => {
+    if (!profile.id || isSelf) return;
+    setIsSavingNote(true);
+    try {
+      await identityUniverseClient.saveViewerNote(profile.id, privateNote, 'usr_me');
+      setNoteSavedFeedback(true);
+      setTimeout(() => setNoteSavedFeedback(false), 2000);
+    } catch (err) {
+      console.error('Failed to save private note', err);
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
+  const handleVote = async (type: 'like' | 'dislike') => {
+    if (isSelf) return;
+    try {
+      const active = await identityUniverseClient.castVote(profile.id, type, 'usr_me');
+      setSocialFeedback(prev => ({
+        ...prev,
+        userVote: active,
+        likesCount: type === 'like' 
+          ? (active === 'like' ? prev.likesCount + 1 : prev.likesCount - 1)
+          : (prev.userVote === 'like' ? prev.likesCount - 1 : prev.likesCount),
+        dislikesCount: type === 'dislike'
+          ? (active === 'dislike' ? prev.dislikesCount + 1 : prev.dislikesCount - 1)
+          : (prev.userVote === 'dislike' ? prev.dislikesCount - 1 : prev.dislikesCount)
+      }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleToggleTrait = async (slug: string) => {
+    if (isSelf) return;
+    try {
+      const active = await identityUniverseClient.toggleTraitVote(profile.id, slug, 'usr_me');
+      setSocialFeedback(prev => {
+        const traits = [...prev.traits];
+        const idx = traits.findIndex(t => t.trait_slug === slug);
+        if (idx >= 0) {
+          traits[idx] = {
+            ...traits[idx],
+            count: active ? traits[idx].count + 1 : Math.max(0, traits[idx].count - 1),
+            userSelected: active
+          };
+        } else {
+          traits.push({ trait_slug: slug, count: 1, userSelected: true });
+        }
+        return { ...prev, traits };
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const communityTraitsList = [
+    { slug: 'green_flag', label: '🟢 Walking Green Flag' },
+    { slug: 'good_listener', label: '👂 Good Listener' },
+    { slug: 'thoughtful', label: '💡 Thoughtful' },
+    { slug: 'creative', label: '🎨 Creative' },
+    { slug: 'great_communicator', label: '💬 Great Communicator' },
+    { slug: 'red_flag', label: '🚩 Red Flag' },
+    { slug: 'mysterious', label: '✨ Mysterious' },
+    { slug: 'reliable', label: '🛡️ Reliable' },
+    { slug: 'romantic', label: '🌹 Romantic' }
+  ];
 
   const photos = profile.photos && profile.photos.length > 0 
     ? profile.photos 
@@ -276,6 +378,105 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
                   "{profile.deepQuestion.answer}"
                 </p>
               </div>
+
+              {/* SOCIAL FEEDBACK & COMMUNITY TRAIT VOTING */}
+              {!isSelf && (
+                <div className="p-4 rounded-3xl dark-glass border border-white/10 space-y-3 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-[#FFA4B2] uppercase tracking-wider">
+                      Community Feedback & Personality Traits
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleVote('like')}
+                        className={`px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 transition-all ${
+                          socialFeedback.userVote === 'like'
+                            ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/50'
+                            : 'bg-white/5 text-[#A898A7] hover:text-white border border-white/10'
+                        }`}
+                      >
+                        <ThumbsUp className="w-3 h-3" />
+                        <span>{socialFeedback.likesCount}</span>
+                      </button>
+                      <button
+                        onClick={() => handleVote('dislike')}
+                        className={`px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 transition-all ${
+                          socialFeedback.userVote === 'dislike'
+                            ? 'bg-rose-500/25 text-rose-300 border border-rose-500/50'
+                            : 'bg-white/5 text-[#A898A7] hover:text-white border border-white/10'
+                        }`}
+                      >
+                        <ThumbsDown className="w-3 h-3" />
+                        <span>{socialFeedback.dislikesCount}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Trait voting pills */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {communityTraitsList.map(trait => {
+                      const found = socialFeedback.traits.find(t => t.trait_slug === trait.slug);
+                      const isSelected = found?.userSelected;
+                      const count = found?.count || 0;
+                      return (
+                        <button
+                          key={trait.slug}
+                          onClick={() => handleToggleTrait(trait.slug)}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all cursor-pointer flex items-center gap-1 ${
+                            isSelected
+                              ? 'bg-[#D7374B]/20 text-[#FFA4B2] border-[#D7374B]/60 shadow-[0_0_10px_rgba(215,55,75,0.25)]'
+                              : 'bg-white/[0.03] text-[#A898A7] border-white/10 hover:text-white'
+                          }`}
+                        >
+                          <span>{trait.label}</span>
+                          {count > 0 && <span className="opacity-70 text-[10px]">({count})</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* TELEGRAM CONTACT NOTES: PRIVATE VIEWER NOTE */}
+              {!isSelf && (
+                <div className="p-4 rounded-3xl dark-glass border border-white/10 space-y-2.5 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-[#FFA4B2] uppercase tracking-wider flex items-center gap-1.5">
+                      <Lock className="w-3 h-3 text-[#D7374B]" />
+                      <span>Private Note (Only You See This)</span>
+                    </span>
+                    {noteSavedFeedback && (
+                      <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        <span>Saved</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-[10px] text-[#A898A7] leading-relaxed">
+                    Personal contact note inspired by Telegram. Notes belong exclusively to you; neither {profile.name} nor other viewers can see this.
+                  </p>
+
+                  <textarea
+                    value={privateNote}
+                    onChange={e => setPrivateNote(e.target.value)}
+                    placeholder={`e.g. Met through indie gaming meetup. Likes sci-fi, preferred slow Ceylon tea...`}
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-2xl dark-glass border border-white/10 text-xs text-[#F2EBF0] placeholder-white/30 focus:outline-none focus:border-[#D7374B]/60 transition-colors"
+                  />
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSavePrivateNote}
+                      disabled={isSavingNote}
+                      className="px-3.5 py-1.5 rounded-xl light-red-gradient-btn text-[11px] font-bold flex items-center gap-1.5 shadow-sm cursor-pointer hover:brightness-110"
+                    >
+                      <Save className="w-3 h-3" />
+                      <span>{isSavingNote ? 'Saving...' : 'Save Private Note'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Digital Life: Public Social & Creator Profiles */}
               <div className="p-4 rounded-3xl glass-panel-elevated border border-[#FF78A8]/20 shadow-lg">
