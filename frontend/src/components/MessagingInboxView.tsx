@@ -36,7 +36,16 @@ import {
   Square,
   Sparkles,
   PhoneOff,
-  VideoOff
+  VideoOff,
+  Download,
+  Share2,
+  Maximize2,
+  ChevronLeft,
+  ChevronRight,
+  Archive,
+  VolumeX,
+  UserX,
+  Info
 } from 'lucide-react';
 import { MOCK_PROFILES, CURRENT_USER } from '../mockData';
 import { VoiceWaveformPlayer } from './VoiceWaveformPlayer';
@@ -71,14 +80,26 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
-  // Real voice recording state
+  // Desktop vs Mobile responsive state
+  const [isDesktopLayout, setIsDesktopLayout] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktopLayout(window.innerWidth >= 1024);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Voice recording state
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<any>(null);
 
-  // Real WebRTC Call State
+  // WebRTC Call State
   const [isCalling, setIsCalling] = useState<'voice' | 'video' | null>(null);
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
@@ -99,10 +120,19 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   const [typingPartnerText, setTypingPartnerText] = useState<string | null>(null);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [inChatSearchQuery, setInChatSearchQuery] = useState('');
+  const [isChatSettingsOpen, setIsChatSettingsOpen] = useState(false);
+
+  // Fullscreen Media Lightbox Viewer (Telegram Web K reference)
+  const [activeMediaViewerUrl, setActiveMediaViewerUrl] = useState<string | null>(null);
+
+  // Emoji / Sticker / GIF picker drawer state
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [pickerTab, setPickerTab] = useState<'emoji' | 'stickers' | 'gifs'>('emoji');
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const composerInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Folder definitions
+  // Folder definitions (Telegram Web K benchmark)
   const folders: ChatFolder[] = [
     { id: 'all', title: 'All', badgeCount: undefined },
     { id: 'matches', title: 'Matches', badgeCount: 2 },
@@ -121,6 +151,9 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
           if (activeProfileOverride) {
             const match = convs.find((c: any) => c.participantId === activeProfileOverride.id);
             setActiveConversationId(match ? match.id : convs[0].id);
+          } else if (window.innerWidth >= 1024) {
+            // Auto-select first chat on desktop
+            setActiveConversationId(convs[0].id);
           }
         }
       } catch (err) {
@@ -218,6 +251,42 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     loadMsgs();
   }, [activeConversationId]);
 
+  // Desktop Keyboard Shortcuts (Telegram Desktop reference: Esc to close/cancel, Up to edit last message)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (selectedMessageForMenu) {
+          setSelectedMessageForMenu(null);
+        } else if (replyingTo) {
+          setReplyingTo(null);
+        } else if (editingMessage) {
+          setEditingMessage(null);
+          setInputMessage('');
+        } else if (isEmojiPickerOpen) {
+          setIsEmojiPickerOpen(false);
+        } else if (isActionDockOpen) {
+          setIsActionDockOpen(false);
+        } else if (isChatSettingsOpen) {
+          setIsChatSettingsOpen(false);
+        } else if (activeMediaViewerUrl) {
+          setActiveMediaViewerUrl(null);
+        }
+      } else if (e.key === 'ArrowUp' && !inputMessage && currentMessages.length > 0) {
+        // Edit last outgoing message
+        const lastOutgoing = [...currentMessages].reverse().find(m => m.isOutgoing);
+        if (lastOutgoing) {
+          e.preventDefault();
+          setEditingMessage(lastOutgoing);
+          setInputMessage(lastOutgoing.text);
+          composerInputRef.current?.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedMessageForMenu, replyingTo, editingMessage, isEmojiPickerOpen, isActionDockOpen, isChatSettingsOpen, activeMediaViewerUrl, inputMessage, currentMessages]);
+
   // WebRTC Calling Lifecycle
   const startCall = async (type: 'voice' | 'video') => {
     setIsCalling(type);
@@ -272,7 +341,6 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       }, 1000);
     } catch (err) {
       console.warn('Call stream setup notice (simulating connected peer call):', err);
-      // Fallback timer for testing in environments without camera/mic permissions
       callTimerRef.current = setInterval(() => {
         setCallDuration(prev => prev + 1);
       }, 1000);
@@ -309,12 +377,9 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         stream.getTracks().forEach(track => track.stop());
 
-        // Upload audio file to backend
         try {
           const uploadRes = await chatClient.uploadAttachment(audioBlob, `voice_${Date.now()}.webm`);
           const mediaUrl = uploadRes.file.mediaUrl;
-
-          // Generate waveform representation
           const sampleWaveform = [12, 28, 45, 78, 95, 60, 42, 88, 70, 35, 60, 85, 40, 20];
 
           await chatClient.sendMessage({
@@ -339,8 +404,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         setRecordingSeconds(prev => prev + 1);
       }, 1000);
     } catch (micErr) {
-      console.warn('Microphone permission or mock fall-through:', micErr);
-      // Fallback voice note for simulated environment
+      console.warn('Microphone permission fallback:', micErr);
       await handleSendMessage("🎙️ Voice note (0:08)", 'voice');
     }
   };
@@ -375,7 +439,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       chatClient.sendSocketEvent('typing.stop', { conversationId: activeConversationId });
     }
 
-    // Persist draft
+    // Persist draft in background
     chatClient.saveDraft(activeConversationId, text);
   };
 
@@ -418,6 +482,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     setReplyingTo(null);
     setEditingMessage(null);
     setIsActionDockOpen(false);
+    setIsEmojiPickerOpen(false);
     if (isTyping) {
       setIsTyping(false);
       chatClient.sendSocketEvent('typing.stop', { conversationId: activeConversationId });
@@ -519,16 +584,169 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     return true;
   });
 
-  return (
-    <div className="w-full max-w-md mx-auto min-h-[calc(100dvh-5.5rem)] flex flex-col pb-20 select-none">
-      {/* ======================================================== */}
-      {/* VIEW 1: ACTIVE INDIVIDUAL CONVERSATION (TELEGRAM-DEPTH)  */}
-      {/* ======================================================== */}
-      {activeConversationId && currentConv ? (
-        <div className="flex-1 flex flex-col h-[calc(100dvh-5.5rem)] bg-[#100B12] animate-fadeIn">
-          {/* Header */}
-          <div className="px-4 py-3 glass-panel-elevated flex items-center justify-between border-b border-[#FF78A8]/20 z-30">
-            <div className="flex items-center gap-3">
+  // Message Bubble Grouping (Telegram Web K pattern: group consecutive messages within 5 mins)
+  const isGroupedWithPrevious = (idx: number): boolean => {
+    if (idx === 0) return false;
+    const prev = currentMessages[idx - 1];
+    const curr = currentMessages[idx];
+    if (prev.senderId !== curr.senderId) return false;
+    return Math.abs(curr.createdAt - prev.createdAt) < 300000;
+  };
+
+  const isGroupedWithNext = (idx: number): boolean => {
+    if (idx === currentMessages.length - 1) return false;
+    const next = currentMessages[idx + 1];
+    const curr = currentMessages[idx];
+    if (next.senderId !== curr.senderId) return false;
+    return Math.abs(next.createdAt - curr.createdAt) < 300000;
+  };
+
+  // =========================================================================
+  // SUB-RENDERER: CONVERSATION LIST (SIDEBAR ON DESKTOP, MAIN VIEW ON MOBILE)
+  // =========================================================================
+  const renderConversationList = () => (
+    <div className="flex-1 flex flex-col h-full overflow-hidden select-none">
+      {/* Header */}
+      <div className="p-3 pb-2 flex items-center justify-between border-b border-[#FF78A8]/20">
+        <div>
+          <h1 className="text-xl font-black text-[#FFF1F3] tracking-tight">Messages</h1>
+          <span className="text-[10px] text-[#FFB4CE] font-bold">Encrypted Cloud • TDLib Order</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={() => setActiveConversationId('conv_saved')}
+            className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-amber-400 hover:scale-105 cursor-pointer"
+            title="Saved Messages Cloud"
+          >
+            <Bookmark className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Folder Tabs (Telegram Web K Benchmark) */}
+      <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar border-b border-[#FF78A8]/10">
+        {folders.map(folder => (
+          <button
+            key={folder.id}
+            onClick={() => setActiveFolder(folder.id)}
+            className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-1.5 ${
+              activeFolder === folder.id 
+                ? 'bg-[#FF4F87] text-white shadow-[0_0_12px_rgba(255,79,135,0.6)]' 
+                : 'glass-panel text-[#B9A8B3] hover:text-white'
+            }`}
+          >
+            <span>{folder.title}</span>
+            {folder.badgeCount !== undefined && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${activeFolder === folder.id ? 'bg-white text-[#FF4F87]' : 'bg-[#FF4F87] text-white'}`}>
+                {folder.badgeCount}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Search Input */}
+      <div className="p-3 pb-2">
+        <div className="relative">
+          <Search className="w-4 h-4 text-[#B9A8B3] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search conversations, matches, or cloud..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl glass-panel text-xs text-[#FFF1F3] placeholder-[#7A6975] focus:outline-none focus:border-[#FF4F87]"
+          />
+        </div>
+      </div>
+
+      {/* Conversation Rows */}
+      <div className="flex-1 overflow-y-auto px-3 space-y-1.5 pb-20 no-scrollbar">
+        {filteredConversations.map((conv) => {
+          const isSelected = activeConversationId === conv.id;
+          return (
+            <div
+              key={conv.id}
+              onClick={() => setActiveConversationId(conv.id)}
+              className={`relative p-3 rounded-2xl border flex items-center justify-between gap-3 cursor-pointer transition-all shadow-sm group ${
+                isSelected 
+                  ? 'bg-gradient-to-r from-[#FF4F87]/20 to-[#FF78A8]/10 border-[#FF4F87] shadow-[0_0_16px_rgba(255,79,135,0.25)]' 
+                  : 'glass-panel-elevated border-[#FF78A8]/15 hover:border-[#FF4F87]/50'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative flex-shrink-0">
+                  <img 
+                    src={conv.avatar} 
+                    alt={conv.title} 
+                    className={`w-11 h-11 rounded-2xl object-cover border ${
+                      conv.id === 'conv_saved' ? 'border-amber-400/60' : 'border-[#FF78A8]/40'
+                    }`}
+                  />
+                  {conv.isOnline && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#100B12]" />
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold text-[#FFF1F3] truncate">{conv.title}</h4>
+                    {conv.isVerified && (
+                      <ShieldCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                    )}
+                    {conv.isPinned && (
+                      <Pin className="w-3 h-3 text-[#FF4F87] flex-shrink-0" />
+                    )}
+                  </div>
+                  <p className={`text-[11px] truncate mt-0.5 ${conv.unreadCount > 0 ? 'text-[#FFB4CE] font-bold' : 'text-[#B9A8B3]'}`}>
+                    {conv.draftText ? (
+                      <span className="text-amber-400 italic font-semibold">Draft: {conv.draftText}</span>
+                    ) : (
+                      conv.lastMessage?.text || 'Tap to start conversation'
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                <span className="text-[10px] text-[#7A6975]">{conv.lastMessage?.timestamp}</span>
+                {conv.unreadCount > 0 ? (
+                  <span className="w-4 h-4 rounded-full bg-[#FF4F87] text-[#FFF1F3] text-[9px] font-black flex items-center justify-center shadow-[0_0_8px_#FF4F87]">
+                    {conv.unreadCount}
+                  </span>
+                ) : conv.isPinned ? (
+                  <span className="text-[10px] text-[#FF4F87]">Pinned</span>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // =========================================================================
+  // SUB-RENDERER: ACTIVE CONVERSATION SCREEN
+  // =========================================================================
+  const renderActiveConversation = () => {
+    if (!currentConv) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-[#7A6975]">
+          <div className="w-16 h-16 rounded-full glass-panel flex items-center justify-center mb-3 text-[#FF4F87]">
+            <Sparkles className="w-8 h-8" />
+          </div>
+          <h3 className="text-sm font-bold text-[#FFF1F3]">Select a conversation</h3>
+          <p className="text-xs text-[#B9A8B3] mt-1">Choose from your matches, friends, or personal cloud.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex-1 flex flex-col h-full bg-[#100B12] animate-fadeIn relative overflow-hidden">
+        {/* Header */}
+        <div className="px-4 py-3 glass-panel-elevated flex items-center justify-between border-b border-[#FF78A8]/20 z-30">
+          <div className="flex items-center gap-3">
+            {/* Show back arrow on mobile */}
+            {!isDesktopLayout && (
               <button
                 onClick={() => {
                   setActiveConversationId(null);
@@ -538,538 +756,650 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
+            )}
 
-              <div 
-                onClick={() => {
-                  const targetUser = MOCK_PROFILES.find(p => p.id === currentConv.participantId) || MOCK_PROFILES[0];
-                  onOpenProfileDetail(targetUser);
-                }}
-                className="flex items-center gap-2.5 cursor-pointer"
-              >
-                <div className="relative">
-                  <img 
-                    src={currentConv.avatar} 
-                    alt={currentConv.title} 
-                    className="w-10 h-10 rounded-2xl object-cover border border-[#FF78A8]/40"
-                  />
-                  {currentConv.isOnline && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#100B12]" />
+            <div 
+              onClick={() => {
+                const targetUser = MOCK_PROFILES.find(p => p.id === currentConv.participantId) || MOCK_PROFILES[0];
+                onOpenProfileDetail(targetUser);
+              }}
+              className="flex items-center gap-2.5 cursor-pointer"
+            >
+              <div className="relative">
+                <img 
+                  src={currentConv.avatar} 
+                  alt={currentConv.title} 
+                  className="w-10 h-10 rounded-2xl object-cover border border-[#FF78A8]/40"
+                />
+                {currentConv.isOnline && (
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#100B12]" />
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center gap-1">
+                  <h3 className="text-xs font-bold text-[#FFF1F3]">{currentConv.title}</h3>
+                  {currentConv.isVerified && (
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                   )}
                 </div>
-
-                <div>
-                  <div className="flex items-center gap-1">
-                    <h3 className="text-xs font-bold text-[#FFF1F3]">{currentConv.title}</h3>
-                    {currentConv.isVerified && (
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    )}
-                  </div>
-                  <span className="text-[10px] text-[#B9A8B3]">
-                    {typingPartnerText ? (
-                      <span className="text-[#FF4F87] font-semibold animate-pulse">{typingPartnerText}</span>
-                    ) : (
-                      currentConv.lastSeenText
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Calling & Search Options */}
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setIsSearchActive(!isSearchActive)}
-                className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
-                title="Search Messages"
-              >
-                <Search className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => startCall('voice')}
-                className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
-                title="Encrypted Voice Call"
-              >
-                <Phone className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => startCall('video')}
-                className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
-                title="Encrypted Video Call"
-              >
-                <Video className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* In-Chat Search Bar */}
-          {isSearchActive && (
-            <div className="px-4 py-2 bg-[#1B121D] border-b border-[#FF78A8]/20 flex items-center gap-2 animate-fadeIn">
-              <Search className="w-4 h-4 text-[#FF4F87]" />
-              <input
-                type="text"
-                value={inChatSearchQuery}
-                onChange={(e) => setInChatSearchQuery(e.target.value)}
-                placeholder="Search words in this chat..."
-                className="flex-1 bg-transparent text-xs text-[#FFF1F3] placeholder-[#7A6975] focus:outline-none"
-              />
-              <button onClick={() => { setIsSearchActive(false); setInChatSearchQuery(''); }} className="text-[#B9A8B3] hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          {/* Pinned Message Banner */}
-          {pinnedMessage && (
-            <div className="px-4 py-2 bg-[#1B121D] border-b border-[#FF78A8]/20 flex items-center justify-between text-xs animate-fadeIn">
-              <div className="flex items-center gap-2 truncate">
-                <Pin className="w-3.5 h-3.5 text-[#FF4F87] flex-shrink-0" />
-                <div className="truncate">
-                  <span className="text-[10px] font-bold text-[#FFB4CE] block">Pinned Message:</span>
-                  <span className="text-[11px] text-[#FFF1F3] truncate block">{pinnedMessage.text}</span>
-                </div>
-              </div>
-              <button
-                onClick={() => handleTogglePin(pinnedMessage)}
-                className="text-[10px] text-[#B9A8B3] hover:text-rose-400 ml-2"
-                title="Unpin"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-
-          {/* Messages Stream */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
-            {currentMessages
-              .filter(m => !inChatSearchQuery.trim() || m.text.toLowerCase().includes(inChatSearchQuery.toLowerCase()))
-              .map((msg) => (
-              <div
-                key={msg.id}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setSelectedMessageForMenu(msg);
-                }}
-                className={`flex flex-col ${msg.isOutgoing ? 'items-end' : 'items-start'} group`}
-              >
-                {/* Replying To preview */}
-                {msg.replyTo && (
-                  <div className={`text-[10px] text-[#FFB4CE] mb-1 px-3 py-1 rounded-xl bg-black/40 border-l-2 border-[#FF4F87] max-w-[75%]`}>
-                    <span className="font-bold">Replied to {msg.replyTo.senderName}:</span>
-                    <p className="truncate italic">{msg.replyTo.textSnippet}</p>
-                  </div>
-                )}
-
-                {/* Main Bubble */}
-                <div
-                  onClick={() => setSelectedMessageForMenu(msg)}
-                  className={`relative max-w-[80%] p-3.5 rounded-3xl text-xs space-y-1 shadow-md cursor-pointer transition-transform active:scale-[0.98] ${
-                    msg.isOutgoing
-                      ? 'bg-gradient-to-tr from-[#FF4F87] to-[#FF78A8] text-[#FFF1F3] rounded-br-xs shadow-[0_4px_16px_rgba(255,79,135,0.35)]'
-                      : 'glass-panel-elevated text-[#FFF1F3] rounded-bl-xs border border-[#FF78A8]/20'
-                  }`}
-                >
-                  {/* Voice Waveform Player if voice note */}
-                  {msg.type === 'voice' ? (
-                    <VoiceWaveformPlayer 
-                      durationSeconds={msg.voiceDurationSeconds || 8}
-                      waveformAmplitudes={msg.voiceWaveform}
-                      isOutgoing={msg.isOutgoing}
-                    />
+                <span className="text-[10px] text-[#B9A8B3]">
+                  {typingPartnerText ? (
+                    <span className="text-[#FF4F87] font-semibold animate-pulse">{typingPartnerText}</span>
                   ) : (
-                    <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                    currentConv.lastSeenText
                   )}
-
-                  {/* Metadata: Time, Status, Edited */}
-                  <div className={`flex items-center justify-end gap-1.5 text-[9px] ${msg.isOutgoing ? 'text-white/70' : 'text-[#B9A8B3]'}`}>
-                    {msg.isEdited && <span>edited</span>}
-                    <span>{msg.timestamp}</span>
-                    {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-white" />}
-                  </div>
-                </div>
-
-                {/* Emoji Reactions below bubble */}
-                {msg.reactions && msg.reactions.length > 0 && (
-                  <div className="flex items-center gap-1 mt-1 -mb-1 px-1">
-                    {msg.reactions.map((r, i) => (
-                      <span 
-                        key={i}
-                        className="px-2 py-0.5 rounded-full bg-[#1B121D] border border-[#FF78A8]/30 text-[10px] font-bold text-[#FFF1F3] flex items-center gap-1 shadow-sm"
-                      >
-                        <span>{r.emoji}</span>
-                        {r.count > 1 && <span className="text-[9px] text-[#FFB4CE]">{r.count}</span>}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Reply / Edit Preview Bar */}
-          {replyingTo && (
-            <div className="px-4 py-2 bg-[#1B121D] border-t border-[#FF78A8]/20 flex items-center justify-between text-xs animate-fadeIn">
-              <div className="flex items-center gap-2 truncate">
-                <Reply className="w-4 h-4 text-[#FF4F87]" />
-                <div className="truncate">
-                  <span className="text-[10px] font-bold text-[#FFB4CE] block">Replying to {replyingTo.senderName}:</span>
-                  <span className="text-[11px] text-[#FFF1F3] truncate block">{replyingTo.text}</span>
-                </div>
-              </div>
-              <button onClick={() => setReplyingTo(null)} className="text-[#B9A8B3] hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          {editingMessage && (
-            <div className="px-4 py-2 bg-[#1B121D] border-t border-[#FF78A8]/20 flex items-center justify-between text-xs animate-fadeIn">
-              <div className="flex items-center gap-2 truncate">
-                <Edit2 className="w-4 h-4 text-amber-400" />
-                <div className="truncate">
-                  <span className="text-[10px] font-bold text-amber-300 block">Editing message:</span>
-                  <span className="text-[11px] text-[#FFF1F3] truncate block">{editingMessage.text}</span>
-                </div>
-              </div>
-              <button onClick={() => {
-                setEditingMessage(null);
-                setInputMessage('');
-              }} className="text-[#B9A8B3] hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          {/* Action Dock (Telegram + Dating System) */}
-          {isActionDockOpen && (
-            <div className="p-4 bg-[#1B121D] border-t border-[#FF78A8]/20 grid grid-cols-4 gap-3 animate-fadeIn">
-              <button
-                onClick={() => {
-                  if (onOpenGame) onOpenGame();
-                }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
-              >
-                <div className="w-10 h-10 rounded-xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87]">
-                  <Gamepad2 className="w-5 h-5" />
-                </div>
-                <span className="text-[10px] font-bold">Games</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  if (onOpenLuckyDice) onOpenLuckyDice();
-                }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
-              >
-                <div className="w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center text-amber-300">
-                  <Dices className="w-5 h-5" />
-                </div>
-                <span className="text-[10px] font-bold">Lucky Dice</span>
-              </button>
-
-              <button
-                onClick={() => handleSendMessage("Sending you an animated Lucky Rose! 🌹 (+15 Chemistry)", 'gift_event')}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
-              >
-                <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400">
-                  <Gift className="w-5 h-5" />
-                </div>
-                <span className="text-[10px] font-bold">Send Gift</span>
-              </button>
-
-              <button
-                onClick={() => handleSendMessage("Shared Track: 'Resonance' - Home (Lo-Fi Ambient)", 'text')}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
-              >
-                <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
-                  <Music className="w-5 h-5" />
-                </div>
-                <span className="text-[10px] font-bold">Share Song</span>
-              </button>
-            </div>
-          )}
-
-          {/* Composer or Voice Recording Bar */}
-          {isRecordingVoice ? (
-            <div className="p-3 bg-[#1B121D] border-t border-rose-500/40 flex items-center justify-between gap-3 animate-fadeIn">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
-                <span className="text-xs font-bold text-rose-400">
-                  Recording Voice {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, '0')}
                 </span>
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={cancelVoiceRecording}
-                  className="px-3 py-1.5 rounded-xl glass-panel text-xs text-[#B9A8B3] hover:text-white cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={stopVoiceRecording}
-                  className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white flex items-center gap-1 cursor-pointer shadow-lg"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Send</span>
-                </button>
-              </div>
             </div>
-          ) : (
-            <div className="p-3 glass-panel-elevated border-t border-[#FF78A8]/20 flex items-center gap-2">
-              <button
-                onClick={() => setIsActionDockOpen(!isActionDockOpen)}
-                className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
-                  isActionDockOpen 
-                    ? 'bg-[#FF4F87] text-white shadow-[0_0_12px_rgba(255,79,135,0.7)]' 
-                    : 'glass-panel text-[#B9A8B3] hover:text-white'
-                }`}
-                title="Interactive Action Dock"
-              >
-                {isActionDockOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-              </button>
+          </div>
 
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => handleTypingNotice(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder={editingMessage ? "Update message..." : `Message ${currentConv.title}...`}
-                  className="w-full pl-4 pr-10 py-3 rounded-2xl glass-panel text-xs text-[#FFF1F3] placeholder-[#7A6975] focus:outline-none focus:border-[#FF4F87]"
-                />
-                <button 
-                  onClick={startVoiceRecording}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
-                  title="Hold or Click to Record Voice Note"
-                >
-                  <Mic className="w-4 h-4" />
-                </button>
-              </div>
-
-              <button
-                onClick={() => handleSendMessage()}
-                disabled={!inputMessage.trim()}
-                className="w-11 h-11 rounded-2xl pink-gradient-btn flex items-center justify-center text-[#FFF1F3] disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-transform active:scale-95"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          {/* Context Menu Modal */}
-          {selectedMessageForMenu && (
-            <div 
-              onClick={() => setSelectedMessageForMenu(null)}
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center p-4 animate-fadeIn"
+          {/* Calling, Search & Settings Options */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setIsSearchActive(!isSearchActive)}
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
+              title="Search Messages (Ctrl+F)"
             >
-              <div 
-                onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-sm rounded-3xl glass-panel-elevated p-4 border border-[#FF78A8]/30 space-y-3 pink-ambient-glow"
-              >
-                {/* Emoji Reaction Bar */}
-                <div className="flex items-center justify-around py-2 border-b border-[#FF78A8]/15 text-2xl">
-                  {['❤️', '🔥', '✨', '🌹', '😂', '😮'].map(emoji => (
-                    <button
-                      key={emoji}
-                      onClick={() => handleToggleReaction(selectedMessageForMenu.id, emoji)}
-                      className="hover:scale-125 transition-transform cursor-pointer"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Actions List */}
-                <div className="space-y-1 text-xs">
-                  <button
-                    onClick={() => {
-                      setReplyingTo(selectedMessageForMenu);
-                      setSelectedMessageForMenu(null);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
-                  >
-                    <Reply className="w-4 h-4 text-[#FF4F87]" />
-                    <span>Reply</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(selectedMessageForMenu.text);
-                      alert("Copied to clipboard!");
-                      setSelectedMessageForMenu(null);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
-                  >
-                    <Copy className="w-4 h-4 text-[#B9A8B3]" />
-                    <span>Copy Text</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleSaveToSavedMessages(selectedMessageForMenu)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
-                  >
-                    <Bookmark className="w-4 h-4 text-amber-400" />
-                    <span>Save to Saved Messages</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTogglePin(selectedMessageForMenu)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
-                  >
-                    <Pin className="w-4 h-4 text-[#FF78A8]" />
-                    <span>{selectedMessageForMenu.isPinned ? 'Unpin' : 'Pin to Header'}</span>
-                  </button>
-
-                  {selectedMessageForMenu.isOutgoing && (
-                    <button
-                      onClick={() => {
-                        setEditingMessage(selectedMessageForMenu);
-                        setInputMessage(selectedMessageForMenu.text);
-                        setSelectedMessageForMenu(null);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
-                    >
-                      <Edit2 className="w-4 h-4 text-amber-300" />
-                      <span>Edit Message</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => handleDeleteMessage(selectedMessageForMenu.id, true)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-950/20 cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Delete for Everyone</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleReportUser('Inappropriate Content')}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-amber-400 hover:bg-amber-950/20 cursor-pointer"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Report to Trust & Safety</span>
-                  </button>
-
-                  <button
-                    onClick={handleBlockUser}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-950/20 cursor-pointer"
-                  >
-                    <Lock className="w-4 h-4" />
-                    <span>Block User</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+              <Search className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => startCall('voice')}
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
+              title="Encrypted Voice Call"
+            >
+              <Phone className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => startCall('video')}
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
+              title="Encrypted Video Call"
+            >
+              <Video className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setIsChatSettingsOpen(!isChatSettingsOpen)}
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
+              title="Chat Options & Privacy"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      ) : (
-        /* ======================================================== */
-        /* VIEW 2: TELEGRAM-STYLE CONVERSATION INBOX WITH FOLDERS   */
-        /* ======================================================== */
-        <div className="space-y-3 px-3 pt-2 animate-fadeIn">
-          {/* Header */}
-          <div className="flex items-center justify-between px-1">
-            <h1 className="text-xl font-black text-[#FFF1F3] tracking-tight">Messages</h1>
-            <span className="text-xs text-[#FFB4CE] font-bold">Encrypted Cloud</span>
-          </div>
 
-          {/* Folder Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-            {folders.map(folder => (
-              <button
-                key={folder.id}
-                onClick={() => setActiveFolder(folder.id)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-1.5 ${
-                  activeFolder === folder.id 
-                    ? 'bg-[#FF4F87] text-white shadow-[0_0_12px_rgba(255,79,135,0.6)]' 
-                    : 'glass-panel text-[#B9A8B3] hover:text-white'
-                }`}
-              >
-                <span>{folder.title}</span>
-                {folder.badgeCount !== undefined && (
-                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${activeFolder === folder.id ? 'bg-white text-[#FF4F87]' : 'bg-[#FF4F87] text-white'}`}>
-                    {folder.badgeCount}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+        {/* Chat Settings & Privacy Drawer */}
+        {isChatSettingsOpen && (
+          <div className="absolute right-4 top-14 w-60 rounded-3xl glass-panel-elevated p-3 border border-[#FF78A8]/30 z-40 shadow-2xl space-y-1 animate-fadeIn text-xs">
+            <button
+              onClick={() => {
+                alert("Notifications muted for 8 hours.");
+                setIsChatSettingsOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+            >
+              <VolumeX className="w-4 h-4 text-[#B9A8B3]" />
+              <span>Mute Notifications</span>
+            </button>
 
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-[#B9A8B3] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <button
+              onClick={() => {
+                alert("Conversation archived.");
+                setIsChatSettingsOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+            >
+              <Archive className="w-4 h-4 text-[#B9A8B3]" />
+              <span>Archive Conversation</span>
+            </button>
+
+            <button
+              onClick={() => {
+                alert("Auto-delete set to 24 hours.");
+                setIsChatSettingsOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+            >
+              <Clock className="w-4 h-4 text-[#FF78A8]" />
+              <span>Auto-Delete (24h)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                handleBlockUser();
+                setIsChatSettingsOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-950/20 cursor-pointer"
+            >
+              <UserX className="w-4 h-4" />
+              <span>Block User</span>
+            </button>
+          </div>
+        )}
+
+        {/* In-Chat Search Bar */}
+        {isSearchActive && (
+          <div className="px-4 py-2 bg-[#1B121D] border-b border-[#FF78A8]/20 flex items-center gap-2 animate-fadeIn">
+            <Search className="w-4 h-4 text-[#FF4F87]" />
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search conversations, saved notes, or matches..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl glass-panel text-xs text-[#FFF1F3] placeholder-[#7A6975] focus:outline-none focus:border-[#FF4F87]"
+              value={inChatSearchQuery}
+              onChange={(e) => setInChatSearchQuery(e.target.value)}
+              placeholder="Search words in this chat..."
+              className="flex-1 bg-transparent text-xs text-[#FFF1F3] placeholder-[#7A6975] focus:outline-none"
             />
+            <button onClick={() => { setIsSearchActive(false); setInChatSearchQuery(''); }} className="text-[#B9A8B3] hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Pinned Message Banner */}
+        {pinnedMessage && (
+          <div className="px-4 py-2 bg-[#1B121D] border-b border-[#FF78A8]/20 flex items-center justify-between text-xs animate-fadeIn">
+            <div className="flex items-center gap-2 truncate">
+              <Pin className="w-3.5 h-3.5 text-[#FF4F87] flex-shrink-0" />
+              <div className="truncate">
+                <span className="text-[10px] font-bold text-[#FFB4CE] block">Pinned Message:</span>
+                <span className="text-[11px] text-[#FFF1F3] truncate block">{pinnedMessage.text}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => handleTogglePin(pinnedMessage)}
+              className="text-[10px] text-[#B9A8B3] hover:text-rose-400 ml-2"
+              title="Unpin"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Messages Stream with Grouping & Date Separators */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-1.5 no-scrollbar">
+          {/* Floating Date Separator */}
+          <div className="flex justify-center my-2">
+            <span className="px-3 py-0.5 rounded-full bg-black/40 border border-[#FF78A8]/20 text-[10px] font-bold text-[#FFB4CE] shadow-sm">
+              Today
+            </span>
           </div>
 
-          {/* Conversation List */}
-          <div className="space-y-2 pt-1">
-            {filteredConversations.map((conv) => (
-              <div
-                key={conv.id}
-                onClick={() => setActiveConversationId(conv.id)}
-                className="relative p-3.5 rounded-3xl glass-panel-elevated border border-[#FF78A8]/20 flex items-center justify-between gap-3 cursor-pointer hover:border-[#FF4F87]/60 transition-all shadow-md group"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="relative flex-shrink-0">
-                    <img 
-                      src={conv.avatar} 
-                      alt={conv.title} 
-                      className={`w-12 h-12 rounded-2xl object-cover border ${
-                        conv.id === 'saved_messages' ? 'border-amber-400/50' : 'border-[#FF78A8]/40'
-                      }`}
-                    />
-                    {conv.isOnline && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#100B12]" />
-                    )}
-                  </div>
+          {currentMessages
+            .filter(m => !inChatSearchQuery.trim() || m.text.toLowerCase().includes(inChatSearchQuery.toLowerCase()))
+            .map((msg, idx) => {
+              const groupedPrev = isGroupedWithPrevious(idx);
+              const groupedNext = isGroupedWithNext(idx);
 
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <h4 className="text-xs font-bold text-[#FFF1F3] truncate">{conv.title}</h4>
-                      {conv.isVerified && (
-                        <ShieldCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-                      )}
-                      {conv.isPinned && (
-                        <Pin className="w-3 h-3 text-[#FF4F87] flex-shrink-0" />
-                      )}
+              // Tail corner rounding rules (Telegram Web K reference)
+              let cornerClass = 'rounded-3xl';
+              if (msg.isOutgoing) {
+                if (groupedPrev && groupedNext) cornerClass = 'rounded-l-3xl rounded-r-lg';
+                else if (groupedPrev) cornerClass = 'rounded-l-3xl rounded-tl-lg rounded-br-xs';
+                else if (groupedNext) cornerClass = 'rounded-3xl rounded-br-lg';
+                else cornerClass = 'rounded-3xl rounded-br-xs';
+              } else {
+                if (groupedPrev && groupedNext) cornerClass = 'rounded-r-3xl rounded-l-lg';
+                else if (groupedPrev) cornerClass = 'rounded-r-3xl rounded-tr-lg rounded-bl-xs';
+                else if (groupedNext) cornerClass = 'rounded-3xl rounded-bl-lg';
+                else cornerClass = 'rounded-3xl rounded-bl-xs';
+              }
+
+              return (
+                <div
+                  key={msg.id}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setSelectedMessageForMenu(msg);
+                  }}
+                  className={`flex flex-col ${msg.isOutgoing ? 'items-end' : 'items-start'} group ${groupedPrev ? 'mt-0.5' : 'mt-2'}`}
+                >
+                  {/* Replying To preview banner */}
+                  {msg.replyTo && (
+                    <div className="text-[10px] text-[#FFB4CE] mb-1 px-3 py-1 rounded-xl bg-black/40 border-l-2 border-[#FF4F87] max-w-[75%]">
+                      <span className="font-bold">Replied to {msg.replyTo.senderName}:</span>
+                      <p className="truncate italic">{msg.replyTo.textSnippet}</p>
                     </div>
-                    <p className={`text-[11px] truncate mt-0.5 ${conv.unreadCount > 0 ? 'text-[#FFB4CE] font-bold' : 'text-[#B9A8B3]'}`}>
-                      {conv.draftText ? (
-                        <span className="text-amber-400 italic">Draft: {conv.draftText}</span>
-                      ) : (
-                        conv.lastMessage?.text || 'Tap to send a message'
-                      )}
-                    </p>
-                  </div>
-                </div>
+                  )}
 
-                <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                  <span className="text-[10px] text-[#7A6975]">{conv.lastMessage?.timestamp}</span>
-                  {conv.unreadCount > 0 ? (
-                    <span className="w-4 h-4 rounded-full bg-[#FF4F87] text-[#FFF1F3] text-[9px] font-black flex items-center justify-center shadow-[0_0_8px_#FF4F87]">
-                      {conv.unreadCount}
-                    </span>
-                  ) : conv.isPinned ? (
-                    <span className="text-[10px] text-[#FF4F87]">Pinned</span>
-                  ) : null}
+                  {/* Main Bubble */}
+                  <div
+                    onClick={() => setSelectedMessageForMenu(msg)}
+                    className={`relative max-w-[80%] p-3 text-xs space-y-1 shadow-md cursor-pointer transition-transform active:scale-[0.98] ${cornerClass} ${
+                      msg.isOutgoing
+                        ? 'bg-gradient-to-tr from-[#FF4F87] to-[#FF78A8] text-[#FFF1F3] shadow-[0_4px_16px_rgba(255,79,135,0.35)]'
+                        : 'glass-panel-elevated text-[#FFF1F3] border border-[#FF78A8]/20'
+                    }`}
+                  >
+                    {/* Media Image Attachment with Lightbox Viewer */}
+                    {msg.mediaUrl && msg.type !== 'voice' && (
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMediaViewerUrl(msg.mediaUrl!);
+                        }}
+                        className="rounded-2xl overflow-hidden mb-1 border border-white/20 group/media relative"
+                      >
+                        <img 
+                          src={msg.mediaUrl} 
+                          alt="Attachment" 
+                          className="w-full max-h-60 object-cover hover:scale-105 transition-transform" 
+                        />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/media:opacity-100 flex items-center justify-center transition-opacity">
+                          <Maximize2 className="w-5 h-5 text-white drop-shadow-md" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Voice Waveform Player */}
+                    {msg.type === 'voice' ? (
+                      <VoiceWaveformPlayer 
+                        durationSeconds={msg.voiceDurationSeconds || 8}
+                        waveformAmplitudes={msg.voiceWaveform}
+                        isOutgoing={msg.isOutgoing}
+                      />
+                    ) : (
+                      <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                    )}
+
+                    {/* Metadata: Time, Status, Edited */}
+                    <div className={`flex items-center justify-end gap-1.5 text-[9px] ${msg.isOutgoing ? 'text-white/70' : 'text-[#B9A8B3]'}`}>
+                      {msg.isEdited && <span>edited</span>}
+                      <span>{msg.timestamp}</span>
+                      {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-white" />}
+                    </div>
+                  </div>
+
+                  {/* Emoji Reactions ribbon */}
+                  {msg.reactions && msg.reactions.length > 0 && (
+                    <div className="flex items-center gap-1 mt-1 -mb-1 px-1">
+                      {msg.reactions.map((r, i) => (
+                        <span 
+                          key={i}
+                          className="px-2 py-0.5 rounded-full bg-[#1B121D] border border-[#FF78A8]/30 text-[10px] font-bold text-[#FFF1F3] flex items-center gap-1 shadow-sm"
+                        >
+                          <span>{r.emoji}</span>
+                          {r.count > 1 && <span className="text-[9px] text-[#FFB4CE]">{r.count}</span>}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              );
+            })}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Reply / Edit Preview Bar */}
+        {replyingTo && (
+          <div className="px-4 py-2 bg-[#1B121D] border-t border-[#FF78A8]/20 flex items-center justify-between text-xs animate-fadeIn">
+            <div className="flex items-center gap-2 truncate">
+              <Reply className="w-4 h-4 text-[#FF4F87]" />
+              <div className="truncate">
+                <span className="text-[10px] font-bold text-[#FFB4CE] block">Replying to {replyingTo.senderName}:</span>
+                <span className="text-[11px] text-[#FFF1F3] truncate block">{replyingTo.text}</span>
               </div>
-            ))}
+            </div>
+            <button onClick={() => setReplyingTo(null)} className="text-[#B9A8B3] hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {editingMessage && (
+          <div className="px-4 py-2 bg-[#1B121D] border-t border-[#FF78A8]/20 flex items-center justify-between text-xs animate-fadeIn">
+            <div className="flex items-center gap-2 truncate">
+              <Edit2 className="w-4 h-4 text-amber-400" />
+              <div className="truncate">
+                <span className="text-[10px] font-bold text-amber-300 block">Editing message:</span>
+                <span className="text-[11px] text-[#FFF1F3] truncate block">{editingMessage.text}</span>
+              </div>
+            </div>
+            <button onClick={() => {
+              setEditingMessage(null);
+              setInputMessage('');
+            }} className="text-[#B9A8B3] hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Emoji / Sticker / GIF Drawer (Telegram Web K Benchmark) */}
+        {isEmojiPickerOpen && (
+          <div className="h-48 bg-[#1B121D] border-t border-[#FF78A8]/20 flex flex-col animate-fadeIn">
+            <div className="flex items-center justify-around border-b border-[#FF78A8]/10 py-1.5 text-xs font-bold">
+              <button 
+                onClick={() => setPickerTab('emoji')} 
+                className={`px-3 py-1 rounded-full cursor-pointer ${pickerTab === 'emoji' ? 'bg-[#FF4F87] text-white' : 'text-[#B9A8B3]'}`}
+              >
+                Emoji
+              </button>
+              <button 
+                onClick={() => setPickerTab('stickers')} 
+                className={`px-3 py-1 rounded-full cursor-pointer ${pickerTab === 'stickers' ? 'bg-[#FF4F87] text-white' : 'text-[#B9A8B3]'}`}
+              >
+                Stickers
+              </button>
+              <button 
+                onClick={() => setPickerTab('gifs')} 
+                className={`px-3 py-1 rounded-full cursor-pointer ${pickerTab === 'gifs' ? 'bg-[#FF4F87] text-white' : 'text-[#B9A8B3]'}`}
+              >
+                GIFs
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 grid grid-cols-8 gap-2 text-2xl no-scrollbar">
+              {['❤️', '🔥', '✨', '🌹', '😂', '😍', '😘', '🥺', '🎉', '🌟', '🧁', '🥂', '💌', '🌸', '💖', '🥰', '🌙', '💫', '🎶', '🎀', '💎', '🍓', '🍰', '🕊️'].map(e => (
+                <button 
+                  key={e} 
+                  onClick={() => handleSendMessage(e, 'text')} 
+                  className="hover:scale-125 transition-transform cursor-pointer"
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Action Dock (Telegram + Dating System) */}
+        {isActionDockOpen && (
+          <div className="p-4 bg-[#1B121D] border-t border-[#FF78A8]/20 grid grid-cols-4 gap-3 animate-fadeIn">
+            <button
+              onClick={() => {
+                if (onOpenGame) onOpenGame();
+              }}
+              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87]">
+                <Gamepad2 className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold">Games</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (onOpenLuckyDice) onOpenLuckyDice();
+              }}
+              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center text-amber-300">
+                <Dices className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold">Lucky Dice</span>
+            </button>
+
+            <button
+              onClick={() => handleSendMessage("Sending you an animated Lucky Rose! 🌹 (+15 Chemistry)", 'gift_event')}
+              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400">
+                <Gift className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold">Send Gift</span>
+            </button>
+
+            <button
+              onClick={() => handleSendMessage("Shared Track: 'Resonance' - Home (Lo-Fi Ambient)", 'text')}
+              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                <Music className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold">Share Song</span>
+            </button>
+          </div>
+        )}
+
+        {/* Composer / Audio Recorder Bar */}
+        {isRecordingVoice ? (
+          <div className="p-3 bg-[#1B121D] border-t border-rose-500/40 flex items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+              <span className="text-xs font-bold text-rose-400">
+                Recording Voice {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={cancelVoiceRecording}
+                className="px-3 py-1.5 rounded-xl glass-panel text-xs text-[#B9A8B3] hover:text-white cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={stopVoiceRecording}
+                className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white flex items-center gap-1 cursor-pointer shadow-lg"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Send</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 glass-panel-elevated border-t border-[#FF78A8]/20 flex items-center gap-2">
+            <button
+              onClick={() => setIsActionDockOpen(!isActionDockOpen)}
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
+                isActionDockOpen 
+                  ? 'bg-[#FF4F87] text-white shadow-[0_0_12px_rgba(255,79,135,0.7)]' 
+                  : 'glass-panel text-[#B9A8B3] hover:text-white'
+              }`}
+              title="Interactive Action Dock"
+            >
+              {isActionDockOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            </button>
+
+            <button
+              onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
+                isEmojiPickerOpen ? 'text-[#FF4F87]' : 'text-[#B9A8B3] hover:text-white'
+              }`}
+              title="Emoji, Stickers & GIFs"
+            >
+              <Smile className="w-4 h-4" />
+            </button>
+
+            <div className="relative flex-1">
+              <input
+                ref={composerInputRef}
+                type="text"
+                value={inputMessage}
+                onChange={(e) => handleTypingNotice(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder={editingMessage ? "Update message (Esc to cancel)..." : `Message ${currentConv.title}...`}
+                className="w-full pl-4 pr-10 py-3 rounded-2xl glass-panel text-xs text-[#FFF1F3] placeholder-[#7A6975] focus:outline-none focus:border-[#FF4F87]"
+              />
+              <button 
+                onClick={startVoiceRecording}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
+                title="Hold or Click to Record Voice Note"
+              >
+                <Mic className="w-4 h-4" />
+              </button>
+            </div>
+
+            <button
+              onClick={() => handleSendMessage()}
+              disabled={!inputMessage.trim()}
+              className="w-11 h-11 rounded-2xl pink-gradient-btn flex items-center justify-center text-[#FFF1F3] disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-transform active:scale-95"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // =========================================================================
+  // MAIN RENDER (RESPONSIVE: 2-COLUMN ON DESKTOP, SWITCHER ON MOBILE)
+  // =========================================================================
+  return (
+    <div className={`w-full mx-auto select-none ${isDesktopLayout ? 'max-w-6xl h-[calc(100vh-6rem)] flex rounded-3xl overflow-hidden glass-panel-elevated border border-[#FF78A8]/30' : 'max-w-md min-h-[calc(100dvh-5.5rem)] flex flex-col'}`}>
+      
+      {/* DESKTOP 2-COLUMN VIEW */}
+      {isDesktopLayout ? (
+        <>
+          <div className="w-80 border-r border-[#FF78A8]/20 flex flex-col bg-[#140D17]">
+            {renderConversationList()}
+          </div>
+          <div className="flex-1 flex flex-col bg-[#100B12]">
+            {renderActiveConversation()}
+          </div>
+        </>
+      ) : (
+        /* MOBILE VIEW (SWITCHES BETWEEN INBOX LIST AND INDIVIDUAL CHAT) */
+        activeConversationId ? renderActiveConversation() : renderConversationList()
+      )}
+
+      {/* Context Menu Modal */}
+      {selectedMessageForMenu && (
+        <div 
+          onClick={() => setSelectedMessageForMenu(null)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center p-4 animate-fadeIn"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-3xl glass-panel-elevated p-4 border border-[#FF78A8]/30 space-y-3 pink-ambient-glow"
+          >
+            {/* Emoji Reaction Bar */}
+            <div className="flex items-center justify-around py-2 border-b border-[#FF78A8]/15 text-2xl">
+              {['❤️', '🔥', '✨', '🌹', '😂', '😮'].map(emoji => (
+                <button
+                  key={emoji}
+                  onClick={() => handleToggleReaction(selectedMessageForMenu.id, emoji)}
+                  className="hover:scale-125 transition-transform cursor-pointer"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            {/* Actions List */}
+            <div className="space-y-1 text-xs">
+              <button
+                onClick={() => {
+                  setReplyingTo(selectedMessageForMenu);
+                  setSelectedMessageForMenu(null);
+                  composerInputRef.current?.focus();
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+              >
+                <Reply className="w-4 h-4 text-[#FF4F87]" />
+                <span>Reply</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(selectedMessageForMenu.text);
+                  alert("Copied to clipboard!");
+                  setSelectedMessageForMenu(null);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+              >
+                <Copy className="w-4 h-4 text-[#B9A8B3]" />
+                <span>Copy Text</span>
+              </button>
+
+              <button
+                onClick={() => handleSaveToSavedMessages(selectedMessageForMenu)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+              >
+                <Bookmark className="w-4 h-4 text-amber-400" />
+                <span>Save to Personal Cloud</span>
+              </button>
+
+              <button
+                onClick={() => handleTogglePin(selectedMessageForMenu)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+              >
+                <Pin className="w-4 h-4 text-[#FF78A8]" />
+                <span>{selectedMessageForMenu.isPinned ? 'Unpin' : 'Pin to Header'}</span>
+              </button>
+
+              {selectedMessageForMenu.isOutgoing && (
+                <button
+                  onClick={() => {
+                    setEditingMessage(selectedMessageForMenu);
+                    setInputMessage(selectedMessageForMenu.text);
+                    setSelectedMessageForMenu(null);
+                    composerInputRef.current?.focus();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+                >
+                  <Edit2 className="w-4 h-4 text-amber-300" />
+                  <span>Edit Message (or press Up arrow)</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => handleDeleteMessage(selectedMessageForMenu.id, true)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-950/20 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete for Everyone</span>
+              </button>
+
+              <button
+                onClick={() => handleReportUser('Inappropriate Content')}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-amber-400 hover:bg-amber-950/20 cursor-pointer"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Report to Trust & Safety</span>
+              </button>
+
+              <button
+                onClick={handleBlockUser}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-950/20 cursor-pointer"
+              >
+                <Lock className="w-4 h-4" />
+                <span>Block User</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* WebRTC Video / Voice Call Modal with Real Stream Elements */}
+      {/* Fullscreen Media Lightbox Viewer (Telegram Web K reference) */}
+      {activeMediaViewerUrl && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col justify-between p-4 animate-fadeIn">
+          <div className="flex items-center justify-between text-white p-2">
+            <span className="text-xs font-bold text-[#FFB4CE]">Media Viewer</span>
+            <div className="flex items-center gap-3">
+              <a 
+                href={activeMediaViewerUrl} 
+                download 
+                target="_blank" 
+                rel="noreferrer"
+                className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-white hover:text-[#FF4F87]"
+              >
+                <Download className="w-4 h-4" />
+              </a>
+              <button 
+                onClick={() => setActiveMediaViewerUrl(null)} 
+                className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-white hover:text-rose-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center p-2">
+            <img 
+              src={activeMediaViewerUrl} 
+              alt="Fullscreen Media" 
+              className="max-h-[80vh] max-w-full rounded-2xl object-contain shadow-2xl" 
+            />
+          </div>
+
+          <div className="flex justify-center pb-4 text-xs text-[#B9A8B3]">
+            <span>Press Esc to close</span>
+          </div>
+        </div>
+      )}
+
+      {/* WebRTC Video / Voice Call Modal */}
       {isCalling && (
         <div className="fixed inset-0 z-50 bg-[#100B12]/95 backdrop-blur-xl flex flex-col items-center justify-between p-6 text-center animate-fadeIn">
-          {/* Top Info */}
           <div className="pt-6 space-y-2">
             <h3 className="text-lg font-black text-[#FFF1F3]">{currentConv?.title}</h3>
             <p className="text-xs text-[#FFB4CE]">
@@ -1077,7 +1407,6 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             </p>
           </div>
 
-          {/* Video or Avatar Display */}
           <div className="relative w-full max-w-sm flex-1 flex items-center justify-center my-4 overflow-hidden rounded-3xl bg-black/60 border border-[#FF78A8]/30">
             {isCalling === 'video' ? (
               <div className="relative w-full h-full min-h-[300px]">
@@ -1115,7 +1444,6 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             )}
           </div>
 
-          {/* Controls Bar */}
           <div className="flex items-center gap-4 pb-6">
             <button
               onClick={() => {

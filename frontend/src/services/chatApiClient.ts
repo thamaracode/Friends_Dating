@@ -242,6 +242,90 @@ export class ChatApiClient {
     });
     return await res.json();
   }
+
+  // -------------------------------------------------------------
+  // Digital Life / Social Links Methods
+  // -------------------------------------------------------------
+
+  public async recognizeSocialUrl(url: string) {
+    const res = await fetch(`${API_BASE}/profile/social-links/recognize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    if (!res.ok) throw new Error('Failed to recognize social URL');
+    return await res.json();
+  }
+
+  public async getMySocialLinks() {
+    const res = await fetch(`${API_BASE}/profile/social-links?userId=${this.currentUserId}`);
+    if (!res.ok) throw new Error('Failed to fetch social links');
+    const data = await res.json();
+    return data.links;
+  }
+
+  public async addSocialLink(params: {
+    url: string;
+    customLabel?: string;
+    visibility: 'public' | 'matches_only' | 'private';
+  }) {
+    const res = await fetch(`${API_BASE}/profile/social-links`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: this.currentUserId,
+        ...params
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to add social link');
+    return data;
+  }
+
+  public async updateSocialLink(id: string, params: {
+    customLabel?: string;
+    visibility?: 'public' | 'matches_only' | 'private';
+    sortOrder?: number;
+  }) {
+    const res = await fetch(`${API_BASE}/profile/social-links/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: this.currentUserId,
+        ...params
+      })
+    });
+    if (!res.ok) throw new Error('Failed to update social link');
+    return await res.json();
+  }
+
+  public async deleteSocialLink(id: string) {
+    const res = await fetch(`${API_BASE}/profile/social-links/${id}?userId=${this.currentUserId}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error('Failed to delete social link');
+    return await res.json();
+  }
+
+  public async reorderSocialLinks(linkIds: string[]) {
+    const res = await fetch(`${API_BASE}/profile/social-links-reorder`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: this.currentUserId,
+        linkIds
+      })
+    });
+    if (!res.ok) throw new Error('Failed to reorder links');
+    return await res.json();
+  }
+
+  public async getUserPublicSocialLinks(targetUserId: string) {
+    const res = await fetch(`${API_BASE}/users/${targetUserId}/social-links?callerId=${this.currentUserId}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.links || [];
+  }
 }
 
 export const chatClient = new ChatApiClient('usr_me');

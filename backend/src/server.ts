@@ -6,6 +6,7 @@ import multer from 'multer';
 import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 import { db, initDatabase } from './db.js';
+import { recognizeSocialUrl, PLATFORM_REGISTRY } from './social-platforms/registry.js';
 
 initDatabase();
 
@@ -714,6 +715,239 @@ app.post('/api/v1/games/start', (req, res) => {
 
   res.json({ success: true, gameId: id, gameType, state: initialState });
 });
+
+// -------------------------------------------------------------
+// 16. DIGITAL LIFE / PUBLIC SOCIAL PROFILE LINKS
+// -------------------------------------------------------------
+
+// URL Recognition Endpoint
+app.post('/api/v1/profile/social-links/recognize', (req, res) => {
+  const { url } = req.body;
+  if (!url || typeof url !== 'string') {
+    return res.status(400).json({ success: false, error: 'A valid URL string is required' });
+  }
+
+  const result = recognizeSocialUrl(url);
+  res.json(result);
+});
+
+// Get Current User's Social Links
+app.get('/api/v1/profile/social-links', (req, res) => {
+  const userId = (req.query.userId as string) || 'usr_me';
+
+  const rows = db.prepare(`
+    SELECT * FROM user_social_links 
+    WHERE user_id = ? 
+    ORDER BY sort_order ASC, created_at ASC
+  `).all(userId) as any[];
+
+  const links = rows.map(r => {
+    const config = PLATFORM_REGISTRY[r.platform_id];
+    return {
+      id: r.id,
+      userId: r.user_id,
+      platformId: r.platform_id,
+      platformName: config ? config.name : (r.custom_label || 'Website'),
+      category: config ? config.category : 'web',
+      color: config ? config.color : '#FF4F87',
+      badgeBg: config ? config.badgeBg : 'rgba(255, 79, 135, 0.15)',
+      iconName: config ? config.iconName : 'Globe',
+      originalUrl: r.original_url,
+      canonicalUrl: r.canonical_url,
+      username: r.username,
+      customLabel: r.custom_label,
+      visibility: r.visibility,
+      sortOrder: r.sort_order,
+      verificationStatus: r.verification_status,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    };
+  });
+
+  res.json({ success: true, links });
+});
+
+// Add Social Link
+app.post('/api/v1/profile/social-links', (req, res) => {
+  const { 
+    userId = 'usr_me', 
+    url, 
+    customLabel, 
+    visibility = 'public' 
+  } = req.body;
+
+  if (!url) return res.status(400).json({ error: 'URL is required' });
+
+  // 1. Recognize and validate server-side
+  const recognized = recognizeSocialUrl(url);
+  if (!recognized.success) {
+    return res.status(400).json({ error: recognized.error || 'Invalid profile URL' });
+  }
+
+  // 2. Check for duplicate canonical URL for this user
+  const existing = db.prepare('SELECT id FROM user_social_links WHERE user_id = ? AND canonical_url = ?')
+    .get(userId, recognized.canonicalUrl);
+  if (existing) {
+    return res.status(409).json({ error: 'This profile link has already been added to your Digital Life' });
+  }
+
+  // 3. Get next sort_order
+  const maxOrderRow = db.prepare('SELECT COALESCE(MAX(sort_order), -1) + 1 as next_order FROM user_social_links WHERE user_id = ?')
+    .get(userId) as { next_order: number };
+  const sortOrder = maxOrderRow.next_order;
+
+  const id = `link_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO user_social_links (
+      id, user_id, platform_id, original_url, canonical_url,
+      username, custom_label, visibility, sort_order, verification_status,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'SELF_DECLARED', ?, ?)
+  `).run(
+    id,
+    userId,
+    recognized.platformId,
+    url,
+    recognized.canonicalUrl,
+    recognized.username || null,
+    customLabel || null,
+    visibility,
+    sortOrder,
+    now,
+    now
+  );
+
+  const newLink = {
+    id,
+    userId,
+    platformId: recognized.platformId,
+    platformName: recognized.platformName,
+    category: recognized.category,
+    color: recognized.color,
+    badgeBg: recognized.badgeBg,
+    iconName: recognized.iconName,
+    originalUrl: url,
+    canonicalUrl: recognized.canonicalUrl,
+    username: recognized.username,
+    customLabel: customLabel || null,
+    visibility,
+    sortOrder,
+    verificationStatus: 'SELF_DECLARED',
+    createdAt: now,
+    updatedAt: now
+  };
+
+  res.status(201).json({ success: true, link: newLink });
+});
+
+// Update Social Link (Visibility, Custom Label, Sort Order)
+app.patch('/api/v1/profile/social-links/:id', (req, res) => {
+  const { id } = req.params;
+  const { userId = 'usr_me', customLabel, visibility, sortOrder } = req.body;
+
+  const link = db.prepare('SELECT * FROM user_social_links WHERE id = ?').get(id) as any;
+  if (!link) return res.status(404).json({ error: 'Social link not found' });
+  if (link.user_id !== userId) return res.status(403).json({ error: 'Unauthorized to edit this link' });
+
+  const updatedLabel = customLabel !== undefined ? customLabel : link.custom_label;
+  const updatedVisibility = visibility !== undefined ? visibility : link.visibility;
+  const updatedOrder = sortOrder !== undefined ? sortOrder : link.sort_order;
+  const now = Date.now();
+
+  db.prepare(`
+    UPDATE user_social_links 
+    SET custom_label = ?, visibility = ?, sort_order = ?, updated_at = ?
+    WHERE id = ?
+  `).run(updatedLabel, updatedVisibility, updatedOrder, now, id);
+
+  res.json({ success: true, updated: true });
+});
+
+// Delete Social Link
+app.delete('/api/v1/profile/social-links/:id', (req, res) => {
+  const { id } = req.params;
+  const userId = (req.query.userId as string) || 'usr_me';
+
+  const link = db.prepare('SELECT user_id FROM user_social_links WHERE id = ?').get(id) as any;
+  if (!link) return res.status(404).json({ error: 'Social link not found' });
+  if (link.user_id !== userId) return res.status(403).json({ error: 'Unauthorized to delete this link' });
+
+  db.prepare('DELETE FROM user_social_links WHERE id = ?').run(id);
+  res.json({ success: true, deleted: true });
+});
+
+// Reorder Social Links
+app.patch('/api/v1/profile/social-links-reorder', (req, res) => {
+  const { userId = 'usr_me', linkIds } = req.body;
+  if (!Array.isArray(linkIds)) {
+    return res.status(400).json({ error: 'linkIds array is required' });
+  }
+
+  const tx = db.transaction(() => {
+    linkIds.forEach((id, idx) => {
+      db.prepare('UPDATE user_social_links SET sort_order = ? WHERE id = ? AND user_id = ?').run(idx, id, userId);
+    });
+  });
+
+  tx();
+  res.json({ success: true, reordered: true });
+});
+
+// View Public / Matched Social Links for Target User (Strict Visibility Authorization)
+app.get('/api/v1/users/:userId/social-links', (req, res) => {
+  const { userId: targetUserId } = req.params;
+  const callerId = (req.query.callerId as string) || 'usr_anonymous';
+
+  // Determine relationship between caller and target
+  let allowedVisibilities: string[] = ['public'];
+
+  if (callerId === targetUserId) {
+    allowedVisibilities = ['public', 'matches_only', 'private'];
+  } else {
+    // Check if matched in a direct conversation
+    const isMatched = db.prepare(`
+      SELECT 1 FROM conversations c
+      JOIN conversation_members cm1 ON c.id = cm1.conversation_id AND cm1.user_id = ?
+      JOIN conversation_members cm2 ON c.id = cm2.conversation_id AND cm2.user_id = ?
+      WHERE c.type = 'direct'
+    `).get(callerId, targetUserId);
+
+    if (isMatched) {
+      allowedVisibilities = ['public', 'matches_only'];
+    }
+  }
+
+  const placeholders = allowedVisibilities.map(() => '?').join(',');
+  const rows = db.prepare(`
+    SELECT * FROM user_social_links 
+    WHERE user_id = ? AND visibility IN (${placeholders})
+    ORDER BY sort_order ASC, created_at ASC
+  `).all(targetUserId, ...allowedVisibilities) as any[];
+
+  const links = rows.map(r => {
+    const config = PLATFORM_REGISTRY[r.platform_id];
+    return {
+      id: r.id,
+      userId: r.user_id,
+      platformId: r.platform_id,
+      platformName: config ? config.name : (r.custom_label || 'Website'),
+      category: config ? config.category : 'web',
+      color: config ? config.color : '#FF4F87',
+      badgeBg: config ? config.badgeBg : 'rgba(255, 79, 135, 0.15)',
+      iconName: config ? config.iconName : 'Globe',
+      canonicalUrl: r.canonical_url,
+      username: r.username,
+      customLabel: r.custom_label,
+      visibility: r.visibility,
+      verificationStatus: r.verification_status
+    };
+  });
+
+  res.json({ success: true, links });
+});
+
 
 const PORT = 3001;
 server.listen(PORT, () => {

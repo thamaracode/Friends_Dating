@@ -173,11 +173,30 @@ export function initDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
-    -- Indexes for sub-millisecond timeline queries
+    -- Digital Life: User Social & Public Profile Links table
+    CREATE TABLE IF NOT EXISTS user_social_links (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      platform_id TEXT NOT NULL,
+      original_url TEXT NOT NULL,
+      canonical_url TEXT NOT NULL,
+      username TEXT,
+      custom_label TEXT,
+      visibility TEXT NOT NULL CHECK(visibility IN ('public', 'matches_only', 'private')) DEFAULT 'public',
+      sort_order INTEGER DEFAULT 0,
+      verification_status TEXT NOT NULL DEFAULT 'SELF_DECLARED',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      UNIQUE (user_id, canonical_url),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    -- Indexes for sub-millisecond timeline and profile queries
     CREATE INDEX IF NOT EXISTS idx_messages_conv_seq ON messages(conversation_id, sequence_number);
     CREATE INDEX IF NOT EXISTS idx_members_user ON conversation_members(user_id);
     CREATE INDEX IF NOT EXISTS idx_reactions_msg ON message_reactions(message_id);
     CREATE INDEX IF NOT EXISTS idx_sched_time ON scheduled_messages(scheduled_for, status);
+    CREATE INDEX IF NOT EXISTS idx_social_user_vis ON user_social_links(user_id, visibility, sort_order);
   `);
 
   seedInitialData();

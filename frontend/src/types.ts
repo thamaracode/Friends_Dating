@@ -29,6 +29,25 @@ export type DiscoveryMode = 'swipe' | 'video' | 'social' | 'personality';
 
 export type VisibilityLevel = 'public' | 'members_only' | 'connections_only' | 'only_me';
 
+export interface SocialLinkItem {
+  id: string;
+  userId: string;
+  platformId: string;
+  platformName: string;
+  category: string;
+  color: string;
+  badgeBg: string;
+  iconName: string;
+  originalUrl?: string;
+  canonicalUrl: string;
+  username?: string;
+  customLabel?: string;
+  visibility: 'public' | 'matches_only' | 'private';
+  sortOrder?: number;
+  verificationStatus: string;
+}
+
+
 export interface FieldPrivacySetting {
   fieldKey: string;
   label: string;

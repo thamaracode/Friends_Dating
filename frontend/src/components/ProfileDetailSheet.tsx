@@ -21,6 +21,8 @@ import {
   ChevronDown,
   ExternalLink
 } from 'lucide-react';
+import { CURRENT_USER } from '../mockData';
+import { DigitalLifeHub } from './DigitalLifeHub';
 import type { UserProfile } from '../types';
 
 interface ProfileDetailSheetProps {
@@ -214,6 +216,11 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
                 <p className="text-xs text-[#FFF1F3] italic leading-relaxed">
                   "{profile.deepQuestion.answer}"
                 </p>
+              </div>
+
+              {/* Digital Life: Public Social & Creator Profiles */}
+              <div className="p-4 rounded-3xl glass-panel-elevated border border-[#FF78A8]/20 shadow-lg">
+                <DigitalLifeHub userId={profile.id} isOwner={profile.id === CURRENT_USER.id} />
               </div>
             </div>
           )}

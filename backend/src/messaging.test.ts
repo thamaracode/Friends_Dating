@@ -177,4 +177,115 @@ describe('FRIENDS Master Messaging Engine Comprehensive Test Suite', () => {
     const schedData = await resSched.json();
     expect(schedData.id).toBeDefined();
   });
+
+  it('recognizes social platform URLs and extracts usernames', async () => {
+    // 1. Instagram
+    const resInsta = await fetch(`${API_URL}/profile/social-links/recognize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://instagram.com/kavindu_art' })
+    });
+    expect(resInsta.status).toBe(200);
+    const dataInsta = await resInsta.json();
+    expect(dataInsta.success).toBe(true);
+    expect(dataInsta.platformId).toBe('instagram');
+    expect(dataInsta.username).toBe('kavindu_art');
+
+    // 2. GitHub
+    const resGh = await fetch(`${API_URL}/profile/social-links/recognize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://github.com/thamaracode' })
+    });
+    const dataGh = await resGh.json();
+    expect(dataGh.success).toBe(true);
+    expect(dataGh.platformId).toBe('github');
+    expect(dataGh.username).toBe('thamaracode');
+
+    // 3. Reject invalid Instagram post route (not a profile)
+    const resBadInsta = await fetch(`${API_URL}/profile/social-links/recognize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://instagram.com/p/C-12345678' })
+    });
+    const dataBadInsta = await resBadInsta.json();
+    expect(dataBadInsta.success).toBe(false);
+
+    // 4. Reject dangerous malicious URL scheme
+    const resMal = await fetch(`${API_URL}/profile/social-links/recognize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'javascript:alert(1)' })
+    });
+    const dataMal = await resMal.json();
+    expect(dataMal.success).toBe(false);
+
+    // 5. Custom website
+    const resWeb = await fetch(`${API_URL}/profile/social-links/recognize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://kavindusenanayake.dev' })
+    });
+    const dataWeb = await resWeb.json();
+    expect(dataWeb.success).toBe(true);
+    expect(dataWeb.platformId).toBe('custom');
+  });
+
+  it('manages digital life profile links with privacy enforcement', async () => {
+    const uniqueSuffix = Date.now();
+    // 1. Add public link (GitHub)
+    const resAdd1 = await fetch(`${API_URL}/profile/social-links`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        url: `https://github.com/kavindu_${uniqueSuffix}`,
+        visibility: 'public'
+      })
+    });
+    expect([200, 201]).toContain(resAdd1.status);
+    const data1 = await resAdd1.json();
+    const linkId1 = data1.link.id;
+
+    // 2. Add matches-only link (Instagram)
+    const resAdd2 = await fetch(`${API_URL}/profile/social-links`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        url: `https://instagram.com/kavindu_private_${uniqueSuffix}`,
+        visibility: 'matches_only'
+      })
+    });
+    expect([200, 201]).toContain(resAdd2.status);
+
+    // 3. Re-submitting exact same URL should return 409 conflict
+    const resDup = await fetch(`${API_URL}/profile/social-links`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'usr_me',
+        url: `https://github.com/kavindu_${uniqueSuffix}`
+      })
+    });
+    expect(resDup.status).toBe(409);
+
+    // 4. Stranger queries usr_me's links -> must ONLY see public link!
+    const resStranger = await fetch(`${API_URL}/users/usr_me/social-links?callerId=usr_stranger`);
+    const dataStranger = await resStranger.json();
+    expect(dataStranger.success).toBe(true);
+    expect(dataStranger.links.every((l: any) => l.visibility === 'public')).toBe(true);
+
+    // 5. Matched user (usr_alex) queries usr_me's links -> sees public AND matches_only
+    const resMatch = await fetch(`${API_URL}/users/usr_me/social-links?callerId=usr_alex`);
+    const dataMatch = await resMatch.json();
+    expect(dataMatch.success).toBe(true);
+    expect(dataMatch.links.some((l: any) => l.visibility === 'matches_only')).toBe(true);
+
+    // 6. Delete link
+    const resDel = await fetch(`${API_URL}/profile/social-links/${linkId1}?userId=usr_me`, {
+      method: 'DELETE'
+    });
+    expect(resDel.status).toBe(200);
+  });
 });

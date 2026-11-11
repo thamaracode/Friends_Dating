@@ -16,6 +16,7 @@ import {
   Film
 } from 'lucide-react';
 import { CURRENT_USER } from '../mockData';
+import { DigitalLifeHub } from './DigitalLifeHub';
 import type { ExperienceTab } from '../types';
 
 interface MyProfileHubProps {
@@ -86,6 +87,11 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
             <span>Real Verification</span>
           </button>
         </div>
+      </div>
+
+      {/* Digital Life: Social & Creator Profiles */}
+      <div className="rounded-3xl glass-panel-elevated p-3 border border-[#FF78A8]/25 shadow-xl">
+        <DigitalLifeHub userId={profile.id} isOwner={true} />
       </div>
 
       {/* Personality & Entertainment Systems */}
