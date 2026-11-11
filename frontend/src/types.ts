@@ -1,7 +1,9 @@
 export type ExperienceTab = 
   | 'home'
   | 'discover'
+  | 'likes'
   | 'messages_rooms'
+  | 'profile'
   | 'events'
   | 'communities'
   | 'social_growth'
@@ -16,6 +18,10 @@ export type ExperienceTab =
   | 'dating' 
   | 'talk'
   | 'admin';
+
+export type MainNavTab = 'home' | 'discover' | 'likes' | 'messages' | 'profile';
+export type DiscoveryMode = 'swipe' | 'video' | 'social' | 'personality';
+
 
 export type VisibilityLevel = 'public' | 'members_only' | 'connections_only' | 'only_me';
 
@@ -338,6 +344,11 @@ export interface UserProfile {
   }[];
   compatibilityScore?: number;
   matchReasons?: string[];
+  photos?: string[];
+  videoUrl?: string;
+  voiceIntroUrl?: string;
+  relationshipStage?: 'Stranger' | 'Like' | 'Match' | 'Chat' | 'Date' | 'Exclusive' | 'Relationship';
+  likesYou?: boolean;
 
   // Verification & Trust ("FRIENDS REAL")
   verifications?: VerificationStatus;
