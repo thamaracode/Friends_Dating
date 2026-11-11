@@ -18,7 +18,13 @@ dist-ssr
 .env.*
 !.env.example
 
-# Editor & OS files
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+backend/node_modules/
+backend/dist/
+
 .vscode/*
 !.vscode/extensions.json
 .idea

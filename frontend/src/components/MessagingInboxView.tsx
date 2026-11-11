@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Send, 
@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { MOCK_PROFILES, CURRENT_USER } from '../mockData';
 import { VoiceWaveformPlayer } from './VoiceWaveformPlayer';
+import { chatClient } from '../services/chatApiClient';
 import type { UserProfile } from '../types';
 import type { 
   ChatMessage, 
@@ -59,177 +60,68 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   activeProfileOverride,
   onClearActiveProfileOverride
 }) => {
-  // Folders state
   const [activeFolder, setActiveFolder] = useState<ChatFolderType>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
-  // Initial Conversations List (Telegram-style depth)
-  const [conversations, setConversations] = useState<ConversationItem[]>([
-    {
-      id: 'saved_messages',
-      participantId: 'me',
-      title: 'Saved Messages',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      isOnline: true,
-      lastSeenText: 'Your personal cloud',
-      isVerified: true,
-      isPinned: true,
-      isArchived: false,
-      category: 'saved_messages',
-      unreadCount: 0,
-      lastMessage: {
-        text: 'Notes, icebreakers, and bookmarked profiles',
-        senderId: 'me',
-        timestamp: 'Just now',
-        isOutgoing: true,
-        status: 'read'
+  // Fetch conversations from Backend on mount & subscribe to Real-Time events
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        const convs = await chatClient.getConversations();
+        setConversations(convs);
+        if (!activeConversationId && convs.length > 0) {
+          if (activeProfileOverride) {
+            const match = convs.find((c: any) => c.participantId === activeProfileOverride.id);
+            setActiveConversationId(match ? match.id : convs[0].id);
+          }
+        }
+      } catch (err) {
+        console.warn('Fallback to local conversation list', err);
       }
-    },
-    {
-      id: 'conv_alex',
-      participantId: 'usr_alex',
-      title: 'Alex Rivera',
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
-      isOnline: true,
-      lastSeenText: 'Active 5m ago',
-      isVerified: true,
-      isPinned: true,
-      isArchived: false,
-      category: 'match',
-      unreadCount: 1,
-      typingUser: 'Alex is typing...',
-      lastMessage: {
-        text: "I really loved that point you made about slow weekends.",
-        senderId: 'usr_alex',
-        timestamp: '10:22 AM',
-        isOutgoing: false,
-        status: 'delivered'
-      }
-    },
-    {
-      id: 'conv_tara',
-      participantId: 'usr_tara',
-      title: 'Tara Perera',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
-      isOnline: false,
-      lastSeenText: 'Active 2h ago',
-      isVerified: true,
-      isPinned: false,
-      isArchived: false,
-      category: 'match',
-      unreadCount: 0,
-      lastMessage: {
-        text: 'Are you attending the Saturday coffee tasting meetup?',
-        senderId: 'usr_tara',
-        timestamp: '9:15 AM',
-        isOutgoing: false,
-        status: 'read'
-      }
-    },
-    {
-      id: 'conv_dinuk',
-      participantId: 'usr_dinuk',
-      title: 'Dinuk Fernando',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-      isOnline: true,
-      lastSeenText: 'Online',
-      isVerified: false,
-      isPinned: false,
-      isArchived: false,
-      category: 'friend',
-      unreadCount: 0,
-      lastMessage: {
-        text: 'Hi Kavindu, I noticed we both enjoy indie synth-pop...',
-        senderId: 'usr_dinuk',
-        timestamp: 'Yesterday',
-        isOutgoing: false,
-        status: 'read'
-      }
-    }
-  ]);
+    };
 
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(
-    activeProfileOverride 
-      ? (conversations.find(c => c.participantId === activeProfileOverride.id)?.id || 'conv_alex')
-      : null
-  );
+    loadConversations();
 
-  // Messages per conversation state
-  const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>({
-    'conv_alex': [
-      {
-        id: 'msg_1',
-        clientMessageId: 'cli_1',
-        conversationId: 'conv_alex',
-        senderId: 'usr_alex',
-        senderName: 'Alex Rivera',
-        type: 'text',
-        text: "Hey Kavindu! Saw you're also deep into indie game architecture. Outer Wilds changed how I view storytelling.",
-        timestamp: '10:14 AM',
-        createdAt: Date.now() - 3600000,
-        isOutgoing: false,
-        status: 'read',
-        reactions: [{ emoji: '🔥', count: 1, userReacted: true }]
-      },
-      {
-        id: 'msg_2',
-        clientMessageId: 'cli_2',
-        conversationId: 'conv_alex',
-        senderId: 'me',
-        senderName: 'Kavindu',
-        type: 'text',
-        text: "Totally agree! That feeling of discovering orbital mechanics yourself without a tutorial is unmatched.",
-        timestamp: '10:20 AM',
-        createdAt: Date.now() - 3000000,
-        isOutgoing: true,
-        status: 'read'
-      },
-      {
-        id: 'msg_3',
-        clientMessageId: 'cli_3',
-        conversationId: 'conv_alex',
-        senderId: 'usr_alex',
-        senderName: 'Alex Rivera',
-        type: 'voice',
-        text: 'Voice note (0:14)',
-        voiceDurationSeconds: 14,
-        voiceWaveform: [30, 45, 90, 60, 100, 50, 75, 80, 40, 65, 85, 45, 30, 70],
-        timestamp: '10:21 AM',
-        createdAt: Date.now() - 1800000,
-        isOutgoing: false,
-        status: 'delivered'
-      },
-      {
-        id: 'msg_4',
-        clientMessageId: 'cli_4',
-        conversationId: 'conv_alex',
-        senderId: 'usr_alex',
-        senderName: 'Alex Rivera',
-        type: 'text',
-        text: "I really loved that point you made about slow weekends.",
-        timestamp: '10:22 AM',
-        createdAt: Date.now() - 600000,
-        isOutgoing: false,
-        status: 'delivered',
-        isPinned: true
+    // Subscribe to real-time incoming messages & presence
+    const unsubMsg = chatClient.subscribe('chat.message.created', (event: any) => {
+      if (event.conversationId === activeConversationId) {
+        setCurrentMessages((prev) => [...prev, event.message]);
       }
-    ],
-    'saved_messages': [
-      {
-        id: 's_1',
-        clientMessageId: 'cli_s1',
-        conversationId: 'saved_messages',
-        senderId: 'me',
-        senderName: 'You',
-        type: 'text',
-        text: "Bookmarked Icebreaker: 'If your life had an end-credits track, what would play?'",
-        timestamp: 'Yesterday',
-        createdAt: Date.now() - 86400000,
-        isOutgoing: true,
-        status: 'read'
+      loadConversations();
+    });
+
+    const unsubPresence = chatClient.subscribe('presence.updated', () => {
+      loadConversations();
+    });
+
+    return () => {
+      unsubMsg();
+      unsubPresence();
+    };
+  }, [activeConversationId, activeProfileOverride]);
+
+  // Load real messages whenever active conversation changes
+  useEffect(() => {
+    if (!activeConversationId) return;
+
+    const loadMsgs = async () => {
+      setIsLoadingMessages(true);
+      try {
+        const msgs = await chatClient.getMessages(activeConversationId);
+        setCurrentMessages(msgs);
+      } catch (e) {
+        console.error('Failed to load messages from backend', e);
+      } finally {
+        setIsLoadingMessages(false);
       }
-    ]
-  });
+    };
+
+    loadMsgs();
+  }, [activeConversationId]);
 
   const [inputMessage, setInputMessage] = useState('');
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
@@ -248,7 +140,6 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   ];
 
   const currentConv = conversations.find(c => c.id === activeConversationId);
-  const currentMessages = activeConversationId && messagesMap[activeConversationId] ? messagesMap[activeConversationId] : [];
   const pinnedMessage = currentMessages.find(m => m.isPinned);
 
   // Filtered conversations based on folder & search
@@ -266,136 +157,81 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     return true;
   });
 
-  const handleSendMessage = (customText?: string, type: ChatMessage['type'] = 'text') => {
+  const handleSendMessage = async (customText?: string, type: ChatMessage['type'] = 'text') => {
     const textToSend = customText || inputMessage;
     if (!textToSend.trim() || !activeConversationId) return;
 
-    if (editingMessage) {
-      // Handle Edit
-      setMessagesMap(prev => ({
-        ...prev,
-        [activeConversationId]: prev[activeConversationId].map(m => 
-          m.id === editingMessage.id ? { ...m, text: textToSend, isEdited: true } : m
-        )
-      }));
-      setEditingMessage(null);
-      setInputMessage('');
-      return;
+    try {
+      await chatClient.sendMessage({
+        conversationId: activeConversationId,
+        text: textToSend,
+        type,
+        replyToMessageId: replyingTo ? replyingTo.id : undefined
+      });
+
+      // Refetch messages for certainty
+      const updated = await chatClient.getMessages(activeConversationId);
+      setCurrentMessages(updated);
+      
+      const convs = await chatClient.getConversations();
+      setConversations(convs);
+    } catch (e) {
+      console.error('Failed to submit message to real backend', e);
     }
-
-    const newMsg: ChatMessage = {
-      id: `msg_${Date.now()}`,
-      clientMessageId: `cli_${Date.now()}`,
-      conversationId: activeConversationId,
-      senderId: 'me',
-      senderName: CURRENT_USER.name,
-      type,
-      text: textToSend,
-      timestamp: 'Just now',
-      createdAt: Date.now(),
-      isOutgoing: true,
-      status: 'sent',
-      replyTo: replyingTo ? {
-        messageId: replyingTo.id,
-        senderName: replyingTo.senderName,
-        textSnippet: replyingTo.text
-      } : undefined
-    };
-
-    setMessagesMap(prev => ({
-      ...prev,
-      [activeConversationId]: [...(prev[activeConversationId] || []), newMsg]
-    }));
-
-    // Update conversation last message preview
-    setConversations(prev => prev.map(c => 
-      c.id === activeConversationId ? {
-        ...c,
-        lastMessage: {
-          text: textToSend,
-          senderId: 'me',
-          timestamp: 'Just now',
-          isOutgoing: true,
-          status: 'sent'
-        }
-      } : c
-    ));
 
     setInputMessage('');
     setReplyingTo(null);
+    setEditingMessage(null);
     setIsActionDockOpen(false);
   };
 
-  const handleToggleReaction = (msgId: string, emoji: string) => {
+  const handleToggleReaction = async (msgId: string, emoji: string) => {
     if (!activeConversationId) return;
-
-    setMessagesMap(prev => ({
-      ...prev,
-      [activeConversationId]: prev[activeConversationId].map(m => {
-        if (m.id !== msgId) return m;
-        const currentReactions = m.reactions || [];
-        const existing = currentReactions.find(r => r.emoji === emoji);
-
-        if (existing) {
-          return {
-            ...m,
-            reactions: currentReactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1, userReacted: true } : r)
-          };
-        } else {
-          return {
-            ...m,
-            reactions: [...currentReactions, { emoji, count: 1, userReacted: true }]
-          };
-        }
-      })
-    }));
-
+    try {
+      await chatClient.toggleReaction(msgId, emoji);
+      const updated = await chatClient.getMessages(activeConversationId);
+      setCurrentMessages(updated);
+    } catch (e) {
+      console.error(e);
+    }
     setSelectedMessageForMenu(null);
   };
 
-  const handleTogglePin = (msg: ChatMessage) => {
+  const handleTogglePin = async (msg: ChatMessage) => {
     if (!activeConversationId) return;
-
-    setMessagesMap(prev => ({
-      ...prev,
-      [activeConversationId]: prev[activeConversationId].map(m => 
-        m.id === msg.id ? { ...m, isPinned: !m.isPinned } : m
-      )
-    }));
+    try {
+      await chatClient.togglePin(msg.id);
+      const updated = await chatClient.getMessages(activeConversationId);
+      setCurrentMessages(updated);
+    } catch (e) {
+      console.error(e);
+    }
     setSelectedMessageForMenu(null);
   };
 
-  const handleDeleteMessage = (msgId: string) => {
+  const handleDeleteMessage = async (msgId: string) => {
     if (!activeConversationId) return;
-
-    setMessagesMap(prev => ({
-      ...prev,
-      [activeConversationId]: prev[activeConversationId].filter(m => m.id !== msgId)
-    }));
+    try {
+      await chatClient.deleteMessage(msgId);
+      const updated = await chatClient.getMessages(activeConversationId);
+      setCurrentMessages(updated);
+    } catch (e) {
+      console.error(e);
+    }
     setSelectedMessageForMenu(null);
   };
 
-  const handleSaveToSavedMessages = (msg: ChatMessage) => {
-    const savedMsg: ChatMessage = {
-      id: `s_${Date.now()}`,
-      clientMessageId: `cli_s_${Date.now()}`,
-      conversationId: 'saved_messages',
-      senderId: 'me',
-      senderName: 'You',
-      type: msg.type,
-      text: `Forwarded from ${msg.senderName}: "${msg.text}"`,
-      timestamp: 'Just now',
-      createdAt: Date.now(),
-      isOutgoing: true,
-      status: 'read'
-    };
-
-    setMessagesMap(prev => ({
-      ...prev,
-      'saved_messages': [...(prev['saved_messages'] || []), savedMsg]
-    }));
-
-    alert("Message saved to Saved Messages folder!");
+  const handleSaveToSavedMessages = async (msg: ChatMessage) => {
+    try {
+      await chatClient.sendMessage({
+        conversationId: 'conv_saved',
+        text: `Forwarded from ${msg.senderName}: "${msg.text}"`,
+        type: msg.type
+      });
+      alert("Message saved to Saved Messages cloud!");
+    } catch (e) {
+      console.error(e);
+    }
     setSelectedMessageForMenu(null);
   };
 
