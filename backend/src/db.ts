@@ -102,10 +102,82 @@ export function initDatabase() {
       FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
     );
 
+    -- Edit History table
+    CREATE TABLE IF NOT EXISTS message_edit_history (
+      id TEXT PRIMARY KEY,
+      message_id TEXT NOT NULL,
+      editor_id TEXT NOT NULL,
+      previous_content TEXT NOT NULL,
+      edited_at INTEGER NOT NULL,
+      FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+      FOREIGN KEY (editor_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    -- Scheduled Messages table
+    CREATE TABLE IF NOT EXISTS scheduled_messages (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL,
+      sender_id TEXT NOT NULL,
+      payload_json TEXT NOT NULL,
+      scheduled_for INTEGER NOT NULL,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'sent', 'cancelled')),
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+      FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    -- User Blocks table
+    CREATE TABLE IF NOT EXISTS user_blocks (
+      blocker_id TEXT NOT NULL,
+      blocked_id TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      PRIMARY KEY (blocker_id, blocked_id),
+      FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    -- User Reports table
+    CREATE TABLE IF NOT EXISTS user_reports (
+      id TEXT PRIMARY KEY,
+      reporter_id TEXT NOT NULL,
+      reported_user_id TEXT NOT NULL,
+      message_id TEXT,
+      reason TEXT NOT NULL,
+      details TEXT,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'investigating', 'resolved', 'dismissed')),
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (reported_user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    -- Dating Game Sessions table (Server-authoritative)
+    CREATE TABLE IF NOT EXISTS game_sessions (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL,
+      game_type TEXT NOT NULL CHECK(game_type IN ('truth_or_dare', 'would_you_rather', 'two_truths_and_lie', 'compatibility_quiz', 'lucky_dice')),
+      current_turn_user_id TEXT NOT NULL,
+      state_json TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('waiting', 'active', 'completed', 'cancelled')),
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+    );
+
+    -- Custom Chat Folders table
+    CREATE TABLE IF NOT EXISTS chat_folders (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      filter_type TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     -- Indexes for sub-millisecond timeline queries
     CREATE INDEX IF NOT EXISTS idx_messages_conv_seq ON messages(conversation_id, sequence_number);
     CREATE INDEX IF NOT EXISTS idx_members_user ON conversation_members(user_id);
     CREATE INDEX IF NOT EXISTS idx_reactions_msg ON message_reactions(message_id);
+    CREATE INDEX IF NOT EXISTS idx_sched_time ON scheduled_messages(scheduled_for, status);
   `);
 
   seedInitialData();

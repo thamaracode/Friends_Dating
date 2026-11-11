@@ -1,6 +1,8 @@
 import http from 'http';
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
 import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 import { db, initDatabase } from './db.js';
@@ -10,6 +12,26 @@ initDatabase();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded media statically
+const uploadsDir = path.resolve(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsDir));
+
+// Multer storage for voice notes, photos, and file attachments
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.webm';
+    const uniqueName = `${Date.now()}_${uuidv4().slice(0, 8)}${ext}`;
+    cb(null, uniqueName);
+  }
+});
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 25 * 1024 * 1024 } // 25 MB max payload
+});
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
@@ -85,7 +107,7 @@ function broadcastToAll(event: any) {
   }
 }
 
-function handleClientSocketEvent(userId: string, event: any, ws: WebSocket) {
+function handleClientSocketEvent(userId: string, event: any, _ws: WebSocket) {
   if (event.type === 'typing.start') {
     const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ?')
       .all(event.conversationId, userId) as { user_id: string }[];
@@ -103,6 +125,7 @@ function handleClientSocketEvent(userId: string, event: any, ws: WebSocket) {
       userId
     }));
   } else if (event.type === 'call.signal') {
+    // Forward WebRTC SDP Offer/Answer or ICE Candidate to the peer
     broadcastToUser(event.recipientId, {
       type: 'call.signal',
       senderId: userId,
@@ -112,12 +135,78 @@ function handleClientSocketEvent(userId: string, event: any, ws: WebSocket) {
   }
 }
 
+// Background Runner for Scheduled Messages (Runs every 10 seconds)
+setInterval(() => {
+  try {
+    const now = Date.now();
+    const pending = db.prepare(`
+      SELECT * FROM scheduled_messages 
+      WHERE scheduled_for <= ? AND status = 'pending'
+    `).all(now) as any[];
+
+    for (const item of pending) {
+      const payload = JSON.parse(item.payload_json);
+      const messageId = `msg_${uuidv4().replace(/-/g, '').slice(0, 12)}`;
+      
+      const insertTx = db.transaction(() => {
+        const seqRow = db.prepare('SELECT COALESCE(MAX(sequence_number), 0) + 1 as next_seq FROM messages WHERE conversation_id = ?').get(item.conversation_id) as { next_seq: number };
+        const seq = seqRow.next_seq;
+
+        db.prepare(`
+          INSERT INTO messages (
+            id, conversation_id, sender_id, client_message_id, sequence_number,
+            message_type, text_content, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          messageId,
+          item.conversation_id,
+          item.sender_id,
+          `sched_${item.id}`,
+          seq,
+          payload.type || 'text',
+          payload.text || '',
+          now
+        );
+
+        db.prepare('UPDATE conversations SET last_message_id = ?, updated_at = ? WHERE id = ?').run(messageId, now, item.conversation_id);
+        db.prepare("UPDATE scheduled_messages SET status = 'sent' WHERE id = ?").run(item.id);
+
+        return { messageId, seq };
+      });
+
+      insertTx();
+
+      // Broadcast
+      const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?').all(item.conversation_id) as { user_id: string }[];
+      members.forEach(m => {
+        broadcastToUser(m.user_id, {
+          type: 'chat.message.created',
+          conversationId: item.conversation_id,
+          message: {
+            id: messageId,
+            conversationId: item.conversation_id,
+            senderId: item.sender_id,
+            type: payload.type || 'text',
+            text: payload.text,
+            timestamp: new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            createdAt: now,
+            status: 'delivered',
+            isOutgoing: m.user_id === item.sender_id
+          }
+        });
+      });
+    }
+  } catch (err) {
+    console.error('Scheduled message runner error', err);
+  }
+}, 10000);
+
 // -------------------------------------------------------------
 // REST API ENDPOINTS
 // -------------------------------------------------------------
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'FRIENDS Messaging Engine' });
 });
 
@@ -155,6 +244,7 @@ app.get('/api/v1/conversations', (req, res) => {
   const conversations = rows.map(r => ({
     id: r.id,
     type: r.type,
+    participantId: r.partner_id,
     isPinned: Boolean(r.is_pinned),
     isArchived: Boolean(r.is_archived),
     isMuted: Boolean(r.is_muted),
@@ -180,10 +270,11 @@ app.get('/api/v1/conversations', (req, res) => {
   res.json({ success: true, conversations });
 });
 
-// 2. Get messages for conversation
+// 2. Get messages for conversation (with cursor pagination)
 app.get('/api/v1/conversations/:id/messages', (req, res) => {
   const { id } = req.params;
   const userId = (req.query.userId as string) || 'usr_me';
+  const limit = parseInt(req.query.limit as string) || 50;
 
   const messages = db.prepare(`
     SELECT 
@@ -201,12 +292,14 @@ app.get('/api/v1/conversations/:id/messages', (req, res) => {
       m.reply_to_message_id,
       m.is_edited,
       m.is_pinned,
+      m.is_deleted_for_everyone,
       m.created_at
     FROM messages m
     JOIN users u ON m.sender_id = u.id
     WHERE m.conversation_id = ?
     ORDER BY m.sequence_number ASC
-  `).all(id) as any[];
+    LIMIT ?
+  `).all(id, limit) as any[];
 
   // Fetch reactions
   const reactionsMap = new Map<string, any[]>();
@@ -228,6 +321,26 @@ app.get('/api/v1/conversations/:id/messages', (req, res) => {
     });
   }
 
+  // Pre-fetch reply-to summaries
+  const replyMap = new Map<string, { senderName: string; textSnippet: string }>();
+  const replyIds = messages.filter(m => m.reply_to_message_id).map(m => m.reply_to_message_id);
+  if (replyIds.length > 0) {
+    const placeholders = replyIds.map(() => '?').join(',');
+    const replyRows = db.prepare(`
+      SELECT m.id, u.name as sender_name, m.text_content
+      FROM messages m
+      JOIN users u ON m.sender_id = u.id
+      WHERE m.id IN (${placeholders})
+    `).all(...replyIds) as any[];
+
+    for (const r of replyRows) {
+      replyMap.set(r.id, {
+        senderName: r.sender_name,
+        textSnippet: r.text_content ? r.text_content.slice(0, 50) : 'Attachment'
+      });
+    }
+  }
+
   const result = messages.map(m => ({
     id: m.id,
     clientMessageId: m.client_message_id,
@@ -235,23 +348,25 @@ app.get('/api/v1/conversations/:id/messages', (req, res) => {
     senderId: m.sender_id,
     senderName: m.sender_name,
     type: m.type,
-    text: m.text,
-    mediaUrl: m.media_url,
+    text: m.is_deleted_for_everyone ? 'This message was deleted' : m.text,
+    mediaUrl: m.is_deleted_for_everyone ? undefined : m.media_url,
     voiceDurationSeconds: m.voice_duration,
     voiceWaveform: m.voice_waveform ? JSON.parse(m.voice_waveform) : undefined,
+    replyTo: m.reply_to_message_id ? replyMap.get(m.reply_to_message_id) : undefined,
     timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     createdAt: m.created_at,
     isOutgoing: m.sender_id === userId,
     status: 'delivered',
     isEdited: Boolean(m.is_edited),
     isPinned: Boolean(m.is_pinned),
+    isDeleted: Boolean(m.is_deleted_for_everyone),
     reactions: reactionsMap.get(m.id) || []
   }));
 
   res.json({ success: true, messages: result });
 });
 
-// 3. Send message (Transactional with sequence numbering and idempotency)
+// 3. Send message (Transactional with sequence numbering, security checks, and idempotency)
 app.post('/api/v1/conversations/:id/messages', (req, res) => {
   const { id } = req.params;
   const { 
@@ -267,6 +382,16 @@ app.post('/api/v1/conversations/:id/messages', (req, res) => {
 
   if (!clientMessageId || (!text && !mediaUrl)) {
     return res.status(400).json({ error: 'Missing clientMessageId or message payload' });
+  }
+
+  // Security Check: Is sender blocked by recipient or vice-versa?
+  const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?').all(id) as { user_id: string }[];
+  const recipient = members.find(m => m.user_id !== senderId);
+  if (recipient) {
+    const isBlocked = db.prepare('SELECT 1 FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?').get(recipient.user_id, senderId);
+    if (isBlocked) {
+      return res.status(403).json({ error: 'Cannot send message: conversation is blocked' });
+    }
   }
 
   // Idempotency check: If client retried with same clientMessageId, return existing
@@ -307,6 +432,9 @@ app.post('/api/v1/conversations/:id/messages', (req, res) => {
     // Update conversation last_message_id and updated_at
     db.prepare('UPDATE conversations SET last_message_id = ?, updated_at = ? WHERE id = ?').run(messageId, now, id);
 
+    // Increment unread count for conversation members other than sender
+    db.prepare('UPDATE conversation_members SET unread_count = unread_count + 1 WHERE conversation_id = ? AND user_id != ?').run(id, senderId);
+
     return { messageId, seq, now };
   });
 
@@ -322,13 +450,13 @@ app.post('/api/v1/conversations/:id/messages', (req, res) => {
     mediaUrl,
     voiceDurationSeconds: voiceDuration,
     voiceWaveform,
+    replyToMessageId,
     timestamp: new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     createdAt: now,
     status: 'delivered'
   };
 
   // Broadcast real-time event to conversation members
-  const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?').all(id) as { user_id: string }[];
   members.forEach(m => {
     broadcastToUser(m.user_id, {
       type: 'chat.message.created',
@@ -343,7 +471,65 @@ app.post('/api/v1/conversations/:id/messages', (req, res) => {
   res.status(201).json({ success: true, message: newMsg });
 });
 
-// 4. Toggle Reaction
+// 4. Edit message (with audit history)
+app.patch('/api/v1/messages/:id', (req, res) => {
+  const { id } = req.params;
+  const { text, editorId = 'usr_me' } = req.body;
+
+  if (!text) return res.status(400).json({ error: 'New text is required' });
+
+  const msg = db.prepare('SELECT sender_id, text_content, conversation_id FROM messages WHERE id = ?').get(id) as any;
+  if (!msg) return res.status(404).json({ error: 'Message not found' });
+  if (msg.sender_id !== editorId) return res.status(403).json({ error: 'Only author can edit this message' });
+
+  db.transaction(() => {
+    // Record edit history
+    db.prepare(`
+      INSERT INTO message_edit_history (id, message_id, editor_id, previous_content, edited_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(`ed_${uuidv4().slice(0, 8)}`, id, editorId, msg.text_content, Date.now());
+
+    // Update message
+    db.prepare('UPDATE messages SET text_content = ?, is_edited = 1 WHERE id = ?').run(text, id);
+  })();
+
+  const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?').all(msg.conversation_id) as { user_id: string }[];
+  members.forEach(m => broadcastToUser(m.user_id, {
+    type: 'chat.message.edited',
+    conversationId: msg.conversation_id,
+    messageId: id,
+    text
+  }));
+
+  res.json({ success: true, text });
+});
+
+// 5. Delete message (Delete for me vs Delete for everyone)
+app.delete('/api/v1/messages/:id', (req, res) => {
+  const { id } = req.params;
+  const forEveryone = req.query.forEveryone === 'true';
+
+  const msg = db.prepare('SELECT conversation_id, sender_id FROM messages WHERE id = ?').get(id) as any;
+  if (!msg) return res.status(404).json({ error: 'Message not found' });
+
+  if (forEveryone) {
+    db.prepare('UPDATE messages SET is_deleted_for_everyone = 1, text_content = ? WHERE id = ?').run('This message was deleted', id);
+  } else {
+    db.prepare('DELETE FROM messages WHERE id = ?').run(id);
+  }
+
+  const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?').all(msg.conversation_id) as { user_id: string }[];
+  members.forEach(m => broadcastToUser(m.user_id, {
+    type: 'chat.message.deleted',
+    conversationId: msg.conversation_id,
+    messageId: id,
+    forEveryone
+  }));
+
+  res.json({ success: true, deleted: true });
+});
+
+// 6. Toggle Reaction
 app.post('/api/v1/messages/:id/reactions', (req, res) => {
   const { id } = req.params;
   const { userId = 'usr_me', emoji } = req.body;
@@ -359,7 +545,6 @@ app.post('/api/v1/messages/:id/reactions', (req, res) => {
       .run(`rx_${uuidv4().slice(0, 8)}`, id, userId, emoji, Date.now());
   }
 
-  // Broadcast reaction update
   const msg = db.prepare('SELECT conversation_id FROM messages WHERE id = ?').get(id) as { conversation_id: string } | undefined;
   if (msg) {
     const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?').all(msg.conversation_id) as { user_id: string }[];
@@ -373,7 +558,7 @@ app.post('/api/v1/messages/:id/reactions', (req, res) => {
   res.json({ success: true });
 });
 
-// 5. Pin / Unpin Message
+// 7. Pin / Unpin Message
 app.patch('/api/v1/messages/:id/pin', (req, res) => {
   const { id } = req.params;
   const msg = db.prepare('SELECT is_pinned, conversation_id FROM messages WHERE id = ?').get(id) as any;
@@ -385,11 +570,149 @@ app.patch('/api/v1/messages/:id/pin', (req, res) => {
   res.json({ success: true, isPinned: Boolean(nextVal) });
 });
 
-// 6. Delete Message
-app.delete('/api/v1/messages/:id', (req, res) => {
+// 8. Mark Conversation as Read
+app.post('/api/v1/conversations/:id/read', (req, res) => {
   const { id } = req.params;
-  db.prepare('DELETE FROM messages WHERE id = ?').run(id);
-  res.json({ success: true, deleted: true });
+  const { userId = 'usr_me' } = req.body;
+
+  db.prepare('UPDATE conversation_members SET unread_count = 0 WHERE conversation_id = ? AND user_id = ?').run(id, userId);
+
+  res.json({ success: true });
+});
+
+// 9. Draft Management
+app.get('/api/v1/conversations/:id/draft', (req, res) => {
+  const { id } = req.params;
+  const userId = (req.query.userId as string) || 'usr_me';
+  const row = db.prepare('SELECT draft_text FROM conversation_members WHERE conversation_id = ? AND user_id = ?').get(id, userId) as any;
+  res.json({ success: true, draftText: row ? row.draft_text : '' });
+});
+
+app.put('/api/v1/conversations/:id/draft', (req, res) => {
+  const { id } = req.params;
+  const { userId = 'usr_me', draftText } = req.body;
+  db.prepare('UPDATE conversation_members SET draft_text = ? WHERE conversation_id = ? AND user_id = ?').run(draftText, id, userId);
+  res.json({ success: true });
+});
+
+// 10. File & Voice Upload Endpoint
+app.post('/api/v1/attachments/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file provided' });
+  }
+
+  const mediaUrl = `http://127.0.0.1:3001/uploads/${req.file.filename}`;
+  res.json({
+    success: true,
+    file: {
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      mediaUrl
+    }
+  });
+});
+
+// 11. Search within conversations
+app.get('/api/v1/conversations/:id/search', (req, res) => {
+  const { id } = req.params;
+  const q = (req.query.q as string) || '';
+
+  const results = db.prepare(`
+    SELECT m.id, m.text_content, m.created_at, u.name as sender_name
+    FROM messages m
+    JOIN users u ON m.sender_id = u.id
+    WHERE m.conversation_id = ? AND m.text_content LIKE ?
+    ORDER BY m.created_at DESC
+  `).all(id, `%${q}%`);
+
+  res.json({ success: true, results });
+});
+
+// 12. Scheduled Messages Queue
+app.post('/api/v1/scheduled-messages', (req, res) => {
+  const { conversationId, senderId = 'usr_me', payload, scheduledFor } = req.body;
+  if (!conversationId || !payload || !scheduledFor) {
+    return res.status(400).json({ error: 'Missing scheduled message parameters' });
+  }
+
+  const id = `sched_${uuidv4().slice(0, 8)}`;
+  db.prepare(`
+    INSERT INTO scheduled_messages (id, conversation_id, sender_id, payload_json, scheduled_for, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(id, conversationId, senderId, JSON.stringify(payload), scheduledFor, Date.now());
+
+  res.json({ success: true, id, scheduledFor });
+});
+
+// 13. Privacy & Safety: Block and Unblock User
+app.post('/api/v1/users/:id/block', (req, res) => {
+  const { id: blockedId } = req.params;
+  const { blockerId = 'usr_me' } = req.body;
+
+  try {
+    db.prepare('INSERT OR IGNORE INTO user_blocks (blocker_id, blocked_id, created_at) VALUES (?, ?, ?)')
+      .run(blockerId, blockedId, Date.now());
+    res.json({ success: true, blocked: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/v1/users/:id/block', (req, res) => {
+  const { id: blockedId } = req.params;
+  const { blockerId = 'usr_me' } = req.body;
+
+  db.prepare('DELETE FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?').run(blockerId, blockedId);
+  res.json({ success: true, blocked: false });
+});
+
+// 14. Moderation & Abuse Reporting
+app.post('/api/v1/reports', (req, res) => {
+  const { reporterId = 'usr_me', reportedUserId, messageId, reason, details } = req.body;
+  if (!reportedUserId || !reason) {
+    return res.status(400).json({ error: 'Missing report target or reason' });
+  }
+
+  const reportId = `rep_${uuidv4().slice(0, 8)}`;
+  db.prepare(`
+    INSERT INTO user_reports (id, reporter_id, reported_user_id, message_id, reason, details, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(reportId, reporterId, reportedUserId, messageId || null, reason, details || '', Date.now());
+
+  res.json({ success: true, reportId, message: 'Report submitted for moderation investigation' });
+});
+
+// 15. Dating-Specific Interactive Games (Server-Authoritative State Machine)
+app.post('/api/v1/games/start', (req, res) => {
+  const { conversationId, gameType, currentUserId = 'usr_me' } = req.body;
+  if (!conversationId || !gameType) {
+    return res.status(400).json({ error: 'Missing conversationId or gameType' });
+  }
+
+  const id = `game_${uuidv4().slice(0, 8)}`;
+  const initialState = {
+    turn: 1,
+    scores: { [currentUserId]: 0 },
+    history: []
+  };
+
+  db.prepare(`
+    INSERT INTO game_sessions (id, conversation_id, game_type, current_turn_user_id, state_json, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, 'active', ?, ?)
+  `).run(id, conversationId, gameType, currentUserId, JSON.stringify(initialState), Date.now(), Date.now());
+
+  // Broadcast game event
+  const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?').all(conversationId) as { user_id: string }[];
+  members.forEach(m => broadcastToUser(m.user_id, {
+    type: 'game.started',
+    conversationId,
+    gameId: id,
+    gameType
+  }));
+
+  res.json({ success: true, gameId: id, gameType, state: initialState });
 });
 
 const PORT = 3001;

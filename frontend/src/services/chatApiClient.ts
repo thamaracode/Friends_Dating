@@ -34,7 +34,6 @@ export class ChatApiClient {
       };
 
       this.ws.onclose = () => {
-        // Reconnect with exponential backoff
         setTimeout(() => this.initWebSocket(), 3000);
       };
 
@@ -81,8 +80,8 @@ export class ChatApiClient {
     return data.conversations;
   }
 
-  public async getMessages(conversationId: string) {
-    const res = await fetch(`${API_BASE}/conversations/${conversationId}/messages?userId=${this.currentUserId}`);
+  public async getMessages(conversationId: string, limit: number = 50) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/messages?userId=${this.currentUserId}&limit=${limit}`);
     if (!res.ok) throw new Error('Failed to fetch messages');
     const data = await res.json();
     return data.messages;
@@ -112,7 +111,23 @@ export class ChatApiClient {
         replyToMessageId: params.replyToMessageId
       })
     });
-    if (!res.ok) throw new Error('Failed to send message');
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to send message');
+    }
+    return await res.json();
+  }
+
+  public async editMessage(messageId: string, text: string) {
+    const res = await fetch(`${API_BASE}/messages/${messageId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        editorId: this.currentUserId
+      })
+    });
+    if (!res.ok) throw new Error('Failed to edit message');
     return await res.json();
   }
 
@@ -135,9 +150,95 @@ export class ChatApiClient {
     return await res.json();
   }
 
-  public async deleteMessage(messageId: string) {
-    const res = await fetch(`${API_BASE}/messages/${messageId}`, {
+  public async deleteMessage(messageId: string, forEveryone: boolean = false) {
+    const res = await fetch(`${API_BASE}/messages/${messageId}?forEveryone=${forEveryone}`, {
       method: 'DELETE'
+    });
+    return await res.json();
+  }
+
+  public async markConversationAsRead(conversationId: string) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/read`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: this.currentUserId })
+    });
+    return await res.json();
+  }
+
+  public async uploadAttachment(file: Blob, originalName: string = 'voice.webm') {
+    const formData = new FormData();
+    formData.append('file', file, originalName);
+
+    const res = await fetch(`${API_BASE}/attachments/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) throw new Error('Failed to upload attachment');
+    return await res.json();
+  }
+
+  public async searchConversation(conversationId: string, query: string) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/search?q=${encodeURIComponent(query)}`);
+    if (!res.ok) throw new Error('Failed to search messages');
+    return await res.json();
+  }
+
+  public async saveDraft(conversationId: string, draftText: string) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/draft`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: this.currentUserId, draftText })
+    });
+    return await res.json();
+  }
+
+  public async getDraft(conversationId: string) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/draft?userId=${this.currentUserId}`);
+    if (!res.ok) return '';
+    const data = await res.json();
+    return data.draftText || '';
+  }
+
+  public async blockUser(targetUserId: string) {
+    const res = await fetch(`${API_BASE}/users/${targetUserId}/block`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blockerId: this.currentUserId })
+    });
+    return await res.json();
+  }
+
+  public async unblockUser(targetUserId: string) {
+    const res = await fetch(`${API_BASE}/users/${targetUserId}/block`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blockerId: this.currentUserId })
+    });
+    return await res.json();
+  }
+
+  public async submitReport(params: { reportedUserId: string; messageId?: string; reason: string; details?: string }) {
+    const res = await fetch(`${API_BASE}/reports`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reporterId: this.currentUserId,
+        ...params
+      })
+    });
+    return await res.json();
+  }
+
+  public async startDatingGame(conversationId: string, gameType: string) {
+    const res = await fetch(`${API_BASE}/games/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId,
+        gameType,
+        currentUserId: this.currentUserId
+      })
     });
     return await res.json();
   }
