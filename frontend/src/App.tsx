@@ -23,6 +23,7 @@ import { LikesAndMatchesView } from './components/LikesAndMatchesView';
 import { MessagingInboxView } from './components/MessagingInboxView';
 import { MyProfileHub } from './components/MyProfileHub';
 import { ProfileDetailSheet } from './components/ProfileDetailSheet';
+import { TelegramWebWindow } from './components/TelegramWebWindow';
 
 // Personality & Entertainment Systems
 import { MyCharacterBuilder } from './components/MyCharacterBuilder';
@@ -53,6 +54,7 @@ export function App() {
   const [inspectedProfile, setInspectedProfile] = useState<UserProfile | null>(null);
   const [activeChatProfileOverride, setActiveChatProfileOverride] = useState<UserProfile | null>(null);
   const [isCrisisModalOpen, setIsCrisisModalOpen] = useState(false);
+  const [isTelegramWebWindowOpen, setIsTelegramWebWindowOpen] = useState(false);
 
   const handleOpenProfile = (profile: UserProfile) => {
     setInspectedProfile(profile);
@@ -92,14 +94,24 @@ export function App() {
           </span>
         </div>
 
-        {/* Crisis 1926 Support Pill */}
-        <button
-          onClick={() => setIsCrisisModalOpen(true)}
-          className="px-2.5 py-1 rounded-full glass-panel border border-rose-500/30 text-rose-300 text-[10px] font-bold flex items-center gap-1 shadow-md hover:border-rose-400 cursor-pointer"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
-          <span>1926 Safe</span>
-        </button>
+        {/* Crisis 1926 Support Pill & Telegram Web View Launcher */}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setIsTelegramWebWindowOpen(true)}
+            className="px-2.5 py-1 rounded-full bg-[#1B121D] border border-[#FF78A8]/40 text-[#FFB4CE] hover:text-white text-[10px] font-bold flex items-center gap-1 shadow-sm hover:border-[#FF4F87] cursor-pointer transition-colors"
+            title="Launch Fullscreen Telegram Web Client Window"
+          >
+            <span>✈️ Telegram Web</span>
+          </button>
+
+          <button
+            onClick={() => setIsCrisisModalOpen(true)}
+            className="px-2.5 py-1 rounded-full glass-panel border border-rose-500/30 text-rose-300 text-[10px] font-bold flex items-center gap-1 shadow-md hover:border-rose-400 cursor-pointer"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
+            <span>1926 Safe</span>
+          </button>
+        </div>
       </header>
 
       {/* Main Content View Container */}
@@ -216,6 +228,12 @@ export function App() {
       <CrisisSupportModal 
         isOpen={isCrisisModalOpen} 
         onClose={() => setIsCrisisModalOpen(false)} 
+      />
+
+      {/* Telegram Web View Window (Desktop/Tablet Full Experience) */}
+      <TelegramWebWindow 
+        isOpen={isTelegramWebWindowOpen} 
+        onClose={() => setIsTelegramWebWindowOpen(false)} 
       />
 
     </div>
