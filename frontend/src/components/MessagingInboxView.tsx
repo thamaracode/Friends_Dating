@@ -13,19 +13,31 @@ import {
   Lock, 
   CheckCheck,
   Flame,
-  Volume2
+  Volume2,
+  Plus,
+  Gamepad2,
+  Dices,
+  Gift,
+  Music,
+  MapPin,
+  Calendar,
+  X
 } from 'lucide-react';
 import { MOCK_PROFILES, CURRENT_USER } from '../mockData';
 import type { UserProfile } from '../types';
 
 interface MessagingInboxViewProps {
   onOpenProfileDetail: (profile: UserProfile) => void;
+  onOpenGame?: () => void;
+  onOpenLuckyDice?: () => void;
   activeProfileOverride?: UserProfile | null;
   onClearActiveProfileOverride?: () => void;
 }
 
 export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   onOpenProfileDetail,
+  onOpenGame,
+  onOpenLuckyDice,
   activeProfileOverride,
   onClearActiveProfileOverride
 }) => {
@@ -65,7 +77,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       : null
   );
 
-  const [chatMessages, setChatMessages] = useState<Record<string, Array<{ sender: 'me' | 'them'; text: string; time: string }>>>({
+  const [chatMessages, setChatMessages] = useState<Record<string, Array<{ sender: 'me' | 'them'; text: string; time: string; badge?: string }>>>({
     'conv-1': [
       { sender: 'them', text: "Hey Kavindu! Saw you're also deep into indie game architecture. Outer Wilds changed how I view storytelling.", time: "10:14 AM" },
       { sender: 'me', text: "Totally agree! That feeling of discovering orbital mechanics yourself without a tutorial is unmatched.", time: "10:20 AM" },
@@ -80,18 +92,21 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
   const [inputMessage, setInputMessage] = useState('');
   const [isCalling, setIsCalling] = useState<'voice' | 'video' | null>(null);
+  const [isActionDockOpen, setIsActionDockOpen] = useState(false);
 
   const selectedConv = conversations.find(c => c.id === activeConversationId);
   const currentChatUser = activeProfileOverride || selectedConv?.profile || MOCK_PROFILES[0];
   const currentMessages = activeConversationId && chatMessages[activeConversationId] ? chatMessages[activeConversationId] : [];
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim() || !activeConversationId) return;
+  const handleSendMessage = (customText?: string, badge?: string) => {
+    const textToSend = customText || inputMessage;
+    if (!textToSend.trim() || !activeConversationId) return;
 
     const newMsg = {
       sender: 'me' as const,
-      text: inputMessage,
-      time: 'Just now'
+      text: textToSend,
+      time: 'Just now',
+      badge
     };
 
     setChatMessages(prev => ({
@@ -99,6 +114,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       [activeConversationId]: [...(prev[activeConversationId] || []), newMsg]
     }));
     setInputMessage('');
+    setIsActionDockOpen(false);
   };
 
   return (
@@ -201,8 +217,69 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             ))}
           </div>
 
-          {/* Message Input Composer */}
+          {/* Expandable Interaction Action Dock */}
+          {isActionDockOpen && (
+            <div className="p-4 bg-[#1B121D] border-t border-[#FF78A8]/20 grid grid-cols-4 gap-3 animate-fadeIn">
+              <button
+                onClick={() => {
+                  if (onOpenGame) onOpenGame();
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87]">
+                  <Gamepad2 className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold">Games</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  if (onOpenLuckyDice) onOpenLuckyDice();
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center text-amber-300">
+                  <Dices className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold">Lucky Dice</span>
+              </button>
+
+              <button
+                onClick={() => handleSendMessage("Sending you a Lucky Rose! 🌹 (+10 Chemistry)", "Gift Sent")}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400">
+                  <Gift className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold">Send Gift</span>
+              </button>
+
+              <button
+                onClick={() => handleSendMessage("Shared Track: 'Resonance' - Home (Lo-Fi Ambient)", "Music")}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                  <Music className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold">Share Song</span>
+              </button>
+            </div>
+          )}
+
+          {/* Message Input Composer with Action Dock Toggle */}
           <div className="p-3 glass-panel-elevated border-t border-[#FF78A8]/20 flex items-center gap-2">
+            <button
+              onClick={() => setIsActionDockOpen(!isActionDockOpen)}
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
+                isActionDockOpen 
+                  ? 'bg-[#FF4F87] text-white shadow-[0_0_12px_rgba(255,79,135,0.7)]' 
+                  : 'glass-panel text-[#B9A8B3] hover:text-white'
+              }`}
+              title="Interactive Action Dock"
+            >
+              {isActionDockOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            </button>
+
             <div className="relative flex-1">
               <input
                 type="text"
@@ -213,7 +290,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 className="w-full pl-4 pr-10 py-3 rounded-2xl glass-panel text-xs text-[#FFF1F3] placeholder-[#7A6975] focus:outline-none focus:border-[#FF4F87]"
               />
               <button 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B9A8B3] hover:text-[#FFF1F3]"
+                onClick={() => handleSendMessage("Voice memo recorded (0:14) 🎙️", "Voice Note")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
                 title="Send Voice Memo"
               >
                 <Mic className="w-4 h-4" />
@@ -221,7 +299,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             </div>
 
             <button
-              onClick={handleSendMessage}
+              onClick={() => handleSendMessage()}
               disabled={!inputMessage.trim()}
               className="w-11 h-11 rounded-2xl pink-gradient-btn flex items-center justify-center text-[#FFF1F3] disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-transform active:scale-95"
             >

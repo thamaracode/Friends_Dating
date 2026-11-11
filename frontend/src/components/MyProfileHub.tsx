@@ -8,13 +8,12 @@ import {
   Heart, 
   Lock, 
   Eye, 
-  ExternalLink,
   ChevronRight,
   Sliders,
-  Volume2,
   Calendar,
   Layers,
-  HelpCircle
+  Dices,
+  Film
 } from 'lucide-react';
 import { CURRENT_USER } from '../mockData';
 import type { ExperienceTab } from '../types';
@@ -89,9 +88,84 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
         </div>
       </div>
 
-      {/* Subsystems & Settings Hub */}
+      {/* Personality & Entertainment Systems */}
       <div className="space-y-2">
-        <span className="text-[10px] uppercase font-bold text-[#FFB4CE] tracking-wider px-1">Identity & Growth Hubs</span>
+        <span className="text-[10px] uppercase font-bold text-[#FFB4CE] tracking-wider px-1">Personality & Lucky Universe</span>
+
+        <div className="rounded-3xl glass-panel-elevated divide-y divide-[#FF78A8]/10 overflow-hidden border border-[#FF78A8]/20">
+          {/* My Character / Cinematic Universe */}
+          <div 
+            onClick={() => onNavigateSubsystem('character_builder')}
+            className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#FF4F87] to-[#FF78A8] flex items-center justify-center text-white shadow-md">
+                <Film className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">My Character Universe</h4>
+                <p className="text-[10px] text-[#B9A8B3]">Cinematic questions, villain story, & quotes</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+          </div>
+
+          {/* Lucky Universe & Coin Wallet */}
+          <div 
+            onClick={() => onNavigateSubsystem('lucky_universe')}
+            className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl bg-amber-400/20 flex items-center justify-center text-amber-300">
+                <Dices className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Lucky Universe & Dice</h4>
+                <p className="text-[10px] text-[#B9A8B3]">Roll daily 3D dice, unlock themed cubes & wallet</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+          </div>
+
+          {/* Mini-Games Engine */}
+          <div 
+            onClick={() => onNavigateSubsystem('mini_games')}
+            className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                <Sliders className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Truth or Dare & Mini-Games</h4>
+                <p className="text-[10px] text-[#B9A8B3]">Turn-based multiplayer dilemmas & challenges</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+          </div>
+
+          {/* Blind Chemistry Anonymous Mode */}
+          <div 
+            onClick={() => onNavigateSubsystem('blind_chemistry')}
+            className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl bg-rose-500/20 flex items-center justify-center text-rose-400">
+                <Eye className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Blind Chemistry Discovery</h4>
+                <p className="text-[10px] text-[#B9A8B3]">Anonymous-first matching with progressive reveal</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </div>
+      </div>
+
+      {/* Identity & Subsystems Hub */}
+      <div className="space-y-2">
+        <span className="text-[10px] uppercase font-bold text-[#FFB4CE] tracking-wider px-1">Identity & Subsystems</span>
 
         <div className="rounded-3xl glass-panel-elevated divide-y divide-[#FF78A8]/10 overflow-hidden border border-[#FF78A8]/20">
           {/* Social Growth 30-Day Ladder */}

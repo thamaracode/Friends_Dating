@@ -24,6 +24,12 @@ import { MessagingInboxView } from './components/MessagingInboxView';
 import { MyProfileHub } from './components/MyProfileHub';
 import { ProfileDetailSheet } from './components/ProfileDetailSheet';
 
+// Personality & Entertainment Systems
+import { MyCharacterBuilder } from './components/MyCharacterBuilder';
+import { LuckyUniverseView } from './components/LuckyUniverseView';
+import { MiniGameEngine } from './components/MiniGameEngine';
+import { BlindChemistryView } from './components/BlindChemistryView';
+
 // Subsystems preserved
 import { MyWorldProfile } from './components/MyWorldProfile';
 import { EventsHub } from './components/EventsHub';
@@ -113,6 +119,18 @@ export function App() {
             </div>
 
             {activeSubsystem === 'my_world' && <MyWorldProfile />}
+            {activeSubsystem === 'character_builder' && <MyCharacterBuilder onClose={() => setActiveSubsystem(null)} />}
+            {activeSubsystem === 'lucky_universe' && <LuckyUniverseView />}
+            {activeSubsystem === 'mini_games' && <MiniGameEngine onSendResultToChat={(res) => {
+              setActiveChatProfileOverride(inspectedProfile || null);
+              setMainTab('messages');
+              setActiveSubsystem(null);
+            }} />}
+            {activeSubsystem === 'blind_chemistry' && <BlindChemistryView onOpenRevealedChat={(p) => {
+              setActiveChatProfileOverride(p);
+              setMainTab('messages');
+              setActiveSubsystem(null);
+            }} />}
             {activeSubsystem === 'events' && <EventsHub />}
             {activeSubsystem === 'communities' && <CommunitiesHub />}
             {activeSubsystem === 'social_growth' && <SocialGrowthHub />}
@@ -142,6 +160,7 @@ export function App() {
               <DiscoverExplorationView 
                 onOpenProfileDetail={handleOpenProfile}
                 onInitiateChat={handleInitiateChat}
+                onOpenBlindChemistry={() => setActiveSubsystem('blind_chemistry')}
               />
             )}
 
@@ -157,6 +176,8 @@ export function App() {
             {mainTab === 'messages' && (
               <MessagingInboxView 
                 onOpenProfileDetail={handleOpenProfile}
+                onOpenGame={() => setActiveSubsystem('mini_games')}
+                onOpenLuckyDice={() => setActiveSubsystem('lucky_universe')}
                 activeProfileOverride={activeChatProfileOverride}
                 onClearActiveProfileOverride={() => setActiveChatProfileOverride(null)}
               />

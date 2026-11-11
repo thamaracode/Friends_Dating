@@ -24,11 +24,13 @@ import type { DiscoveryMode, UserProfile } from '../types';
 interface DiscoverExplorationViewProps {
   onOpenProfileDetail: (profile: UserProfile) => void;
   onInitiateChat: (profile: UserProfile) => void;
+  onOpenBlindChemistry?: () => void;
 }
 
 export const DiscoverExplorationView: React.FC<DiscoverExplorationViewProps> = ({
   onOpenProfileDetail,
-  onInitiateChat
+  onInitiateChat,
+  onOpenBlindChemistry
 }) => {
   const [activeMode, setActiveMode] = useState<DiscoveryMode>('social');
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,6 +115,16 @@ export const DiscoverExplorationView: React.FC<DiscoverExplorationViewProps> = (
             <Brain className="w-3.5 h-3.5" />
             <span>Deep Fit</span>
           </button>
+
+          {onOpenBlindChemistry && (
+            <button
+              onClick={onOpenBlindChemistry}
+              className="px-2.5 py-2 rounded-xl text-xs font-bold text-[#FFB4CE] hover:text-[#FFF1F3] flex items-center gap-1 bg-purple-950/40 border border-purple-500/30 cursor-pointer"
+              title="Blind Chemistry Anonymous Mode"
+            >
+              <span>Blind</span>
+            </button>
+          )}
         </div>
 
         {/* Horizontal Interest Filter Pills */}
