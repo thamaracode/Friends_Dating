@@ -40,6 +40,7 @@ import {
   Download,
   Share2,
   Maximize2,
+  Minimize2,
   ChevronLeft,
   ChevronRight,
   Archive,
@@ -83,10 +84,11 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
   // Desktop vs Mobile responsive state
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
+  const [isEdgeToEdge, setIsEdgeToEdge] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsDesktopLayout(window.innerWidth >= 1024);
+      setIsDesktopLayout(window.innerWidth >= 900);
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -659,20 +661,20 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       </div>
 
       {/* Folder Tabs (Telegram Web K Benchmark) */}
-      <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar border-b border-[#FF78A8]/10">
+      <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar border-b border-[#FF1A75]/15">
         {folders.map(folder => (
           <button
             key={folder.id}
             onClick={() => setActiveFolder(folder.id)}
             className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-1.5 ${
               activeFolder === folder.id 
-                ? 'bg-[#FF4F87] text-white shadow-[0_0_12px_rgba(255,79,135,0.6)]' 
-                : 'glass-panel text-[#B9A8B3] hover:text-white'
+                ? 'bg-gradient-to-r from-[#FF0D69] to-[#E0005C] text-white shadow-[0_0_12px_rgba(255,13,105,0.6)]' 
+                : 'glass-panel text-[#C49DB2] hover:text-white'
             }`}
           >
             <span>{folder.title}</span>
             {folder.badgeCount !== undefined && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${activeFolder === folder.id ? 'bg-white text-[#FF4F87]' : 'bg-[#FF4F87] text-white'}`}>
+              <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${activeFolder === folder.id ? 'bg-white text-[#FF0D69]' : 'bg-[#FF0D69] text-white'}`}>
                 {folder.badgeCount}
               </span>
             )}
@@ -683,13 +685,13 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       {/* Search Input */}
       <div className="p-3 pb-2">
         <div className="relative">
-          <Search className="w-4 h-4 text-[#B9A8B3] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#C49DB2] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search conversations, matches, or cloud..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl glass-panel text-xs text-[#FFF1F3] placeholder-[#7A6975] focus:outline-none focus:border-[#FF4F87]"
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl glass-panel text-xs text-[#FFF2F6] placeholder-[#82586E] focus:outline-none focus:border-[#FF0D69]"
           />
         </div>
       </div>
@@ -704,8 +706,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               onClick={() => setActiveConversationId(conv.id)}
               className={`relative p-3 rounded-2xl border flex items-center justify-between gap-3 cursor-pointer transition-all shadow-sm group ${
                 isSelected 
-                  ? 'bg-gradient-to-r from-[#FF4F87]/20 to-[#FF78A8]/10 border-[#FF4F87] shadow-[0_0_16px_rgba(255,79,135,0.25)]' 
-                  : 'glass-panel-elevated border-[#FF78A8]/15 hover:border-[#FF4F87]/50'
+                  ? 'bg-gradient-to-r from-[#FF0D69]/25 via-[#D60058]/15 to-transparent border-[#FF0D69] shadow-[0_0_20px_rgba(255,13,105,0.25)]' 
+                  : 'glass-panel-elevated border-[#FF1A75]/15 hover:border-[#FF0D69]/50'
               }`}
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -714,7 +716,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                     src={conv.avatar} 
                     alt={conv.title} 
                     className={`w-11 h-11 rounded-2xl object-cover border ${
-                      conv.id === 'conv_saved' ? 'border-amber-400/60' : 'border-[#FF78A8]/40'
+                      conv.id === 'conv_saved' ? 'border-amber-400/60' : 'border-[#FF1A75]/40'
                     }`}
                   />
                   {conv.isOnline && (
@@ -724,15 +726,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <h4 className="text-xs font-bold text-[#FFF1F3] truncate">{conv.title}</h4>
+                    <h4 className="text-xs font-bold text-[#FFF2F6] truncate">{conv.title}</h4>
                     {conv.isVerified && (
                       <ShieldCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" />
                     )}
                     {conv.isPinned && (
-                      <Pin className="w-3 h-3 text-[#FF4F87] flex-shrink-0" />
+                      <Pin className="w-3 h-3 text-[#FF0D69] flex-shrink-0" />
                     )}
                   </div>
-                  <p className={`text-[11px] truncate mt-0.5 ${conv.unreadCount > 0 ? 'text-[#FFB4CE] font-bold' : 'text-[#B9A8B3]'}`}>
+                  <p className={`text-[11px] truncate mt-0.5 ${conv.unreadCount > 0 ? 'text-[#FFB8D2] font-bold' : 'text-[#C49DB2]'}`}>
                     {conv.draftText ? (
                       <span className="text-amber-400 italic font-semibold">Draft: {conv.draftText}</span>
                     ) : (
@@ -743,13 +745,13 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               </div>
 
               <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                <span className="text-[10px] text-[#7A6975]">{conv.lastMessage?.timestamp}</span>
+                <span className="text-[10px] text-[#82586E]">{conv.lastMessage?.timestamp}</span>
                 {conv.unreadCount > 0 ? (
-                  <span className="w-4 h-4 rounded-full bg-[#FF4F87] text-[#FFF1F3] text-[9px] font-black flex items-center justify-center shadow-[0_0_8px_#FF4F87]">
+                  <span className="w-4 h-4 rounded-full bg-[#FF0D69] text-[#FFF2F6] text-[9px] font-black flex items-center justify-center shadow-[0_0_8px_#FF0D69]">
                     {conv.unreadCount}
                   </span>
                 ) : conv.isPinned ? (
-                  <span className="text-[10px] text-[#FF4F87]">Pinned</span>
+                  <span className="text-[10px] text-[#FF0D69]">Pinned</span>
                 ) : null}
               </div>
             </div>
@@ -831,30 +833,38 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
           {/* Calling, Search & Settings Options */}
           <div className="flex items-center gap-1.5">
+            {/* Fullscreen / Edge-to-Edge Web Toggle */}
+            <button
+              onClick={() => setIsEdgeToEdge(!isEdgeToEdge)}
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
+              title={isEdgeToEdge ? "Exit Fullscreen Web View" : "Fullscreen Telegram Web View"}
+            >
+              {isEdgeToEdge ? <Minimize2 className="w-4 h-4 text-[#FF0D69]" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
             <button
               onClick={() => setIsSearchActive(!isSearchActive)}
-              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
               title="Search Messages (Ctrl+F)"
             >
               <Search className="w-4 h-4" />
             </button>
             <button
               onClick={() => startCall('voice')}
-              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
               title="Encrypted Voice Call"
             >
               <Phone className="w-4 h-4" />
             </button>
             <button
               onClick={() => startCall('video')}
-              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
               title="Encrypted Video Call"
             >
               <Video className="w-4 h-4" />
             </button>
             <button
               onClick={() => setIsChatSettingsOpen(!isChatSettingsOpen)}
-              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
               title="Chat Options & Privacy"
             >
               <MoreVertical className="w-4 h-4" />
@@ -949,93 +959,94 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         )}
 
         {/* Messages Stream with Grouping & Date Separators */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-1.5 no-scrollbar">
-          {/* Floating Date Separator */}
-          <div className="flex justify-center my-2">
-            <span className="px-3 py-0.5 rounded-full bg-black/40 border border-[#FF78A8]/20 text-[10px] font-bold text-[#FFB4CE] shadow-sm">
-              Today
-            </span>
-          </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-1.5 no-scrollbar telegram-chat-wallpaper">
+          <div className="max-w-3xl xl:max-w-4xl mx-auto w-full flex flex-col space-y-1.5 min-h-full justify-end">
+            {/* Floating Date Separator */}
+            <div className="flex justify-center my-2">
+              <span className="px-3 py-0.5 rounded-full bg-black/60 border border-[#FF1A75]/25 text-[10px] font-bold text-[#FFB8D2] shadow-sm backdrop-blur-md">
+                Today
+              </span>
+            </div>
 
-          {currentMessages
-            .filter(m => !inChatSearchQuery.trim() || m.text.toLowerCase().includes(inChatSearchQuery.toLowerCase()))
-            .map((msg, idx) => {
-              const groupedPrev = isGroupedWithPrevious(idx);
-              const groupedNext = isGroupedWithNext(idx);
+            {currentMessages
+              .filter(m => !inChatSearchQuery.trim() || m.text.toLowerCase().includes(inChatSearchQuery.toLowerCase()))
+              .map((msg, idx) => {
+                const groupedPrev = isGroupedWithPrevious(idx);
+                const groupedNext = isGroupedWithNext(idx);
 
-              // Tail corner rounding rules (Telegram Web K reference)
-              let cornerClass = 'rounded-3xl';
-              if (msg.isOutgoing) {
-                if (groupedPrev && groupedNext) cornerClass = 'rounded-l-3xl rounded-r-lg';
-                else if (groupedPrev) cornerClass = 'rounded-l-3xl rounded-tl-lg rounded-br-xs';
-                else if (groupedNext) cornerClass = 'rounded-3xl rounded-br-lg';
-                else cornerClass = 'rounded-3xl rounded-br-xs';
-              } else {
-                if (groupedPrev && groupedNext) cornerClass = 'rounded-r-3xl rounded-l-lg';
-                else if (groupedPrev) cornerClass = 'rounded-r-3xl rounded-tr-lg rounded-bl-xs';
-                else if (groupedNext) cornerClass = 'rounded-3xl rounded-bl-lg';
-                else cornerClass = 'rounded-3xl rounded-bl-xs';
-              }
+                // Tail corner rounding rules (Telegram Web K reference)
+                let cornerClass = 'rounded-3xl';
+                if (msg.isOutgoing) {
+                  if (groupedPrev && groupedNext) cornerClass = 'rounded-l-3xl rounded-r-lg';
+                  else if (groupedPrev) cornerClass = 'rounded-l-3xl rounded-tl-lg rounded-br-xs';
+                  else if (groupedNext) cornerClass = 'rounded-3xl rounded-br-lg';
+                  else cornerClass = 'rounded-3xl rounded-br-xs';
+                } else {
+                  if (groupedPrev && groupedNext) cornerClass = 'rounded-r-3xl rounded-l-lg';
+                  else if (groupedPrev) cornerClass = 'rounded-r-3xl rounded-tr-lg rounded-bl-xs';
+                  else if (groupedNext) cornerClass = 'rounded-3xl rounded-bl-lg';
+                  else cornerClass = 'rounded-3xl rounded-bl-xs';
+                }
 
-              return (
-                <div
-                  key={msg.id}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setSelectedMessageForMenu(msg);
-                  }}
-                  className={`flex flex-col ${msg.isOutgoing ? 'items-end' : 'items-start'} group ${groupedPrev ? 'mt-0.5' : 'mt-2'}`}
-                >
-                  {/* Replying To preview banner */}
-                  {msg.replyTo && (
-                    <div className="text-[10px] text-[#FFB4CE] mb-1 px-3 py-1 rounded-xl bg-black/40 border-l-2 border-[#FF4F87] max-w-[75%]">
-                      <span className="font-bold">Replied to {msg.replyTo.senderName}:</span>
-                      <p className="truncate italic">{msg.replyTo.textSnippet}</p>
-                    </div>
-                  )}
-
-                  {/* TELEGRAM LUCK EMOJIS: Large borderless element with floating time pill */}
-                  {msg.type === 'dice_event' || msg.type === 'slot_event' || msg.type === 'coin_event' ? (
-                    <div 
-                      onClick={() => setSelectedMessageForMenu(msg)}
-                      className="relative p-1 my-1 flex flex-col items-center cursor-pointer group/luck"
-                    >
-                      <TelegramLuckEmoji 
-                        type={msg.type === 'dice_event' ? 'dice' : msg.type === 'slot_event' ? 'slot' : 'coin'} 
-                        seedValue={msg.mediaUrl}
-                      />
-                      {/* Floating Translucent Pill (Telegram Authenticity) */}
-                      <div className="absolute bottom-0 right-0 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white/90 shadow-md">
-                        <span>{msg.timestamp}</span>
-                        {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FF4F87]" />}
+                return (
+                  <div
+                    key={msg.id}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setSelectedMessageForMenu(msg);
+                    }}
+                    className={`flex flex-col ${msg.isOutgoing ? 'items-end' : 'items-start'} group ${groupedPrev ? 'mt-0.5' : 'mt-2'}`}
+                  >
+                    {/* Replying To preview banner */}
+                    {msg.replyTo && (
+                      <div className="text-[10px] text-[#FFB8D2] mb-1 px-3 py-1 rounded-xl bg-black/50 border-l-2 border-[#FF0D69] max-w-[75%] backdrop-blur-md">
+                        <span className="font-bold">Replied to {msg.replyTo.senderName}:</span>
+                        <p className="truncate italic">{msg.replyTo.textSnippet}</p>
                       </div>
-                    </div>
-                  ) : msg.type === 'sticker' ? (
-                    /* STICKER: Borderless enlarged sticker with floating time pill */
-                    <div 
-                      onClick={() => setSelectedMessageForMenu(msg)}
-                      className="relative p-1 my-1 cursor-pointer group/sticker"
-                    >
-                      <img 
-                        src={msg.mediaUrl} 
-                        alt="Sticker" 
-                        className="w-32 h-32 object-contain hover:scale-105 transition-transform drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]" 
-                      />
-                      <div className="absolute bottom-1 right-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white/90 shadow-md">
-                        <span>{msg.timestamp}</span>
-                        {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FF4F87]" />}
+                    )}
+
+                    {/* TELEGRAM LUCK EMOJIS: Large borderless element with floating time pill */}
+                    {msg.type === 'dice_event' || msg.type === 'slot_event' || msg.type === 'coin_event' ? (
+                      <div 
+                        onClick={() => setSelectedMessageForMenu(msg)}
+                        className="relative p-1 my-1 flex flex-col items-center cursor-pointer group/luck"
+                      >
+                        <TelegramLuckEmoji 
+                          type={msg.type === 'dice_event' ? 'dice' : msg.type === 'slot_event' ? 'slot' : 'coin'} 
+                          seedValue={msg.mediaUrl}
+                        />
+                        {/* Floating Translucent Pill (Telegram Authenticity) */}
+                        <div className="absolute bottom-0 right-0 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white/90 shadow-md">
+                          <span>{msg.timestamp}</span>
+                          {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FF0D69]" />}
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    /* Standard Message Bubble */
-                    <div
-                      onClick={() => setSelectedMessageForMenu(msg)}
-                      className={`relative max-w-[80%] p-3 text-xs space-y-1 shadow-md cursor-pointer transition-transform active:scale-[0.98] ${cornerClass} ${
-                        msg.isOutgoing
-                          ? 'bg-gradient-to-tr from-[#FF4F87] to-[#FF78A8] text-[#FFF1F3] shadow-[0_4px_16px_rgba(255,79,135,0.35)]'
-                          : 'glass-panel-elevated text-[#FFF1F3] border border-[#FF78A8]/20'
-                      }`}
-                    >
+                    ) : msg.type === 'sticker' ? (
+                      /* STICKER: Borderless enlarged sticker with floating time pill */
+                      <div 
+                        onClick={() => setSelectedMessageForMenu(msg)}
+                        className="relative p-1 my-1 cursor-pointer group/sticker"
+                      >
+                        <img 
+                          src={msg.mediaUrl} 
+                          alt="Sticker" 
+                          className="w-32 h-32 object-contain hover:scale-105 transition-transform drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]" 
+                        />
+                        <div className="absolute bottom-1 right-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white/90 shadow-md">
+                          <span>{msg.timestamp}</span>
+                          {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FF0D69]" />}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Standard Message Bubble */
+                      <div
+                        onClick={() => setSelectedMessageForMenu(msg)}
+                        className={`relative max-w-[80%] p-3 text-xs space-y-1 shadow-md cursor-pointer transition-transform active:scale-[0.98] ${cornerClass} ${
+                          msg.isOutgoing
+                            ? 'bg-gradient-to-r from-[#FF0D69] via-[#E0005C] to-[#B30044] text-[#FFF2F6] shadow-[0_4px_18px_rgba(255,13,105,0.35)]'
+                            : 'bg-[#24061A]/85 border border-[#FF1A75]/25 backdrop-blur-xl text-[#FFF2F6]'
+                        }`}
+                      >
                       {/* Media Image Attachment with Lightbox Viewer */}
                       {msg.mediaUrl && msg.type !== 'voice' && (
                         <div 
@@ -1093,7 +1104,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 </div>
               );
             })}
-          <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
         {/* Reply / Edit Preview Bar */}
@@ -1305,55 +1317,57 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             </div>
           </div>
         ) : (
-          <div className="p-3 glass-panel-elevated border-t border-[#FF78A8]/20 flex items-center gap-2">
-            <button
-              onClick={() => setIsActionDockOpen(!isActionDockOpen)}
-              className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
-                isActionDockOpen 
-                  ? 'bg-[#FF4F87] text-white shadow-[0_0_12px_rgba(255,79,135,0.7)]' 
-                  : 'glass-panel text-[#B9A8B3] hover:text-white'
-              }`}
-              title="Interactive Action Dock"
-            >
-              {isActionDockOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            </button>
-
-            <button
-              onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-              className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
-                isEmojiPickerOpen ? 'text-[#FF4F87]' : 'text-[#B9A8B3] hover:text-white'
-              }`}
-              title="Emoji, Stickers & GIFs"
-            >
-              <Smile className="w-4 h-4" />
-            </button>
-
-            <div className="relative flex-1">
-              <input
-                ref={composerInputRef}
-                type="text"
-                value={inputMessage}
-                onChange={(e) => handleTypingNotice(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder={editingMessage ? "Update message (Esc to cancel)..." : `Message ${currentConv.title}...`}
-                className="w-full pl-4 pr-10 py-3 rounded-2xl glass-panel text-xs text-[#FFF1F3] placeholder-[#7A6975] focus:outline-none focus:border-[#FF4F87]"
-              />
-              <button 
-                onClick={startVoiceRecording}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B9A8B3] hover:text-[#FF4F87] cursor-pointer"
-                title="Hold or Click to Record Voice Note"
+          <div className="p-3 bg-[#180412]/95 border-t border-[#FF1A75]/20 backdrop-blur-2xl">
+            <div className="max-w-3xl xl:max-w-4xl mx-auto w-full flex items-center gap-2">
+              <button
+                onClick={() => setIsActionDockOpen(!isActionDockOpen)}
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
+                  isActionDockOpen 
+                    ? 'bg-[#FF0D69] text-white shadow-[0_0_16px_rgba(255,13,105,0.8)]' 
+                    : 'glass-panel text-[#C49DB2] hover:text-white'
+                }`}
+                title="Interactive Action Dock"
               >
-                <Mic className="w-4 h-4" />
+                {isActionDockOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              </button>
+
+              <button
+                onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
+                  isEmojiPickerOpen ? 'text-[#FF0D69] bg-[#FF0D69]/15' : 'text-[#C49DB2] hover:text-white'
+                }`}
+                title="Emoji, Stickers & Telegram Luck"
+              >
+                <Smile className="w-4 h-4" />
+              </button>
+
+              <div className="relative flex-1">
+                <input
+                  ref={composerInputRef}
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => handleTypingNotice(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder={editingMessage ? "Update message (Esc to cancel)..." : `Message ${currentConv.title}...`}
+                  className="w-full pl-4 pr-10 py-3 rounded-2xl glass-panel text-xs text-[#FFF2F6] placeholder-[#82586E] focus:outline-none focus:border-[#FF0D69]"
+                />
+                <button 
+                  onClick={startVoiceRecording}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
+                  title="Hold or Click to Record Voice Note"
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+              </div>
+
+              <button
+                onClick={() => handleSendMessage()}
+                disabled={!inputMessage.trim()}
+                className="w-11 h-11 rounded-2xl pink-gradient-btn flex items-center justify-center text-[#FFF2F6] disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-transform active:scale-95"
+              >
+                <Send className="w-4 h-4" />
               </button>
             </div>
-
-            <button
-              onClick={() => handleSendMessage()}
-              disabled={!inputMessage.trim()}
-              className="w-11 h-11 rounded-2xl pink-gradient-btn flex items-center justify-center text-[#FFF1F3] disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-transform active:scale-95"
-            >
-              <Send className="w-4 h-4" />
-            </button>
           </div>
         )}
       </div>
@@ -1364,15 +1378,21 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   // MAIN RENDER (RESPONSIVE: 2-COLUMN ON DESKTOP, SWITCHER ON MOBILE)
   // =========================================================================
   return (
-    <div className={`w-full mx-auto select-none ${isDesktopLayout ? 'max-w-6xl h-[calc(100vh-6rem)] flex rounded-3xl overflow-hidden glass-panel-elevated border border-[#FF78A8]/30' : 'max-w-md min-h-[calc(100dvh-5.5rem)] flex flex-col'}`}>
+    <div className={`w-full mx-auto select-none ${
+      isEdgeToEdge 
+        ? 'fixed inset-0 z-50 flex bg-[#0D0209]' 
+        : isDesktopLayout 
+          ? 'max-w-[1700px] h-[calc(100vh-4.5rem)] flex rounded-2xl lg:rounded-3xl overflow-hidden glass-panel-elevated border border-[#FF1A75]/30 shadow-[0_12px_45px_rgba(255,13,105,0.22)]' 
+          : 'max-w-md min-h-[calc(100dvh-5rem)] flex flex-col'
+    }`}>
       
       {/* DESKTOP 2-COLUMN VIEW */}
-      {isDesktopLayout ? (
+      {isDesktopLayout || isEdgeToEdge ? (
         <>
-          <div className="w-80 border-r border-[#FF78A8]/20 flex flex-col bg-[#140D17]">
+          <div className="w-80 lg:w-[380px] xl:w-[420px] flex-shrink-0 border-r border-[#FF1A75]/20 flex flex-col bg-[#160411]/95 backdrop-blur-2xl">
             {renderConversationList()}
           </div>
-          <div className="flex-1 flex flex-col bg-[#100B12]">
+          <div className="flex-1 min-w-0 flex flex-col bg-[#0D0209] relative overflow-hidden">
             {renderActiveConversation()}
           </div>
         </>

@@ -4,79 +4,113 @@
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color-scheme: dark;
 
-  /* Pink Ambient + Dark Luxury + Soft Cream Palette */
-  --color-primary-pink: #FF4F87;
-  --color-secondary-pink: #FF78A8;
-  --color-accent-pink: #FFB4CE;
-  --color-deep-rose: #702B50;
-  --color-ambient-pink: rgba(255, 79, 135, 0.15);
-  --color-bg-dark: #100B12;
-  --color-surface-dark: #1B121D;
-  --color-surface-elevated: #241827;
-  --color-border-dark: rgba(255, 120, 168, 0.14);
-  --color-cream: #FFF1F3;
-  --color-muted-text: #B9A8B3;
-  --color-dim-text: #7A6975;
+  /* Velvet Wine & Hot Magenta Smoke Palette (Inspired by media_1794362638411_c898a5c4.png & media_1794362654697_52b45225.jpg) */
+  --color-primary-pink: #FF0D69;         /* Hot neon magenta glow from smoke */
+  --color-secondary-pink: #FF3B88;       /* Luminous raspberry rose */
+  --color-accent-pink: #FFB8D2;          /* Soft blush cream */
+  --color-deep-rose: #9E0042;            /* Rich berry ruby */
+  --color-ambient-pink: rgba(255, 13, 105, 0.22);
+  --color-bg-dark: #0D0209;              /* Deep obsidian dark velvet base */
+  --color-surface-dark: #180412;         /* Dark wine surface */
+  --color-surface-elevated: #26061D;     /* Elevated plum/wine glass */
+  --color-border-dark: rgba(255, 26, 117, 0.22);
+  --color-cream: #FFF2F6;
+  --color-muted-text: #C49DB2;           /* Mauve-berry muted text */
+  --color-dim-text: #82586E;             /* Dim berry text */
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #100B12;
-  color: #FFF1F3;
+  background-color: #0D0209;
+  color: #FFF2F6;
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  selection-background-color: #FF4F87;
-  selection-color: #FFF1F3;
+  selection-background-color: #FF0D69;
+  selection-color: #FFF2F6;
 }
 
-/* Glassmorphism & Liquid Glass Surfaces */
+/* Velvet Magenta Smoke Ambient Background */
+.velvet-smoke-gradient {
+  background: 
+    radial-gradient(circle at 85% 15%, rgba(255, 13, 105, 0.32) 0%, transparent 48%),
+    radial-gradient(circle at 15% 85%, rgba(158, 0, 66, 0.26) 0%, transparent 52%),
+    radial-gradient(circle at 50% 50%, rgba(84, 0, 38, 0.35) 0%, transparent 75%),
+    #0D0209;
+}
+
+/* Telegram Chat Wallpaper with subtle velvet wine & smoke atmosphere */
+.telegram-chat-wallpaper {
+  background-color: #0D0209;
+  background-image: 
+    radial-gradient(circle at 80% 18%, rgba(255, 13, 105, 0.16) 0%, transparent 45%),
+    radial-gradient(circle at 20% 75%, rgba(158, 0, 66, 0.20) 0%, transparent 50%),
+    radial-gradient(circle at 50% 95%, rgba(255, 59, 136, 0.09) 0%, transparent 40%);
+}
+
+/* Glassmorphism & Liquid Glass Surfaces with Velvet Magenta Tint */
 .glass-panel {
-  background: rgba(27, 18, 29, 0.72);
+  background: rgba(24, 4, 18, 0.78);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 120, 168, 0.16);
+  border: 1px solid rgba(255, 30, 120, 0.20);
 }
 
 .glass-panel-elevated {
-  background: rgba(36, 24, 39, 0.85);
+  background: rgba(38, 6, 29, 0.88);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 120, 168, 0.22);
+  border: 1px solid rgba(255, 30, 120, 0.28);
 }
 
 .glass-pill {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-/* Pink Ambient Glows */
+/* Pink / Hot Magenta Ambient Glows */
 .pink-ambient-glow {
-  box-shadow: 0 0 40px -10px rgba(255, 79, 135, 0.35);
+  box-shadow: 0 0 45px -8px rgba(255, 13, 105, 0.42);
 }
 
 .pink-glow-sm {
-  box-shadow: 0 0 20px -5px rgba(255, 79, 135, 0.45);
+  box-shadow: 0 0 22px -4px rgba(255, 13, 105, 0.50);
 }
 
 .pink-glow-pill {
-  box-shadow: 0 4px 20px -2px rgba(255, 79, 135, 0.28);
+  box-shadow: 0 4px 22px -2px rgba(255, 13, 105, 0.35);
 }
 
+/* Outgoing message bubble: radiant velvet berry/magenta gradient */
+.msg-bubble-outgoing {
+  background: linear-gradient(135deg, #FF1A75 0%, #D60058 55%, #9E003E 100%);
+  color: #FFF2F6;
+  box-shadow: 0 4px 18px rgba(230, 0, 88, 0.32);
+}
+
+/* Incoming message bubble: dark velvet berry glass */
+.msg-bubble-incoming {
+  background: rgba(36, 6, 26, 0.85);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 30, 120, 0.22);
+  color: #FFF2F6;
+}
+
+/* Pink Neon Smoke Buttons */
 .pink-gradient-btn {
-  background: linear-gradient(135deg, #FF4F87 0%, #FF78A8 100%);
-  color: #FFF1F3;
-  box-shadow: 0 8px 24px -4px rgba(255, 79, 135, 0.4);
+  background: linear-gradient(135deg, #FF0D69 0%, #E0005C 50%, #B30044 100%);
+  color: #FFF2F6;
+  box-shadow: 0 8px 26px -4px rgba(255, 13, 105, 0.48);
 }
 
 .pink-gradient-btn:hover {
-  background: linear-gradient(135deg, #FF3D7C 0%, #FF6C9F 100%);
-  box-shadow: 0 10px 28px -4px rgba(255, 79, 135, 0.55);
+  background: linear-gradient(135deg, #FF2E7E 0%, #FF0D69 50%, #C7004F 100%);
+  box-shadow: 0 10px 30px -4px rgba(255, 13, 105, 0.65);
 }
 
 .pink-gradient-btn:active {
@@ -85,7 +119,7 @@ body {
 
 /* Gradients for text & borders */
 .text-pink-gradient {
-  background: linear-gradient(135deg, #FF4F87 0%, #FFB4CE 100%);
+  background: linear-gradient(135deg, #FF2E7E 0%, #FF0D69 45%, #FFB8D2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

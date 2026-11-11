@@ -38,7 +38,7 @@ export const TelegramLuckEmoji: React.FC<TelegramLuckEmojiProps> = ({
 
     return (
       <div 
-        className={`relative w-24 h-24 flex items-center justify-center cursor-pointer transition-transform active:scale-95 ${
+        className={`relative w-28 h-28 flex items-center justify-center cursor-pointer transition-transform active:scale-95 ${
           isAnimating ? 'animate-bounce' : ''
         }`}
         title={`Dice Result: ${diceNumber}`}
@@ -165,28 +165,28 @@ export const TelegramLuckEmoji: React.FC<TelegramLuckEmojiProps> = ({
 
     return (
       <div 
-        className="relative w-28 h-32 flex flex-col items-center justify-center cursor-pointer select-none"
+        className="relative w-32 h-36 flex flex-col items-center justify-center cursor-pointer select-none"
         title={isJackpot ? "JACKPOT 777!" : "Slot Machine"}
       >
         {/* Telegram Slot Machine Frame */}
-        <div className="relative w-full h-full rounded-2xl bg-gradient-to-b from-slate-200 via-slate-300 to-slate-400 p-2 border-2 border-slate-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] flex flex-col items-center justify-between">
+        <div className="relative w-full h-full rounded-2xl bg-gradient-to-b from-slate-100 via-slate-300 to-slate-400 p-2.5 border-2 border-slate-400 shadow-[0_12px_24px_rgba(0,0,0,0.6)] flex flex-col items-center justify-between">
           
           {/* Top Flashing Red Light */}
-          <div className="w-5 h-3 rounded-full bg-red-600 border border-red-800 flex items-center justify-center shadow-[0_0_8px_#ff0000] -mt-1">
-            <div className={`w-2 h-1 rounded-full bg-white ${isJackpot || isAnimating ? 'animate-ping' : ''}`} />
+          <div className="w-6 h-3.5 rounded-full bg-red-600 border border-red-800 flex items-center justify-center shadow-[0_0_10px_#ff0000] -mt-1.5">
+            <div className={`w-2.5 h-1.5 rounded-full bg-white ${isJackpot || isAnimating ? 'animate-ping' : ''}`} />
           </div>
 
           {/* Yellow Hood */}
-          <div className="w-full h-3 rounded-t-lg bg-gradient-to-r from-amber-400 to-amber-500 border-b border-amber-600" />
+          <div className="w-full h-3.5 rounded-t-lg bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 border-b border-amber-600 shadow-sm" />
 
           {/* Reels Display Window */}
           <div className="w-full flex-1 bg-white rounded-lg border-2 border-slate-600 flex items-center justify-around px-1 overflow-hidden shadow-inner my-1">
             {reels.map((icon, i) => (
               <div 
                 key={i} 
-                className={`w-6 h-10 flex items-center justify-center text-sm font-black transition-all ${
+                className={`w-7 h-12 flex items-center justify-center text-base font-black transition-all ${
                   isAnimating ? 'blur-[0.5px] translate-y-0.5' : ''
-                } ${icon === '7' ? 'text-red-600' : icon === 'BAR' ? 'text-blue-900 text-[10px] bg-slate-200 px-0.5 rounded' : ''}`}
+                } ${icon === '7' ? 'text-red-600 text-lg' : icon === 'BAR' ? 'text-blue-900 text-[10px] bg-slate-200 px-1 py-0.5 rounded font-black border border-slate-400' : ''}`}
               >
                 {icon}
               </div>
@@ -194,21 +194,21 @@ export const TelegramLuckEmoji: React.FC<TelegramLuckEmojiProps> = ({
           </div>
 
           {/* Base Plate */}
-          <div className="w-full h-3 rounded-b-lg bg-slate-500 flex items-center justify-center">
-            <span className="text-[7px] font-bold text-white tracking-widest">FRIENDS CASINO</span>
+          <div className="w-full h-3.5 rounded-b-lg bg-slate-500 flex items-center justify-center shadow-inner">
+            <span className="text-[7.5px] font-black text-white tracking-widest">TELEGRAM LUCK</span>
           </div>
 
           {/* Right Handle Lever (Telegram Detail) */}
-          <div className="absolute -right-3 top-6 flex flex-col items-center">
-            <div className="w-4 h-4 rounded-full bg-red-600 border border-red-800 shadow-md" />
-            <div className="w-1.5 h-6 bg-slate-400 border border-slate-600 -mt-0.5" />
+          <div className="absolute -right-3.5 top-7 flex flex-col items-center">
+            <div className="w-4.5 h-4.5 rounded-full bg-red-600 border border-red-800 shadow-md" />
+            <div className="w-1.5 h-7 bg-slate-300 border border-slate-500 -mt-0.5 rounded-b" />
           </div>
         </div>
 
         {/* Jackpot Celebratory Banner */}
         {isJackpot && (
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-amber-400 text-black text-[9px] font-black flex items-center gap-1 shadow-[0_0_12px_#fbbf24] animate-bounce">
-            <Trophy className="w-3 h-3" />
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-black flex items-center gap-1 shadow-[0_0_14px_#fbbf24] animate-bounce">
+            <Trophy className="w-3.5 h-3.5" />
             <span>JACKPOT!</span>
           </div>
         )}
@@ -237,12 +237,12 @@ export const TelegramLuckEmoji: React.FC<TelegramLuckEmojiProps> = ({
 
     return (
       <div 
-        className="relative w-24 h-24 flex items-center justify-center cursor-pointer select-none"
+        className="relative w-28 h-28 flex items-center justify-center cursor-pointer select-none"
         title={isHeads ? "Heads (Eagle)" : "Tails (1)"}
       >
         {/* 3D Flipping Coin */}
         <div 
-          className={`w-20 h-20 rounded-full border-4 border-slate-400 bg-gradient-to-tr from-slate-400 via-slate-200 to-slate-100 flex flex-col items-center justify-center shadow-[0_8px_20px_rgba(0,0,0,0.5)] transition-transform duration-300 ${
+          className={`w-24 h-24 rounded-full border-4 border-slate-400 bg-gradient-to-tr from-slate-400 via-slate-200 to-slate-100 flex flex-col items-center justify-center shadow-[0_10px_24px_rgba(0,0,0,0.6)] transition-transform duration-300 ${
             isAnimating ? 'animate-spin' : ''
           }`}
           style={{ animationDuration: isAnimating ? '0.3s' : '0s' }}
@@ -250,18 +250,18 @@ export const TelegramLuckEmoji: React.FC<TelegramLuckEmojiProps> = ({
           {isHeads ? (
             /* Telegram Eagle Side: "The Crazy Ones 2020" */
             <div className="flex flex-col items-center text-center p-1">
-              <span className="text-[6px] font-black tracking-widest text-slate-600 uppercase">
+              <span className="text-[6.5px] font-black tracking-widest text-slate-600 uppercase">
                 The Crazy Ones
               </span>
               {/* Silver Eagle Silhouette */}
-              <div className="text-xl -my-0.5">🦅</div>
-              <span className="text-[7px] font-bold text-slate-500">2026</span>
+              <div className="text-2xl -my-0.5 drop-shadow">🦅</div>
+              <span className="text-[7.5px] font-bold text-slate-500">2020</span>
             </div>
           ) : (
             /* Tails Side: "1 LUCK" */
             <div className="flex flex-col items-center text-center">
-              <span className="text-lg font-black text-slate-700">1</span>
-              <span className="text-[7px] font-bold tracking-wider text-slate-500 uppercase">
+              <span className="text-xl font-black text-slate-700">1</span>
+              <span className="text-[7.5px] font-bold tracking-wider text-slate-500 uppercase">
                 TAILS
               </span>
             </div>

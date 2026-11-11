@@ -71,14 +71,24 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-[#100B12] text-[#FFF1F3] flex flex-col font-sans relative overflow-x-hidden selection:bg-[#FF4F87] selection:text-[#FFF1F3]">
+    <div className="min-h-screen min-h-[100dvh] bg-[#0D0209] text-[#FFF2F6] flex flex-col font-sans relative overflow-x-hidden selection:bg-[#FF0D69] selection:text-[#FFF2F6]">
       
-      {/* Ambient pink lighting glows (radial atmosphere) */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#FF4F87]/10 rounded-full blur-3xl pointer-events-none -mt-24 z-0" />
-      <div className="fixed bottom-0 right-0 w-80 h-80 bg-[#FF78A8]/8 rounded-full blur-3xl pointer-events-none -mb-20 z-0" />
+      {/* Ambient Velvet Wine & Hot Magenta Smoke Glows (Matching User Reference) */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Top-right intense hot magenta glow */}
+        <div className="absolute -top-36 -right-36 w-[650px] h-[650px] bg-gradient-to-bl from-[#FF0D69]/30 via-[#D60058]/20 to-transparent rounded-full blur-[110px]" />
+        {/* Bottom-left deep sultry wine smoke glow */}
+        <div className="absolute -bottom-36 -left-36 w-[650px] h-[650px] bg-gradient-to-tr from-[#9E0042]/25 via-[#540026]/30 to-transparent rounded-full blur-[110px]" />
+        {/* Center ambient haze */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[550px] bg-[#66002B]/12 rounded-full blur-[130px]" />
+      </div>
 
-      {/* Top Mobile Bar with 24/7 Crisis Access */}
-      <header className="relative z-30 max-w-md mx-auto w-full px-4 py-2 flex items-center justify-between">
+      {/* Top Header Bar */}
+      <header className={`relative z-30 w-full transition-all duration-300 ${
+        mainTab === 'messages' 
+          ? 'max-w-[1700px] mx-auto px-4 lg:px-8 py-2.5' 
+          : 'max-w-md mx-auto px-4 py-2'
+      } flex items-center justify-between`}>
         <div 
           onClick={() => {
             setMainTab('home');
@@ -86,23 +96,48 @@ export function App() {
           }}
           className="flex items-center gap-2 cursor-pointer group"
         >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF4F87] to-[#FF78A8] flex items-center justify-center text-white font-black text-sm shadow-[0_0_12px_rgba(255,79,135,0.7)] group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF0D69] to-[#FF3B88] flex items-center justify-center text-white font-black text-sm shadow-[0_0_16px_rgba(255,13,105,0.8)] group-hover:scale-105 transition-transform">
             <Heart className="w-4 h-4 fill-white" />
           </div>
-          <span className="font-black text-base tracking-widest text-[#FFF1F3] text-pink-gradient">
+          <span className="font-black text-base tracking-widest text-[#FFF2F6] text-pink-gradient">
             FRIENDS
           </span>
         </div>
 
-        {/* Crisis 1926 Support Pill & Telegram Web View Launcher */}
+        {/* Desktop Navigation Tabs (when in wide layout) */}
+        <div className="hidden lg:flex items-center gap-1 glass-panel px-3 py-1.5 rounded-full border border-[#FF1A75]/30 shadow-lg">
+          {(['home', 'discover', 'likes', 'messages', 'profile'] as MainNavTab[]).map(tab => (
+            <button
+              key={tab}
+              onClick={() => {
+                setMainTab(tab);
+                setActiveSubsystem(null);
+              }}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all capitalize cursor-pointer ${
+                mainTab === tab 
+                  ? 'bg-gradient-to-r from-[#FF0D69] to-[#E0005C] text-white shadow-[0_0_12px_rgba(255,13,105,0.6)]' 
+                  : 'text-[#C49DB2] hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {tab === 'home' ? 'Match' : tab === 'messages' ? 'Chats' : tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Crisis 1926 Support Pill & Telegram Web Launcher */}
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setIsTelegramWebWindowOpen(true)}
-            className="px-2.5 py-1 rounded-full bg-[#1B121D] border border-[#FF78A8]/40 text-[#FFB4CE] hover:text-white text-[10px] font-bold flex items-center gap-1 shadow-sm hover:border-[#FF4F87] cursor-pointer transition-colors"
-            title="Launch Fullscreen Telegram Web Client Window"
-          >
-            <span>✈️ Telegram Web</span>
-          </button>
+          {mainTab !== 'messages' && (
+            <button
+              onClick={() => {
+                setMainTab('messages');
+                setActiveSubsystem(null);
+              }}
+              className="px-2.5 py-1 rounded-full bg-[#180412] border border-[#FF1A75]/40 text-[#FFB8D2] hover:text-white text-[10px] font-bold flex items-center gap-1 shadow-sm hover:border-[#FF0D69] cursor-pointer transition-colors"
+              title="Launch Telegram Web Messaging"
+            >
+              <span>✈️ Telegram Web</span>
+            </button>
+          )}
 
           <button
             onClick={() => setIsCrisisModalOpen(true)}
@@ -115,7 +150,11 @@ export function App() {
       </header>
 
       {/* Main Content View Container */}
-      <main className="relative z-10 flex-1 w-full max-w-md mx-auto flex flex-col min-h-0">
+      <main className={`relative z-10 flex-1 w-full flex flex-col min-h-0 transition-all duration-300 ${
+        mainTab === 'messages'
+          ? 'max-w-[1700px] mx-auto px-2 sm:px-4 lg:px-6 pb-2'
+          : 'max-w-md mx-auto'
+      }`}>
         {/* If Subsystem active (e.g. 8 chapters, privacy centre, events) */}
         {activeSubsystem ? (
           <div className="flex-1 flex flex-col p-3 pb-24 animate-fadeIn">
@@ -213,16 +252,18 @@ export function App() {
         onSuperLike={handleSuperLike}
       />
 
-      {/* Persistent Native Mobile Bottom Navigation Bar */}
-      <MobileBottomNavbar 
-        currentTab={mainTab}
-        onSelectTab={(tab) => {
-          setMainTab(tab);
-          setActiveSubsystem(null);
-        }}
-        likesCount={5}
-        unreadMessagesCount={2}
-      />
+      {/* Persistent Native Mobile Bottom Navigation Bar (Hidden on desktop in Messages to give 100% full web view) */}
+      <div className={mainTab === 'messages' ? 'lg:hidden' : 'block'}>
+        <MobileBottomNavbar 
+          currentTab={mainTab}
+          onSelectTab={(tab) => {
+            setMainTab(tab);
+            setActiveSubsystem(null);
+          }}
+          likesCount={5}
+          unreadMessagesCount={2}
+        />
+      </div>
 
       {/* Global 24/7 Crisis Support Modal */}
       <CrisisSupportModal 
