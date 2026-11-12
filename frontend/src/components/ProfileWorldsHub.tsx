@@ -274,20 +274,20 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
   return (
     <div className="w-full flex flex-col space-y-4 pb-20 animate-fadeIn">
       {/* Top Profile Worlds Switcher Carousel */}
-      <div className="p-4 rounded-3xl glass-panel-elevated border border-[#FF4F87]/30 shadow-2xl space-y-3">
+      <div className="p-4 rounded-3xl glass-panel-elevated border border-[#FFFFFF]/30 shadow-2xl space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FF0D69] to-[#FF3B88] flex items-center justify-center text-white shadow-md">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FFFFFF] to-[#E5E7EB] flex items-center justify-center text-white shadow-md">
               <Globe2 className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-[#FFF2F6] flex items-center gap-2">
+              <h2 className="text-sm font-black text-[#F3F4F6] flex items-center gap-2">
                 <span>Profile Worlds</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF4F87]/20 border border-[#FF4F87]/40 text-[#FFB4CE]">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFFFFF]/20 border border-[#FFFFFF]/40 text-[#E5E7EB]">
                   {worlds.length} Dimensions
                 </span>
               </h2>
-              <p className="text-[10px] text-[#A695A0]">Multi-dimensional expressions of self under one identity</p>
+              <p className="text-[10px] text-[#9CA3AF]">Multi-dimensional expressions of self under one identity</p>
             </div>
           </div>
 
@@ -295,14 +295,14 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
             {isOwner && (
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-[#FF4F87] hover:bg-[#FF3377] text-white font-bold text-xs flex items-center gap-1 shadow-md hover:scale-102 transition-all cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-[#FFFFFF] hover:bg-[#E5E7EB] text-white font-bold text-xs flex items-center gap-1 shadow-md hover:scale-102 transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>New World</span>
               </button>
             )}
             {onClose && (
-              <button onClick={onClose} className="p-1 text-[#8E7C88] hover:text-white cursor-pointer">
+              <button onClick={onClose} className="p-1 text-[#6B7280] hover:text-white cursor-pointer">
                 ✕
               </button>
             )}
@@ -319,8 +319,8 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                 onClick={() => openWorld(w.id)}
                 className={`px-3 py-1.5 rounded-2xl flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
                   isSelected
-                    ? 'bg-gradient-to-r from-[#FF0D69] to-[#FF3B88] text-white border-transparent shadow-[0_0_12px_rgba(255,13,105,0.5)] font-bold'
-                    : 'bg-black/40 text-[#C4B2BD] border-white/10 hover:border-[#FF78A8]/30 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#FFFFFF] to-[#E5E7EB] text-white border-transparent shadow-[0_0_12px_rgba(255,13,105,0.5)] font-bold'
+                    : 'bg-black/40 text-[#D1D5DB] border-white/10 hover:border-[rgba(255,255,255,0.20)]/30 hover:text-white'
                 }`}
               >
                 <span className="text-xs">{w.is_default === 1 ? '🌟' : '🪐'}</span>
@@ -338,7 +338,7 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
       {activeWorld && (
         <div className="space-y-4">
           {/* World Hero Card with Ambient Theme & Audio */}
-          <div className="relative rounded-3xl overflow-hidden glass-panel-elevated border border-[#FF4F87]/30 shadow-2xl">
+          <div className="relative rounded-3xl overflow-hidden glass-panel-elevated border border-[#FFFFFF]/30 shadow-2xl">
             {/* Background Cover Image with Gradient */}
             <div className="relative w-full h-44 sm:h-56 overflow-hidden bg-black">
               <img
@@ -351,10 +351,10 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
               {/* Floating Top World Controls */}
               <div className="absolute top-3 inset-x-3 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/60 backdrop-blur-md border border-white/20 text-[#FFF2F6] uppercase tracking-wider">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/60 backdrop-blur-md border border-white/20 text-[#F3F4F6] uppercase tracking-wider">
                     {activeWorld.layout_type} Layout
                   </span>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FF4F87]/30 backdrop-blur-md border border-[#FF4F87]/50 text-[#FFD6E3]">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FFFFFF]/30 backdrop-blur-md border border-[#FFFFFF]/50 text-[#F3F4F6]">
                     {activeWorld.world_type.replace('_', ' ').toUpperCase()}
                   </span>
                 </div>
@@ -366,8 +366,8 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                       onClick={() => setIsPlayingAudio(!isPlayingAudio)}
                       className={`p-2 rounded-full backdrop-blur-md border transition-all cursor-pointer ${
                         isPlayingAudio 
-                          ? 'bg-[#FF0D69] text-white border-white shadow-[0_0_12px_#FF0D69]' 
-                          : 'bg-black/60 text-[#FFB4CE] border-white/20 hover:text-white'
+                          ? 'bg-[#FFFFFF] text-white border-white shadow-[0_0_12px_#FFFFFF]' 
+                          : 'bg-black/60 text-[#E5E7EB] border-white/20 hover:text-white'
                       }`}
                       title="Play/Pause World Ambient Soundtrack"
                     >
@@ -379,7 +379,7 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleDuplicateWorld(activeWorld.id)}
-                        className="p-2 rounded-full bg-black/60 backdrop-blur-md text-[#FFB4CE] hover:text-white border border-white/20 cursor-pointer"
+                        className="p-2 rounded-full bg-black/60 backdrop-blur-md text-[#E5E7EB] hover:text-white border border-white/20 cursor-pointer"
                         title="Duplicate World"
                       >
                         <Copy className="w-3.5 h-3.5" />
@@ -400,7 +400,7 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
               <div className="absolute bottom-3 inset-x-4 flex items-end justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h1 className="text-xl sm:text-2xl font-black text-[#FFF2F6] tracking-tight drop-shadow-md">
+                    <h1 className="text-xl sm:text-2xl font-black text-[#F3F4F6] tracking-tight drop-shadow-md">
                       {activeWorld.name}
                     </h1>
                     {activeWorld.is_default === 1 && (
@@ -409,7 +409,7 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[#E3D2DC] line-clamp-2 max-w-lg mt-0.5 drop-shadow">
+                  <p className="text-xs text-[#E5E7EB] line-clamp-2 max-w-lg mt-0.5 drop-shadow">
                     {activeWorld.description}
                   </p>
                 </div>
@@ -417,8 +417,8 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
             </div>
 
             {/* Quick World Stats Bar */}
-            <div className="px-4 py-2.5 bg-[#170413] border-t border-[#FF4F87]/20 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-4 text-[#A695A0]">
+            <div className="px-4 py-2.5 bg-[#12141B] border-t border-[#FFFFFF]/20 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-4 text-[#9CA3AF]">
                 <span>📚 <strong>{sections.length}</strong> sections</span>
                 <span>✨ <strong>{entries.length}</strong> entries</span>
                 {relations.length > 0 && (
@@ -430,9 +430,9 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsAddSectionOpen(true)}
-                    className="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-[#FFD6E3] font-bold text-[11px] flex items-center gap-1 border border-white/10 cursor-pointer"
+                    className="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-[#F3F4F6] font-bold text-[11px] flex items-center gap-1 border border-white/10 cursor-pointer"
                   >
-                    <Plus className="w-3 h-3 text-[#FF4F87]" />
+                    <Plus className="w-3 h-3 text-[#FFFFFF]" />
                     <span>Add Section</span>
                   </button>
                 </div>
@@ -442,17 +442,17 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
 
           {/* Cross-World Referenced Connections */}
           {relations.length > 0 && (
-            <div className="p-3.5 rounded-2xl bg-black/40 border border-[#FF78A8]/20 flex items-center gap-2 text-xs">
-              <span className="text-[10px] font-bold uppercase text-[#FFB4CE] shrink-0">Cross-World Link:</span>
+            <div className="p-3.5 rounded-2xl bg-black/40 border border-[rgba(255,255,255,0.20)]/20 flex items-center gap-2 text-xs">
+              <span className="text-[10px] font-bold uppercase text-[#E5E7EB] shrink-0">Cross-World Link:</span>
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                 {relations.map((rel) => (
                   <span 
                     key={rel.id} 
-                    className="px-2.5 py-0.5 rounded-full bg-[#FF4F87]/15 border border-[#FF4F87]/30 text-[#FFF2F6] text-[11px] whitespace-nowrap flex items-center gap-1.5"
+                    className="px-2.5 py-0.5 rounded-full bg-[#FFFFFF]/15 border border-[#FFFFFF]/30 text-[#F3F4F6] text-[11px] whitespace-nowrap flex items-center gap-1.5"
                   >
                     <span>🔗</span>
                     <span>"{rel.entry_title}"</span>
-                    <span className="text-[#A695A0]">in {rel.target_world_name}</span>
+                    <span className="text-[#9CA3AF]">in {rel.target_world_name}</span>
                   </span>
                 ))}
               </div>
@@ -467,16 +467,16 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
               return (
                 <div 
                   key={sec.id} 
-                  className="rounded-3xl glass-panel-elevated border border-[#FF4F87]/25 overflow-hidden shadow-xl"
+                  className="rounded-3xl glass-panel-elevated border border-[#FFFFFF]/25 overflow-hidden shadow-xl"
                 >
                   {/* Section Title Header */}
-                  <div className="p-4 bg-gradient-to-r from-[#1C0517] to-[#12020E] border-b border-[#FF4F87]/15 flex items-center justify-between">
+                  <div className="p-4 bg-gradient-to-r from-[#181B24] to-[#12141B] border-b border-[#FFFFFF]/15 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <span className="text-lg">{sec.icon || '✨'}</span>
                       <div>
-                        <h3 className="text-sm font-bold text-[#FFF2F6]">{sec.title}</h3>
+                        <h3 className="text-sm font-bold text-[#F3F4F6]">{sec.title}</h3>
                         {sec.description && (
-                          <p className="text-[10px] text-[#A695A0]">{sec.description}</p>
+                          <p className="text-[10px] text-[#9CA3AF]">{sec.description}</p>
                         )}
                       </div>
                     </div>
@@ -487,9 +487,9 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                           setTargetSectionId(sec.id);
                           setIsAddEntryOpen(true);
                         }}
-                        className="px-2.5 py-1 rounded-xl bg-[#FF4F87]/20 hover:bg-[#FF4F87]/30 text-[#FFD6E3] font-bold text-[11px] flex items-center gap-1 border border-[#FF4F87]/40 cursor-pointer"
+                        className="px-2.5 py-1 rounded-xl bg-[#FFFFFF]/20 hover:bg-[#FFFFFF]/30 text-[#F3F4F6] font-bold text-[11px] flex items-center gap-1 border border-[#FFFFFF]/40 cursor-pointer"
                       >
-                        <Plus className="w-3 h-3 text-[#FF4F87]" />
+                        <Plus className="w-3 h-3 text-[#FFFFFF]" />
                         <span>Add Entry</span>
                       </button>
                     )}
@@ -498,29 +498,29 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                   {/* Section Entries List */}
                   <div className="p-4 space-y-3.5 bg-black/25">
                     {secEntries.length === 0 ? (
-                      <div className="py-6 text-center text-[#7A6975] text-xs">
+                      <div className="py-6 text-center text-[#6B7280] text-xs">
                         No entries in this section yet.
                       </div>
                     ) : (
                       secEntries.map((ent) => (
                         <div 
                           key={ent.id} 
-                          className="p-4 rounded-2xl bg-black/40 border border-[#FF78A8]/20 space-y-2.5 hover:border-[#FF4F87]/40 transition-colors shadow-md"
+                          className="p-4 rounded-2xl bg-black/40 border border-[rgba(255,255,255,0.20)]/20 space-y-2.5 hover:border-[#FFFFFF]/40 transition-colors shadow-md"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               {ent.title && (
-                                <h4 className="text-xs font-bold text-[#FFF2F6] mb-1">{ent.title}</h4>
+                                <h4 className="text-xs font-bold text-[#F3F4F6] mb-1">{ent.title}</h4>
                               )}
                               <div className="flex items-center gap-2">
                                 {renderRealityBadge(ent.reality_classification)}
-                                <span className="text-[10px] text-[#A695A0]">
+                                <span className="text-[10px] text-[#9CA3AF]">
                                   {new Date(ent.created_at).toLocaleDateString()}
                                 </span>
                               </div>
                             </div>
 
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[#B9A8B3]">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[#9CA3AF]">
                               {ent.visibility}
                             </span>
                           </div>
@@ -543,20 +543,20 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
       {/* MODAL: CREATE NEW PROFILE WORLD (With 10 Starting Templates) */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="w-full max-w-xl bg-[#140311] border border-[#FF4F87]/40 rounded-3xl p-5 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto no-scrollbar">
-            <div className="flex items-center justify-between border-b border-[#FF4F87]/20 pb-3">
+          <div className="w-full max-w-xl bg-[#090A0E] border border-[#FFFFFF]/40 rounded-3xl p-5 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto no-scrollbar">
+            <div className="flex items-center justify-between border-b border-[#FFFFFF]/20 pb-3">
               <div className="flex items-center gap-2">
-                <Globe2 className="w-5 h-5 text-[#FF4F87]" />
-                <h3 className="text-sm font-bold text-[#FFF2F6]">Create New Profile World</h3>
+                <Globe2 className="w-5 h-5 text-[#FFFFFF]" />
+                <h3 className="text-sm font-bold text-[#F3F4F6]">Create New Profile World</h3>
               </div>
-              <button onClick={() => setIsCreateModalOpen(false)} className="text-[#8E7C88] hover:text-white cursor-pointer">
+              <button onClick={() => setIsCreateModalOpen(false)} className="text-[#6B7280] hover:text-white cursor-pointer">
                 ✕
               </button>
             </div>
 
             {/* Template Selector Quick Chips */}
             <div>
-              <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1.5 uppercase tracking-wider">
+              <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1.5 uppercase tracking-wider">
                 Select Starting Template
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -575,13 +575,13 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                       }}
                       className={`p-2.5 rounded-2xl border text-left cursor-pointer transition-all ${
                         isChosen
-                          ? 'bg-[#FF0D69]/20 border-[#FF0D69] text-[#FFF2F6] shadow-md'
-                          : 'bg-black/40 border-white/10 hover:border-white/20 text-[#C4B2BD]'
+                          ? 'bg-[#FFFFFF]/20 border-[#FFFFFF] text-[#F3F4F6] shadow-md'
+                          : 'bg-black/40 border-white/10 hover:border-white/20 text-[#D1D5DB]'
                       }`}
                     >
-                      <Icon className="w-4 h-4 text-[#FF4F87] mb-1" />
+                      <Icon className="w-4 h-4 text-[#FFFFFF] mb-1" />
                       <div className="text-xs font-bold leading-tight">{tpl.name}</div>
-                      <div className="text-[9px] text-[#8E7C88] line-clamp-1 mt-0.5">{tpl.desc}</div>
+                      <div className="text-[9px] text-[#6B7280] line-clamp-1 mt-0.5">{tpl.desc}</div>
                     </div>
                   );
                 })}
@@ -589,37 +589,37 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
             </div>
 
             {/* World Details Form */}
-            <form onSubmit={handleCreateWorld} className="space-y-3 text-xs pt-2 border-t border-[#FF4F87]/15">
+            <form onSubmit={handleCreateWorld} className="space-y-3 text-xs pt-2 border-t border-[#FFFFFF]/15">
               <div>
-                <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">World Name</label>
+                <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">World Name</label>
                 <input
                   type="text"
                   placeholder="e.g. Neon Monolith, The Inner Sanctuary, 2030 Horizon"
                   value={newWorldName}
                   onChange={(e) => setNewWorldName(e.target.value)}
-                  className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                  className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">World Introduction / Purpose</label>
+                <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">World Introduction / Purpose</label>
                 <textarea
                   rows={2}
                   placeholder="Describe the nature of this persona or dimension of self..."
                   value={newWorldDesc}
                   onChange={(e) => setNewWorldDesc(e.target.value)}
-                  className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                  className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">Layout Style</label>
+                  <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">Layout Style</label>
                   <select
                     value={newWorldLayout}
                     onChange={(e) => setNewWorldLayout(e.target.value as WorldLayoutType)}
-                    className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                    className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                   >
                     <option value="cinematic">🎬 Cinematic Widescreen</option>
                     <option value="editorial">📰 Editorial Magazine</option>
@@ -631,11 +631,11 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">Audience Visibility</label>
+                  <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">Audience Visibility</label>
                   <select
                     value={newWorldVis}
                     onChange={(e) => setNewWorldVis(e.target.value as WorldVisibility)}
-                    className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                    className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                   >
                     <option value="public">🌐 Public (All Visitors)</option>
                     <option value="matches">💖 Mutual Matches Only</option>
@@ -646,12 +646,12 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
               </div>
 
               <div>
-                <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">Cover Image URL</label>
+                <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">Cover Image URL</label>
                 <input
                   type="url"
                   value={newWorldCover}
                   onChange={(e) => setNewWorldCover(e.target.value)}
-                  className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                  className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -661,14 +661,14 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                     type="checkbox"
                     checked={newWorldIsDefault}
                     onChange={(e) => setNewWorldIsDefault(e.target.checked)}
-                    className="rounded bg-black/40 border-[#FF78A8]/40 text-[#FF4F87]"
+                    className="rounded bg-black/40 border-[rgba(255,255,255,0.20)]/40 text-[#FFFFFF]"
                   />
-                  <span className="text-xs text-[#FFD6E3]">Set as My Primary Default World</span>
+                  <span className="text-xs text-[#F3F4F6]">Set as My Primary Default World</span>
                 </label>
 
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#FF0D69] to-[#FF3B88] hover:brightness-110 text-white font-bold text-xs shadow-md cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#FFFFFF] to-[#E5E7EB] hover:brightness-110 text-white font-bold text-xs shadow-md cursor-pointer"
                 >
                   Create Dimension
                 </button>
@@ -681,36 +681,36 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
       {/* MODAL: ADD ENTRY WITH 5,000 CHAR GFM & REALITY CLASSIFICATION */}
       {isAddEntryOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="w-full max-w-lg bg-[#140311] border border-[#FF4F87]/40 rounded-3xl p-5 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto no-scrollbar">
-            <div className="flex items-center justify-between border-b border-[#FF4F87]/20 pb-3">
-              <h3 className="text-sm font-bold text-[#FFF2F6] flex items-center gap-2">
-                <Plus className="w-4 h-4 text-[#FF4F87]" />
+          <div className="w-full max-w-lg bg-[#090A0E] border border-[#FFFFFF]/40 rounded-3xl p-5 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto no-scrollbar">
+            <div className="flex items-center justify-between border-b border-[#FFFFFF]/20 pb-3">
+              <h3 className="text-sm font-bold text-[#F3F4F6] flex items-center gap-2">
+                <Plus className="w-4 h-4 text-[#FFFFFF]" />
                 <span>Add World Entry</span>
               </h3>
-              <button onClick={() => setIsAddEntryOpen(false)} className="text-[#8E7C88] hover:text-white cursor-pointer">
+              <button onClick={() => setIsAddEntryOpen(false)} className="text-[#6B7280] hover:text-white cursor-pointer">
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleCreateEntry} className="space-y-3 text-xs">
               <div>
-                <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">Entry Title (Optional)</label>
+                <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">Entry Title (Optional)</label>
                 <input
                   type="text"
                   placeholder="e.g. Scene 1: Nightcall, Resonant Crystals, The Paradox"
                   value={newEntryTitle}
                   onChange={(e) => setNewEntryTitle(e.target.value)}
-                  className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                  className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">Reality Classification</label>
+                  <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">Reality Classification</label>
                   <select
                     value={newEntryClassification}
                     onChange={(e) => setNewEntryClassification(e.target.value as RealityClassification)}
-                    className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                    className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                   >
                     <option value="actual">💎 Actual Fact</option>
                     <option value="historical">📜 Historical Past</option>
@@ -729,11 +729,11 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">Visibility</label>
+                  <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">Visibility</label>
                   <select
                     value={newEntryVis}
                     onChange={(e) => setNewEntryVis(e.target.value as WorldVisibility)}
-                    className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                    className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                   >
                     <option value="public">🌐 Public</option>
                     <option value="matches">💖 Matches</option>
@@ -745,8 +745,8 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-[10px] text-[#FFB4CE] font-bold">Content (GitHub Markdown • Max 5,000 Chars)</label>
-                  <span className={`text-[10px] font-mono ${newEntryContent.length > 4500 ? 'text-amber-400 font-bold' : 'text-[#8E7C88]'}`}>
+                  <label className="text-[10px] text-[#E5E7EB] font-bold">Content (GitHub Markdown • Max 5,000 Chars)</label>
+                  <span className={`text-[10px] font-mono ${newEntryContent.length > 4500 ? 'text-amber-400 font-bold' : 'text-[#6B7280]'}`}>
                     {newEntryContent.length} / 5,000
                   </span>
                 </div>
@@ -756,22 +756,22 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
                   placeholder="Compose your entry using GitHub Markdown (## Headings, > Quotes, - [x] Checklists, tables, code blocks)..."
                   value={newEntryContent}
                   onChange={(e) => setNewEntryContent(e.target.value)}
-                  className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] font-mono text-xs leading-relaxed focus:outline-none focus:border-[#FF4F87]"
+                  className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] font-mono text-xs leading-relaxed focus:outline-none focus:border-[#FFFFFF]"
                   required
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#FF4F87]/20">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#FFFFFF]/20">
                 <button
                   type="button"
                   onClick={() => setIsAddEntryOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-white/5 text-[#C4B2BD] hover:text-white"
+                  className="px-4 py-2 rounded-xl bg-white/5 text-[#D1D5DB] hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#FF4F87] hover:bg-[#FF3377] text-white font-bold cursor-pointer shadow-md"
+                  className="px-5 py-2 rounded-xl bg-[#FFFFFF] hover:bg-[#E5E7EB] text-white font-bold cursor-pointer shadow-md"
                 >
                   Save Entry
                 </button>
@@ -784,10 +784,10 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
       {/* MODAL: ADD SECTION */}
       {isAddSectionOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="w-full max-w-md bg-[#140311] border border-[#FF4F87]/40 rounded-3xl p-5 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-[#FF4F87]/20 pb-3">
-              <h3 className="text-sm font-bold text-[#FFF2F6]">Create Section in {activeWorld?.name}</h3>
-              <button onClick={() => setIsAddSectionOpen(false)} className="text-[#8E7C88] hover:text-white cursor-pointer">
+          <div className="w-full max-w-md bg-[#090A0E] border border-[#FFFFFF]/40 rounded-3xl p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#FFFFFF]/20 pb-3">
+              <h3 className="text-sm font-bold text-[#F3F4F6]">Create Section in {activeWorld?.name}</h3>
+              <button onClick={() => setIsAddSectionOpen(false)} className="text-[#6B7280] hover:text-white cursor-pointer">
                 ✕
               </button>
             </div>
@@ -795,42 +795,42 @@ export const ProfileWorldsHub: React.FC<ProfileWorldsHubProps> = ({
             <form onSubmit={handleCreateSection} className="space-y-3 text-xs">
               <div className="flex gap-2">
                 <div className="w-16">
-                  <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">Icon</label>
+                  <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">Icon</label>
                   <input
                     type="text"
                     value={newSecIcon}
                     onChange={(e) => setNewSecIcon(e.target.value)}
-                    className="w-full text-center bg-black/40 border border-[#FF78A8]/30 rounded-xl px-2 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                    className="w-full text-center bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-2 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">Section Title</label>
+                  <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">Section Title</label>
                   <input
                     type="text"
                     placeholder="e.g. Defining Scenes, Insecurities, Magic Lore"
                     value={newSecTitle}
                     onChange={(e) => setNewSecTitle(e.target.value)}
-                    className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                    className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[10px] text-[#FFB4CE] font-bold block mb-1">Section Description (Optional)</label>
+                <label className="text-[10px] text-[#E5E7EB] font-bold block mb-1">Section Description (Optional)</label>
                 <input
                   type="text"
                   placeholder="Brief note about this section..."
                   value={newSecDesc}
                   onChange={(e) => setNewSecDesc(e.target.value)}
-                  className="w-full bg-black/40 border border-[#FF78A8]/30 rounded-xl px-3 py-2 text-[#FFF2F6] focus:outline-none focus:border-[#FF4F87]"
+                  className="w-full bg-black/40 border border-[rgba(255,255,255,0.20)]/30 rounded-xl px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#FF4F87]/20">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#FFFFFF]/20">
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#FF4F87] hover:bg-[#FF3377] text-white font-bold cursor-pointer shadow-md"
+                  className="px-5 py-2 rounded-xl bg-[#FFFFFF] hover:bg-[#E5E7EB] text-white font-bold cursor-pointer shadow-md"
                 >
                   Create Section
                 </button>

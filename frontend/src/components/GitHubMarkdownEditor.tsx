@@ -199,39 +199,39 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
   }
 
   return (
-    <div className="w-full flex flex-col bg-[#0F020B] rounded-3xl border border-[#FF4F87]/30 shadow-2xl overflow-hidden animate-fadeIn">
+    <div className="w-full flex flex-col bg-[#0F020B] rounded-3xl border border-[#FFFFFF]/30 shadow-2xl overflow-hidden animate-fadeIn">
       {/* GitHub Top Header Bar */}
-      <div className="px-4 py-3 bg-[#1A0515] border-b border-[#FF4F87]/20 flex flex-wrap items-center justify-between gap-3">
+      <div className="px-4 py-3 bg-[#1A0515] border-b border-[#FFFFFF]/20 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FF0D69] to-[#FF3B88] flex items-center justify-center text-white shadow-md">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FFFFFF] to-[#E5E7EB] flex items-center justify-center text-white shadow-md">
             <FolderGit2 className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-[#FFB4CE]">@{userId}</span>
-              <span className="text-xs text-[#7A6975]">/</span>
+              <span className="text-xs font-mono font-bold text-[#E5E7EB]">@{userId}</span>
+              <span className="text-xs text-[#6B7280]">/</span>
               {isOwner ? (
                 <input
                   type="text"
                   value={markdownTitle}
                   onChange={(e) => setMarkdownTitle(e.target.value)}
-                  className="bg-black/30 text-xs font-mono font-bold text-[#FFF2F6] border border-[#FF78A8]/30 rounded-lg px-2 py-0.5 focus:outline-none focus:border-[#FF4F87] w-32"
+                  className="bg-black/30 text-xs font-mono font-bold text-[#F3F4F6] border border-[rgba(255,255,255,0.20)]/30 rounded-lg px-2 py-0.5 focus:outline-none focus:border-[#FFFFFF] w-32"
                 />
               ) : (
-                <span className="text-xs font-mono font-bold text-[#FFF2F6]">{markdownTitle}</span>
+                <span className="text-xs font-mono font-bold text-[#F3F4F6]">{markdownTitle}</span>
               )}
             </div>
-            <p className="text-[10px] text-[#A695A0]">GitHub-Flavored Markdown (GFM) Document</p>
+            <p className="text-[10px] text-[#9CA3AF]">GitHub-Flavored Markdown (GFM) Document</p>
           </div>
         </div>
 
         {/* View Switcher: Write | Preview | Split */}
         <div className="flex items-center gap-2">
-          <div className="flex p-0.5 rounded-xl bg-black/40 border border-[#FF78A8]/20 text-xs">
+          <div className="flex p-0.5 rounded-xl bg-black/40 border border-[rgba(255,255,255,0.20)]/20 text-xs">
             <button
               onClick={() => setViewMode('write')}
               className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                viewMode === 'write' ? 'bg-[#FF4F87] text-white shadow-sm' : 'text-[#B9A8B3] hover:text-[#FFF2F6]'
+                viewMode === 'write' ? 'bg-[#FFFFFF] text-white shadow-sm' : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
               }`}
             >
               <Edit3 className="w-3 h-3" />
@@ -240,7 +240,7 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
             <button
               onClick={() => setViewMode('preview')}
               className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                viewMode === 'preview' ? 'bg-[#FF4F87] text-white shadow-sm' : 'text-[#B9A8B3] hover:text-[#FFF2F6]'
+                viewMode === 'preview' ? 'bg-[#FFFFFF] text-white shadow-sm' : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
               }`}
             >
               <Eye className="w-3 h-3" />
@@ -249,7 +249,7 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
             <button
               onClick={() => setViewMode('split')}
               className={`hidden md:flex px-3 py-1 rounded-lg font-bold items-center gap-1.5 transition-all cursor-pointer ${
-                viewMode === 'split' ? 'bg-[#FF4F87] text-white shadow-sm' : 'text-[#B9A8B3] hover:text-[#FFF2F6]'
+                viewMode === 'split' ? 'bg-[#FFFFFF] text-white shadow-sm' : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
               }`}
             >
               <Columns className="w-3 h-3" />
@@ -262,7 +262,7 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FF0D69] to-[#FF3B88] hover:brightness-110 text-white font-bold text-xs flex items-center gap-1.5 shadow-md hover:scale-102 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FFFFFF] to-[#E5E7EB] hover:brightness-110 text-white font-bold text-xs flex items-center gap-1.5 shadow-md hover:scale-102 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
             >
               {saveSuccess ? (
                 <>
@@ -281,7 +281,7 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#A695A0] hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
             >
               ✕
             </button>
@@ -291,9 +291,9 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
 
       {/* Editor Sub-Header: Toolbar & 5,000 Char Counter */}
       {isOwner && (viewMode === 'write' || viewMode === 'split') && (
-        <div className="px-4 py-2 bg-[#140311] border-b border-[#FF4F87]/15 flex flex-wrap items-center justify-between gap-2">
+        <div className="px-4 py-2 bg-[#090A0E] border-b border-[#FFFFFF]/15 flex flex-wrap items-center justify-between gap-2">
           {/* Markdown Formatting Toolbar */}
-          <div className="flex flex-wrap items-center gap-1 text-[#C4B2BD]">
+          <div className="flex flex-wrap items-center gap-1 text-[#D1D5DB]">
             <button
               onClick={() => insertSyntax('# ', '', 'Heading 1')}
               className="px-2 py-1 rounded-lg hover:bg-white/10 hover:text-white font-mono font-bold text-xs"
@@ -379,7 +379,7 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
               className="p-1.5 rounded-lg hover:bg-white/10 hover:text-white"
               title="GitHub Task List"
             >
-              <CheckSquare className="w-3.5 h-3.5 text-[#FF4F87]" />
+              <CheckSquare className="w-3.5 h-3.5 text-[#FFFFFF]" />
             </button>
             <div className="w-px h-4 bg-white/10 mx-0.5" />
             <button
@@ -407,28 +407,28 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
 
           {/* Quick Starter Templates */}
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-[#8E7C88] uppercase font-bold tracking-wider">Templates:</span>
+            <span className="text-[10px] text-[#6B7280] uppercase font-bold tracking-wider">Templates:</span>
             <button
               onClick={() => loadStarterTemplate('manifesto')}
-              className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-[#FFB4CE] font-medium"
+              className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-[#E5E7EB] font-medium"
             >
               Manifesto
             </button>
             <button
               onClick={() => loadStarterTemplate('checklists')}
-              className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-[#FFB4CE] font-medium"
+              className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-[#E5E7EB] font-medium"
             >
               Checklists
             </button>
             <button
               onClick={() => loadStarterTemplate('hyperfixations')}
-              className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-[#FFB4CE] font-medium"
+              className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-[#E5E7EB] font-medium"
             >
               Table
             </button>
             <button
               onClick={() => loadStarterTemplate('engagement')}
-              className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-[#FFB4CE] font-medium"
+              className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-[#E5E7EB] font-medium"
             >
               Alerts
             </button>
@@ -437,7 +437,7 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
       )}
 
       {/* 5,000 Characters Live Meter Bar */}
-      <div className="px-4 py-2 bg-[#12020F] border-b border-[#FF4F87]/15 flex items-center justify-between text-xs">
+      <div className="px-4 py-2 bg-[#12020F] border-b border-[#FFFFFF]/15 flex items-center justify-between text-xs">
         <div className="flex items-center gap-3">
           {/* Character Progress Bar */}
           <div className="flex items-center gap-2">
@@ -462,11 +462,11 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
         {/* Privacy Selector */}
         {isOwner && (
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-[#8E7C88] font-semibold">Visibility:</span>
+            <span className="text-[10px] text-[#6B7280] font-semibold">Visibility:</span>
             <select
               value={visibility}
               onChange={(e) => setVisibility(e.target.value as MarkdownVisibility)}
-              className="bg-black/40 text-[11px] font-medium text-[#FFD6E3] border border-[#FF78A8]/30 rounded-lg px-2 py-0.5 focus:outline-none focus:border-[#FF4F87]"
+              className="bg-black/40 text-[11px] font-medium text-[#F3F4F6] border border-[rgba(255,255,255,0.20)]/30 rounded-lg px-2 py-0.5 focus:outline-none focus:border-[#FFFFFF]"
             >
               <option value="public">🌐 Public (All)</option>
               <option value="matches">💖 Matches Only</option>
@@ -488,7 +488,7 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
       <div className="relative min-h-[350px] max-h-[600px] flex overflow-hidden">
         {/* WRITE VIEW */}
         {(viewMode === 'write' || viewMode === 'split') && (
-          <div className={`flex-1 flex flex-col ${viewMode === 'split' ? 'border-r border-[#FF4F87]/20 w-1/2' : 'w-full'}`}>
+          <div className={`flex-1 flex flex-col ${viewMode === 'split' ? 'border-r border-[#FFFFFF]/20 w-1/2' : 'w-full'}`}>
             <textarea
               ref={textareaRef}
               value={content}
@@ -508,8 +508,8 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
             {content.trim() ? (
               <GitHubMarkdownRenderer content={content} />
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[#7A6975] space-y-2">
-                <FileText className="w-8 h-8 stroke-1 text-[#FF4F87]/40" />
+              <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[#6B7280] space-y-2">
+                <FileText className="w-8 h-8 stroke-1 text-[#FFFFFF]/40" />
                 <p className="text-xs">No markdown content yet.</p>
                 <p className="text-[10px]">Switch to "Write" mode to compose your 5,000 character GitHub manifesto.</p>
               </div>
@@ -519,7 +519,7 @@ export const GitHubMarkdownEditor: React.FC<GitHubMarkdownEditorProps> = ({
       </div>
 
       {/* Bottom Footer Details */}
-      <div className="px-4 py-2 bg-[#140311] border-t border-[#FF4F87]/15 flex items-center justify-between text-[10px] text-[#A695A0]">
+      <div className="px-4 py-2 bg-[#090A0E] border-t border-[#FFFFFF]/15 flex items-center justify-between text-[10px] text-[#9CA3AF]">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400" />
           <span>GitHub Flavored Markdown (GFM) v0.29 Compliant</span>

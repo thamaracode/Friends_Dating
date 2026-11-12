@@ -142,7 +142,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
     }
     if (vis === 'matches') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#FF0D69]/20 border border-[#FF0D69]/40 text-[#FFB8D2]">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#FFFFFF]/20 border border-[#FFFFFF]/40 text-[#FFB8D2]">
           <Heart className="w-2.5 h-2.5" />
           <span>Matches Only</span>
         </span>
@@ -314,7 +314,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
   if (isLoading || !profileData) {
     return (
       <div className="w-full flex flex-col items-center justify-center p-12 space-y-3">
-        <div className="w-8 h-8 rounded-full border-2 border-[#FF0D69] border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-[#FFFFFF] border-t-transparent animate-spin" />
         <span className="text-xs text-[#C49DB2]">Unfolding Living Identity...</span>
       </div>
     );
@@ -356,12 +356,12 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
       {/* ===================================================================== */}
       {/* 1. MASTER HEADER & PERSONA BANNER                                     */}
       {/* ===================================================================== */}
-      <div className="relative rounded-3xl glass-panel-elevated p-6 border border-[#FF1A75]/25 shadow-2xl space-y-5 pink-ambient-glow">
+      <div className="relative rounded-3xl glass-panel-elevated p-6 border border-[#FF1A75]/25 shadow-2xl space-y-5 glass-panel">
         
         {/* Top Controls Row */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FF0D69] animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#FFFFFF] animate-pulse" />
             <h1 className="text-sm font-black tracking-wider uppercase text-pink-gradient">
               Living Identity Profile
             </h1>
@@ -370,12 +370,12 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
           {/* "Preview As" Selector (Crucial for testing multi-tier privacy) */}
           {isOwner && (
             <div className="flex items-center gap-1.5 glass-panel px-2.5 py-1 rounded-full border border-white/10 text-xs">
-              <Eye className="w-3.5 h-3.5 text-[#FF0D69]" />
+              <Eye className="w-3.5 h-3.5 text-[#FFFFFF]" />
               <span className="text-[10px] text-[#C49DB2] font-semibold">Preview As:</span>
               <button
                 onClick={() => setViewerId('usr_me')}
                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors ${
-                  viewerId === 'usr_me' ? 'bg-[#FF0D69] text-white shadow-sm' : 'text-[#C49DB2] hover:text-white'
+                  viewerId === 'usr_me' ? 'bg-[#FFFFFF] text-white shadow-sm' : 'text-[#C49DB2] hover:text-white'
                 }`}
               >
                 Owner
@@ -383,7 +383,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
               <button
                 onClick={() => setViewerId('usr_alex')}
                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors ${
-                  viewerId === 'usr_alex' ? 'bg-[#FF0D69] text-white shadow-sm' : 'text-[#C49DB2] hover:text-white'
+                  viewerId === 'usr_alex' ? 'bg-[#FFFFFF] text-white shadow-sm' : 'text-[#C49DB2] hover:text-white'
                 }`}
               >
                 Match
@@ -391,7 +391,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
               <button
                 onClick={() => setViewerId('usr_tara')}
                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors ${
-                  viewerId === 'usr_tara' ? 'bg-[#FF0D69] text-white shadow-sm' : 'text-[#C49DB2] hover:text-white'
+                  viewerId === 'usr_tara' ? 'bg-[#FFFFFF] text-white shadow-sm' : 'text-[#C49DB2] hover:text-white'
                 }`}
               >
                 Public
@@ -405,18 +405,18 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
           <img 
             src={profileData.user.avatar_url} 
             alt={profileData.user.name} 
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-[#FF0D69] shadow-[0_0_20px_rgba(255,13,105,0.4)]"
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-[#FFFFFF] shadow-[0_0_20px_rgba(255,13,105,0.4)]"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-black text-[#FFF2F6] truncate">{profileData.user.name}</h2>
+              <h2 className="text-lg sm:text-xl font-black text-[#F3F4F6] truncate">{profileData.user.name}</h2>
               {profileData.user.is_verified === 1 && (
                 <span className="w-4 h-4 rounded-full bg-emerald-400 text-black flex items-center justify-center text-[10px] font-black">✓</span>
               )}
             </div>
             <p className="text-xs text-[#C49DB2]">@{profileData.user.username} • {profileData.user.status_text || 'Active Explorer'}</p>
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF0D69]/20 text-[#FFB8D2] border border-[#FF0D69]/30">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFFFFF]/20 text-[#FFB8D2] border border-[#FFFFFF]/30">
                 Current Access: {profileData.accessLevel.toUpperCase()}
               </span>
               <span className="text-[10px] text-[#82586E]">
@@ -431,7 +431,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
           <div className="flex items-center gap-2 pt-3 border-t border-[#FF1A75]/15 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setIsAddSectionOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FF0D69] to-[#E0005C] text-white text-xs font-bold flex items-center gap-1.5 shadow-md hover:scale-105 transition-transform cursor-pointer whitespace-nowrap"
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FFFFFF] to-[#E0005C] text-white text-xs font-bold flex items-center gap-1.5 shadow-md hover:scale-105 transition-transform cursor-pointer whitespace-nowrap"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Custom Section</span>
@@ -491,7 +491,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search sections, thoughts, milestones, or answers..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl glass-panel text-xs text-[#FFF2F6] placeholder-[#82586E] focus:outline-none focus:border-[#FF0D69]"
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl glass-panel text-xs text-[#F3F4F6] placeholder-[#82586E] focus:outline-none focus:border-[#FFFFFF]"
             />
           </div>
 
@@ -509,7 +509,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap cursor-pointer transition-all ${
                   activeTab === tab.id 
-                    ? 'bg-gradient-to-r from-[#FF0D69] to-[#E0005C] text-white shadow-md' 
+                    ? 'bg-gradient-to-r from-[#FFFFFF] to-[#E0005C] text-white shadow-md' 
                     : 'glass-panel text-[#C49DB2] hover:text-white'
                 }`}
               >
@@ -539,7 +539,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs uppercase font-black text-[#FFB8D2] tracking-wider flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4 text-[#FF0D69]" />
+              <BookOpen className="w-4 h-4 text-[#FFFFFF]" />
               <span>Identity Chapters & Dimensions</span>
             </span>
           </div>
@@ -560,9 +560,9 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                     <span className="text-2xl">{sec.icon || '🧭'}</span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-black text-[#FFF2F6]">{sec.title}</h3>
+                        <h3 className="text-sm font-black text-[#F3F4F6]">{sec.title}</h3>
                         {renderVisBadge(sec.visibility)}
-                        {sec.is_pinned === 1 && <Pin className="w-3 h-3 text-[#FF0D69]" />}
+                        {sec.is_pinned === 1 && <Pin className="w-3 h-3 text-[#FFFFFF]" />}
                       </div>
                       {sec.description && (
                         <p className="text-[11px] text-[#C49DB2] mt-0.5">{sec.description}</p>
@@ -631,7 +631,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                               </div>
                             </div>
 
-                            <p className="text-xs text-[#FFF2F6] leading-relaxed whitespace-pre-wrap">
+                            <p className="text-xs text-[#F3F4F6] leading-relaxed whitespace-pre-wrap">
                               {entry.content}
                             </p>
 
@@ -679,7 +679,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs uppercase font-black text-[#FFB8D2] tracking-wider flex items-center gap-1.5">
-              <HelpCircle className="w-4 h-4 text-[#FF0D69]" />
+              <HelpCircle className="w-4 h-4 text-[#FFFFFF]" />
               <span>User-Created Questions & Deep Answers</span>
             </span>
           </div>
@@ -693,7 +693,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <span className="text-[10px] uppercase font-bold text-[#82586E]">{q.description || 'Introspection'}</span>
-                    <h4 className="text-xs font-black text-[#FFF2F6] mt-0.5">{q.question}</h4>
+                    <h4 className="text-xs font-black text-[#F3F4F6] mt-0.5">{q.question}</h4>
                   </div>
                   {renderVisBadge(q.visibility)}
                 </div>
@@ -704,7 +704,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold text-[#FFB8D2]">{ans.respondent_name || 'Owner'}:</span>
                     </div>
-                    <p className="text-xs text-[#FFF2F6] italic leading-relaxed">
+                    <p className="text-xs text-[#F3F4F6] italic leading-relaxed">
                       "{ans.answer_content}"
                     </p>
                   </div>
@@ -722,29 +722,29 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs uppercase font-black text-[#FFB8D2] tracking-wider flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-[#FF0D69]" />
+              <Calendar className="w-4 h-4 text-[#FFFFFF]" />
               <span>Chronological Life Milestones</span>
             </span>
           </div>
 
-          <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gradient-to-b before:from-[#FF0D69] before:via-[#9E0042] before:to-transparent">
+          <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gradient-to-b before:from-[#FFFFFF] before:via-[#9E0042] before:to-transparent">
             {filteredTimeline.map(item => (
               <div key={item.id} className="relative group">
                 {/* Glowing Node Dot */}
-                <div className="absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full bg-[#0D0209] border-2 border-[#FF0D69] shadow-[0_0_10px_#FF0D69]" />
+                <div className="absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full bg-[#0D0209] border-2 border-[#FFFFFF] shadow-[0_0_10px_#FFFFFF]" />
 
                 <div className="p-4 rounded-3xl glass-panel-elevated border border-[#FF1A75]/25 shadow-lg space-y-2">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-full bg-[#FF0D69]/20 text-[#FFB8D2] text-[10px] font-black border border-[#FF0D69]/30">
+                      <span className="px-2 py-0.5 rounded-full bg-[#FFFFFF]/20 text-[#FFB8D2] text-[10px] font-black border border-[#FFFFFF]/30">
                         {item.event_date || 'Period'}
                       </span>
-                      <h4 className="text-xs font-black text-[#FFF2F6]">{item.title}</h4>
+                      <h4 className="text-xs font-black text-[#F3F4F6]">{item.title}</h4>
                     </div>
                     {renderVisBadge(item.visibility)}
                   </div>
 
-                  <p className="text-xs text-[#FFF2F6] leading-relaxed">
+                  <p className="text-xs text-[#F3F4F6] leading-relaxed">
                     {item.description}
                   </p>
 
@@ -756,7 +756,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   )}
 
                   {item.lessons_learned && (
-                    <div className="p-2.5 rounded-2xl bg-amber-950/20 border border-amber-500/20 text-[11px] text-[#FFF2F6]">
+                    <div className="p-2.5 rounded-2xl bg-amber-950/20 border border-amber-500/20 text-[11px] text-[#F3F4F6]">
                       <span className="font-bold text-amber-300 block">Lesson Learned:</span>
                       <span className="italic">"{item.lessons_learned}"</span>
                     </div>
@@ -795,7 +795,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs uppercase font-black text-[#FFB8D2] tracking-wider flex items-center gap-1.5">
-              <Quote className="w-4 h-4 text-[#FF0D69]" />
+              <Quote className="w-4 h-4 text-[#FFFFFF]" />
               <span>Thoughts, Reflections & Essays</span>
             </span>
           </div>
@@ -805,7 +805,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
               <div 
                 key={th.id}
                 className={`p-4 rounded-3xl glass-panel-elevated border shadow-lg space-y-2 ${
-                  th.is_pinned === 1 ? 'border-[#FF0D69] shadow-[0_0_20px_rgba(255,13,105,0.25)]' : 'border-[#FF1A75]/25'
+                  th.is_pinned === 1 ? 'border-[#FFFFFF] shadow-[0_0_20px_rgba(255,13,105,0.25)]' : 'border-[#FF1A75]/25'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -813,15 +813,15 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                     <span className="px-2 py-0.5 rounded-full bg-[#180412] text-[#FFB8D2] text-[9px] font-black uppercase border border-[#FF1A75]/30">
                       {th.thought_type}
                     </span>
-                    {th.title && <h4 className="text-xs font-black text-[#FFF2F6]">{th.title}</h4>}
+                    {th.title && <h4 className="text-xs font-black text-[#F3F4F6]">{th.title}</h4>}
                   </div>
                   <div className="flex items-center gap-1.5">
                     {renderVisBadge(th.visibility)}
-                    {th.is_pinned === 1 && <Pin className="w-3 h-3 text-[#FF0D69]" />}
+                    {th.is_pinned === 1 && <Pin className="w-3 h-3 text-[#FFFFFF]" />}
                   </div>
                 </div>
 
-                <p className="text-xs text-[#FFF2F6] leading-relaxed whitespace-pre-wrap italic pl-2 border-l-2 border-[#FF0D69]/60">
+                <p className="text-xs text-[#F3F4F6] leading-relaxed whitespace-pre-wrap italic pl-2 border-l-2 border-[#FFFFFF]/60">
                   "{th.content}"
                 </p>
 
@@ -865,7 +865,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
           <div className="w-full max-w-md rounded-3xl glass-panel-elevated p-5 border border-[#FF1A75]/30 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-[#FFF2F6]">Create Custom Section</h3>
+              <h3 className="text-sm font-black text-[#F3F4F6]">Create Custom Section</h3>
               <button onClick={() => setIsAddSectionOpen(false)} className="text-[#C49DB2] hover:text-white">
                 <X className="w-4 h-4" />
               </button>
@@ -879,7 +879,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   value={newSecTitle}
                   onChange={(e) => setNewSecTitle(e.target.value)}
                   placeholder="e.g. Things I Will Never Compromise On"
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -903,7 +903,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                         setNewSecType(preset.type as any);
                       }}
                       className={`p-2 rounded-xl flex flex-col items-center gap-1 border transition-all cursor-pointer ${
-                        newSecIcon === preset.icon ? 'bg-[#FF0D69]/25 border-[#FF0D69] text-white' : 'glass-panel text-[#C49DB2] border-white/10'
+                        newSecIcon === preset.icon ? 'bg-[#FFFFFF]/25 border-[#FFFFFF] text-white' : 'glass-panel text-[#C49DB2] border-white/10'
                       }`}
                     >
                       <span className="text-base">{preset.icon}</span>
@@ -920,7 +920,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   onChange={(e) => setNewSecDesc(e.target.value)}
                   placeholder="Briefly explain what this chapter describes..."
                   rows={2}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -929,7 +929,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 <select 
                   value={newSecVis}
                   onChange={(e) => setNewSecVis(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#180412] border border-[#FF1A75]/30 text-[#FFF2F6] focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-[#180412] border border-[#FF1A75]/30 text-[#F3F4F6] focus:outline-none"
                 >
                   <option value="public">🌐 Public (Visible to all viewers)</option>
                   <option value="matches">💖 Matches Only (Approved matches)</option>
@@ -948,7 +948,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 <button 
                   onClick={handleCreateSection}
                   disabled={!newSecTitle.trim()}
-                  className="px-5 py-2 rounded-xl pink-gradient-btn text-white font-bold disabled:opacity-40 cursor-pointer shadow-lg"
+                  className="px-5 py-2 rounded-xl gray-glass-btn text-white font-bold disabled:opacity-40 cursor-pointer shadow-lg"
                 >
                   Create Section
                 </button>
@@ -965,7 +965,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
           <div className="w-full max-w-md rounded-3xl glass-panel-elevated p-5 border border-[#FF1A75]/30 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-[#FFF2F6]">Add Entry to Section</h3>
+              <h3 className="text-sm font-black text-[#F3F4F6]">Add Entry to Section</h3>
               <button onClick={() => setIsAddEntryOpen(null)} className="text-[#C49DB2] hover:text-white">
                 <X className="w-4 h-4" />
               </button>
@@ -979,7 +979,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   value={newEntryTitle}
                   onChange={(e) => setNewEntryTitle(e.target.value)}
                   placeholder="e.g. On Intellectual Humility"
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -990,7 +990,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   onChange={(e) => setNewEntryContent(e.target.value)}
                   placeholder="Write in detail with no arbitrary character limits..."
                   rows={4}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -999,7 +999,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 <select 
                   value={newEntryVis}
                   onChange={(e) => setNewEntryVis(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#180412] border border-[#FF1A75]/30 text-[#FFF2F6] focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-[#180412] border border-[#FF1A75]/30 text-[#F3F4F6] focus:outline-none"
                 >
                   <option value="public">🌐 Public</option>
                   <option value="matches">💖 Matches Only</option>
@@ -1018,7 +1018,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 <button 
                   onClick={() => handleCreateEntry(isAddEntryOpen)}
                   disabled={!newEntryContent.trim()}
-                  className="px-5 py-2 rounded-xl pink-gradient-btn text-white font-bold disabled:opacity-40 cursor-pointer shadow-lg"
+                  className="px-5 py-2 rounded-xl gray-glass-btn text-white font-bold disabled:opacity-40 cursor-pointer shadow-lg"
                 >
                   Save Entry
                 </button>
@@ -1035,7 +1035,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
           <div className="w-full max-w-md rounded-3xl glass-panel-elevated p-5 border border-[#FF1A75]/30 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-[#FFF2F6]">Create Personal Question</h3>
+              <h3 className="text-sm font-black text-[#F3F4F6]">Create Personal Question</h3>
               <button onClick={() => setIsAddQuestionOpen(false)} className="text-[#C49DB2] hover:text-white">
                 <X className="w-4 h-4" />
               </button>
@@ -1049,7 +1049,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   value={newQTitle}
                   onChange={(e) => setNewQTitle(e.target.value)}
                   placeholder="e.g. What is something you will never compromise on?"
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -1060,7 +1060,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   onChange={(e) => setNewQAnswer(e.target.value)}
                   placeholder="Write your honest answer..."
                   rows={3}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -1069,7 +1069,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 <select 
                   value={newQVis}
                   onChange={(e) => setNewQVis(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#180412] border border-[#FF1A75]/30 text-[#FFF2F6] focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-[#180412] border border-[#FF1A75]/30 text-[#F3F4F6] focus:outline-none"
                 >
                   <option value="public">🌐 Public</option>
                   <option value="matches">💖 Matches Only</option>
@@ -1088,7 +1088,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 <button 
                   onClick={handleCreateQuestion}
                   disabled={!newQTitle.trim()}
-                  className="px-5 py-2 rounded-xl pink-gradient-btn text-white font-bold disabled:opacity-40 cursor-pointer shadow-lg"
+                  className="px-5 py-2 rounded-xl gray-glass-btn text-white font-bold disabled:opacity-40 cursor-pointer shadow-lg"
                 >
                   Create Q&A
                 </button>
@@ -1105,7 +1105,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
           <div className="w-full max-w-md rounded-3xl glass-panel-elevated p-5 border border-[#FF1A75]/30 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-[#FFF2F6]">Add Life Milestone</h3>
+              <h3 className="text-sm font-black text-[#F3F4F6]">Add Life Milestone</h3>
               <button onClick={() => setIsAddTimelineOpen(false)} className="text-[#C49DB2] hover:text-white">
                 <X className="w-4 h-4" />
               </button>
@@ -1120,7 +1120,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                     value={newTimeTitle}
                     onChange={(e) => setNewTimeTitle(e.target.value)}
                     placeholder="e.g. First Solo Trek"
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                   />
                 </div>
                 <div>
@@ -1130,7 +1130,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                     value={newTimeDate}
                     onChange={(e) => setNewTimeDate(e.target.value)}
                     placeholder="e.g. Summer 2022"
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                   />
                 </div>
               </div>
@@ -1142,7 +1142,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   onChange={(e) => setNewTimeDesc(e.target.value)}
                   placeholder="What happened during this period?"
                   rows={2}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -1153,7 +1153,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   value={newTimeSig}
                   onChange={(e) => setNewTimeSig(e.target.value)}
                   placeholder="How did this experience shape who you are today?"
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -1164,7 +1164,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   value={newTimeLessons}
                   onChange={(e) => setNewTimeLessons(e.target.value)}
                   placeholder="What lasting lesson did you take away?"
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -1178,7 +1178,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 <button 
                   onClick={handleCreateTimeline}
                   disabled={!newTimeTitle.trim() || !newTimeDesc.trim()}
-                  className="px-5 py-2 rounded-xl pink-gradient-btn text-white font-bold disabled:opacity-40 cursor-pointer shadow-lg"
+                  className="px-5 py-2 rounded-xl gray-glass-btn text-white font-bold disabled:opacity-40 cursor-pointer shadow-lg"
                 >
                   Add Milestone
                 </button>
@@ -1195,7 +1195,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
           <div className="w-full max-w-md rounded-3xl glass-panel-elevated p-5 border border-[#FF1A75]/30 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-[#FFF2F6]">Publish Thought or Essay</h3>
+              <h3 className="text-sm font-black text-[#F3F4F6]">Publish Thought or Essay</h3>
               <button onClick={() => setIsAddThoughtOpen(false)} className="text-[#C49DB2] hover:text-white">
                 <X className="w-4 h-4" />
               </button>
@@ -1209,7 +1209,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   value={newThoughtTitle}
                   onChange={(e) => setNewThoughtTitle(e.target.value)}
                   placeholder="e.g. On Letting Go of Perfectionism"
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -1220,7 +1220,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   onChange={(e) => setNewThoughtContent(e.target.value)}
                   placeholder="Share a perspective, observation, or unedited reflection..."
                   rows={4}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                 />
               </div>
 
@@ -1230,7 +1230,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   <select 
                     value={newThoughtType}
                     onChange={(e) => setNewThoughtType(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#180412] border border-[#FF1A75]/30 text-[#FFF2F6] focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-[#180412] border border-[#FF1A75]/30 text-[#F3F4F6] focus:outline-none"
                   >
                     <option value="thought">Thought</option>
                     <option value="opinion">Opinion</option>
@@ -1245,7 +1245,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                     value={newThoughtTags}
                     onChange={(e) => setNewThoughtTags(e.target.value)}
                     placeholder="philosophy, dating"
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#FFF2F6] focus:outline-none focus:border-[#FF0D69]"
+                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-[#FF1A75]/25 text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
                   />
                 </div>
               </div>
@@ -1255,7 +1255,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 <select 
                   value={newThoughtVis}
                   onChange={(e) => setNewThoughtVis(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#180412] border border-[#FF1A75]/30 text-[#FFF2F6] focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-[#180412] border border-[#FF1A75]/30 text-[#F3F4F6] focus:outline-none"
                 >
                   <option value="public">🌐 Public</option>
                   <option value="matches">💖 Matches Only</option>
@@ -1274,7 +1274,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                 <button 
                   onClick={handleCreateThought}
                   disabled={!newThoughtContent.trim()}
-                  className="px-5 py-2 rounded-xl pink-gradient-btn text-white font-bold disabled:opacity-40 cursor-pointer shadow-lg"
+                  className="px-5 py-2 rounded-xl gray-glass-btn text-white font-bold disabled:opacity-40 cursor-pointer shadow-lg"
                 >
                   Publish Thought
                 </button>
@@ -1293,7 +1293,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Wand2 className="w-4 h-4 text-amber-400" />
-                <h3 className="text-sm font-black text-[#FFF2F6]">AI Writing & Expression Assistant</h3>
+                <h3 className="text-sm font-black text-[#F3F4F6]">AI Writing & Expression Assistant</h3>
               </div>
               <button onClick={() => setIsAiToolOpen(false)} className="text-[#C49DB2] hover:text-white">
                 <X className="w-4 h-4" />
@@ -1340,7 +1340,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   onChange={(e) => setAiDraftInput(e.target.value)}
                   placeholder="Paste rough notes, bullet points, or unpolished sentences..."
                   rows={3}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-[#FFF2F6] focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-[#F3F4F6] focus:outline-none focus:border-amber-400"
                 />
               </div>
             )}
@@ -1367,7 +1367,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
             {aiSuggestion && (
               <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-400/30 space-y-2 text-xs animate-fadeIn">
                 <span className="text-[10px] font-bold text-amber-300 uppercase block">Suggested Draft (Inspect & Edit):</span>
-                <p className="text-[#FFF2F6] italic leading-relaxed whitespace-pre-wrap">
+                <p className="text-[#F3F4F6] italic leading-relaxed whitespace-pre-wrap">
                   {aiSuggestion}
                 </p>
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-amber-400/20">

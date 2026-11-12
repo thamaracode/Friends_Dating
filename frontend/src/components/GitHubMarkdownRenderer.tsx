@@ -243,19 +243,19 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
         elements.push(
           <code 
             key={key++} 
-            className="px-1.5 py-0.5 rounded-md text-[11px] font-mono bg-[#28081E] border border-[#FF4F87]/30 text-[#FF92B8] mx-0.5 font-semibold"
+            className="px-1.5 py-0.5 rounded-md text-[11px] font-mono bg-[#28081E] border border-[#FFFFFF]/30 text-[#FF92B8] mx-0.5 font-semibold"
           >
             {codeContent}
           </code>
         );
       } else if (token.startsWith('***') && token.endsWith('***')) {
-        elements.push(<strong key={key++} className="font-black italic text-[#FFF2F6]">{token.slice(3, -3)}</strong>);
+        elements.push(<strong key={key++} className="font-black italic text-[#F3F4F6]">{token.slice(3, -3)}</strong>);
       } else if ((token.startsWith('**') && token.endsWith('**')) || (token.startsWith('__') && token.endsWith('__'))) {
-        elements.push(<strong key={key++} className="font-black text-[#FFF2F6]">{token.slice(2, -2)}</strong>);
+        elements.push(<strong key={key++} className="font-black text-[#F3F4F6]">{token.slice(2, -2)}</strong>);
       } else if (token.startsWith('~~') && token.endsWith('~~')) {
-        elements.push(<span key={key++} className="line-through text-[#8E7C88]">{token.slice(2, -2)}</span>);
+        elements.push(<span key={key++} className="line-through text-[#6B7280]">{token.slice(2, -2)}</span>);
       } else if ((token.startsWith('*') && token.endsWith('*')) || (token.startsWith('_') && token.endsWith('_'))) {
-        elements.push(<em key={key++} className="italic text-[#FFD6E3]">{token.slice(1, -1)}</em>);
+        elements.push(<em key={key++} className="italic text-[#F3F4F6]">{token.slice(1, -1)}</em>);
       } else if (token.startsWith('[') && token.includes('](')) {
         const linkMatch = token.match(/\[([^\]]+)\]\(([^)]+)\)/);
         if (linkMatch) {
@@ -266,7 +266,7 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#FF4F87] hover:text-[#FF84AB] underline underline-offset-2 decoration-[#FF4F87]/50 inline-flex items-center gap-0.5 font-medium transition-colors"
+              className="text-[#FFFFFF] hover:text-[#FF84AB] underline underline-offset-2 decoration-[#FFFFFF]/50 inline-flex items-center gap-0.5 font-medium transition-colors"
             >
               <span>{label}</span>
               <ExternalLink className="w-2.5 h-2.5 inline" />
@@ -294,9 +294,9 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
           case 'header': {
             if (block.level === 1) {
               return (
-                <div key={idx} className="pb-2 pt-3 border-b border-[#FF4F87]/30 first:pt-0">
-                  <h1 className="text-lg sm:text-xl font-black text-[#FFF2F6] tracking-tight flex items-center gap-2">
-                    <span className="text-[#FF4F87] font-mono text-sm select-none">#</span>
+                <div key={idx} className="pb-2 pt-3 border-b border-[#FFFFFF]/30 first:pt-0">
+                  <h1 className="text-lg sm:text-xl font-black text-[#F3F4F6] tracking-tight flex items-center gap-2">
+                    <span className="text-[#FFFFFF] font-mono text-sm select-none">#</span>
                     <span>{renderInline(block.text)}</span>
                   </h1>
                 </div>
@@ -304,9 +304,9 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
             }
             if (block.level === 2) {
               return (
-                <div key={idx} className="pb-1.5 pt-3 border-b border-[#FF4F87]/15 first:pt-0">
-                  <h2 className="text-base sm:text-lg font-bold text-[#FFF2F6] tracking-tight flex items-center gap-1.5">
-                    <span className="text-[#FF4F87]/70 font-mono text-xs select-none">##</span>
+                <div key={idx} className="pb-1.5 pt-3 border-b border-[#FFFFFF]/15 first:pt-0">
+                  <h2 className="text-base sm:text-lg font-bold text-[#F3F4F6] tracking-tight flex items-center gap-1.5">
+                    <span className="text-[#FFFFFF]/70 font-mono text-xs select-none">##</span>
                     <span>{renderInline(block.text)}</span>
                   </h2>
                 </div>
@@ -314,14 +314,14 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
             }
             if (block.level === 3) {
               return (
-                <h3 key={idx} className="text-sm font-bold text-[#FFB4CE] pt-2 flex items-center gap-1">
-                  <span className="text-[#FF4F87]/50 font-mono text-[10px] select-none">###</span>
+                <h3 key={idx} className="text-sm font-bold text-[#E5E7EB] pt-2 flex items-center gap-1">
+                  <span className="text-[#FFFFFF]/50 font-mono text-[10px] select-none">###</span>
                   <span>{renderInline(block.text)}</span>
                 </h3>
               );
             }
             return (
-              <h4 key={idx} className="text-xs font-bold text-[#FFB4CE] pt-1">
+              <h4 key={idx} className="text-xs font-bold text-[#E5E7EB] pt-1">
                 {renderInline(block.text)}
               </h4>
             );
@@ -329,7 +329,7 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
 
           case 'paragraph': {
             return (
-              <p key={idx} className="text-xs text-[#E3D2DC] leading-relaxed">
+              <p key={idx} className="text-xs text-[#E5E7EB] leading-relaxed">
                 {renderInline(block.text)}
               </p>
             );
@@ -339,7 +339,7 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
             return (
               <blockquote 
                 key={idx} 
-                className="pl-3.5 py-1.5 border-l-3 border-[#FF4F87] bg-gradient-to-r from-[#FF0D69]/10 to-transparent rounded-r-xl italic text-xs text-[#FFF0F4] space-y-1"
+                className="pl-3.5 py-1.5 border-l-3 border-[#FFFFFF] bg-gradient-to-r from-[#FFFFFF]/10 to-transparent rounded-r-xl italic text-xs text-[#F3F4F6] space-y-1"
               >
                 {block.text.split('\n').map((qLine: string, qIdx: number) => (
                   <p key={qIdx}>{renderInline(qLine)}</p>
@@ -380,15 +380,15 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
           case 'code_block': {
             const isCopied = copiedCodeIdx === idx;
             return (
-              <div key={idx} className="rounded-2xl overflow-hidden border border-[#FF4F87]/25 bg-[#0C020A] shadow-xl my-2">
-                <div className="flex items-center justify-between px-3 py-1.5 bg-[#1C0516] border-b border-[#FF4F87]/15 text-[10px] text-[#FFB4CE]">
+              <div key={idx} className="rounded-2xl overflow-hidden border border-[#FFFFFF]/25 bg-[#0C020A] shadow-xl my-2">
+                <div className="flex items-center justify-between px-3 py-1.5 bg-[#1C0516] border-b border-[#FFFFFF]/15 text-[10px] text-[#E5E7EB]">
                   <div className="flex items-center gap-1.5 font-mono">
-                    <Code className="w-3 h-3 text-[#FF4F87]" />
+                    <Code className="w-3 h-3 text-[#FFFFFF]" />
                     <span>{block.lang}</span>
                   </div>
                   <button
                     onClick={() => handleCopyCode(block.code, idx)}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#FFD6E3] hover:text-white transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#F3F4F6] hover:text-white transition-colors cursor-pointer"
                   >
                     {isCopied ? (
                       <>
@@ -415,12 +415,12 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
               <div key={idx} className="flex items-start gap-2.5 py-0.5 group">
                 <div className={`mt-0.5 w-4 h-4 rounded-md flex items-center justify-center border transition-all ${
                   block.checked 
-                    ? 'bg-[#FF0D69] border-[#FF0D69] text-white shadow-[0_0_8px_rgba(255,13,105,0.7)]' 
-                    : 'bg-black/30 border-[#FF78A8]/40 text-transparent'
+                    ? 'bg-[#FFFFFF] border-[#FFFFFF] text-white shadow-[0_0_8px_rgba(255,13,105,0.7)]' 
+                    : 'bg-black/30 border-[rgba(255,255,255,0.20)]/40 text-transparent'
                 }`}>
                   <Check className="w-3 h-3 stroke-[3]" />
                 </div>
-                <span className={`text-xs ${block.checked ? 'text-[#8E7C88] line-through' : 'text-[#FFF2F6]'}`}>
+                <span className={`text-xs ${block.checked ? 'text-[#6B7280] line-through' : 'text-[#F3F4F6]'}`}>
                   {renderInline(block.text)}
                 </span>
               </div>
@@ -430,8 +430,8 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
           case 'list_item': {
             return (
               <div key={idx} className="flex items-start gap-2.5 py-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#FF4F87] mt-1.5 shrink-0 shadow-[0_0_6px_#FF4F87]" />
-                <span className="text-xs text-[#E3D2DC]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FFFFFF] mt-1.5 shrink-0 shadow-[0_0_6px_#FFFFFF]" />
+                <span className="text-xs text-[#E5E7EB]">
                   {renderInline(block.text)}
                 </span>
               </div>
@@ -441,10 +441,10 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
           case 'num_item': {
             return (
               <div key={idx} className="flex items-start gap-2 py-0.5">
-                <span className="text-xs font-mono font-bold text-[#FF4F87] shrink-0">
+                <span className="text-xs font-mono font-bold text-[#FFFFFF] shrink-0">
                   {block.num}
                 </span>
-                <span className="text-xs text-[#E3D2DC]">
+                <span className="text-xs text-[#E5E7EB]">
                   {renderInline(block.text)}
                 </span>
               </div>
@@ -453,18 +453,18 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
 
           case 'table': {
             return (
-              <div key={idx} className="overflow-x-auto rounded-2xl border border-[#FF4F87]/20 bg-[#160412]/60 my-2 shadow-lg">
+              <div key={idx} className="overflow-x-auto rounded-2xl border border-[#FFFFFF]/20 bg-[#160412]/60 my-2 shadow-lg">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-[#FF4F87]/25 bg-[#25071D]">
+                    <tr className="border-b border-[#FFFFFF]/25 bg-[#25071D]">
                       {block.headers.map((h: string, hIdx: number) => (
-                        <th key={hIdx} className="px-3 py-2 font-bold text-[#FFD6E3] tracking-wide text-[11px]">
+                        <th key={hIdx} className="px-3 py-2 font-bold text-[#F3F4F6] tracking-wide text-[11px]">
                           {renderInline(h)}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#FF4F87]/10">
+                  <tbody className="divide-y divide-[#FFFFFF]/10">
                     {block.rows.map((row: string[], rIdx: number) => (
                       <tr key={rIdx} className="hover:bg-white/5 transition-colors">
                         {row.map((cell: string, cIdx: number) => (
@@ -483,7 +483,7 @@ export const GitHubMarkdownRenderer: React.FC<GitHubMarkdownRendererProps> = ({
           case 'hr': {
             return (
               <div key={idx} className="py-2">
-                <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FF0D69]/40 to-transparent" />
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFFFFF]/40 to-transparent" />
               </div>
             );
           }

@@ -644,10 +644,10 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   const renderConversationList = () => (
     <div className="flex-1 flex flex-col h-full overflow-hidden select-none">
       {/* Header */}
-      <div className="p-3 pb-2 flex items-center justify-between border-b border-[#FF78A8]/20">
+      <div className="p-3 pb-2 flex items-center justify-between border-b border-[rgba(255,255,255,0.20)]/20">
         <div>
-          <h1 className="text-xl font-black text-[#FFF1F3] tracking-tight">Messages</h1>
-          <span className="text-[10px] text-[#FFB4CE] font-bold">Encrypted Cloud • TDLib Order</span>
+          <h1 className="text-xl font-black text-[#F3F4F6] tracking-tight">Messages</h1>
+          <span className="text-[10px] text-[#E5E7EB] font-bold">Encrypted Cloud • TDLib Order</span>
         </div>
         <div className="flex items-center gap-1">
           <button 
@@ -668,13 +668,13 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             onClick={() => setActiveFolder(folder.id)}
             className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-1.5 ${
               activeFolder === folder.id 
-                ? 'bg-gradient-to-r from-[#FF0D69] to-[#E0005C] text-white shadow-[0_0_12px_rgba(255,13,105,0.6)]' 
+                ? 'bg-gradient-to-r from-[#FFFFFF] to-[#E0005C] text-white shadow-[0_0_12px_rgba(255,13,105,0.6)]' 
                 : 'glass-panel text-[#C49DB2] hover:text-white'
             }`}
           >
             <span>{folder.title}</span>
             {folder.badgeCount !== undefined && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${activeFolder === folder.id ? 'bg-white text-[#FF0D69]' : 'bg-[#FF0D69] text-white'}`}>
+              <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${activeFolder === folder.id ? 'bg-white text-[#FFFFFF]' : 'bg-[#FFFFFF] text-white'}`}>
                 {folder.badgeCount}
               </span>
             )}
@@ -691,7 +691,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search conversations, matches, or cloud..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl glass-panel text-xs text-[#FFF2F6] placeholder-[#82586E] focus:outline-none focus:border-[#FF0D69]"
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl glass-panel text-xs text-[#F3F4F6] placeholder-[#82586E] focus:outline-none focus:border-[#FFFFFF]"
           />
         </div>
       </div>
@@ -706,8 +706,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               onClick={() => setActiveConversationId(conv.id)}
               className={`relative p-3 rounded-2xl border flex items-center justify-between gap-3 cursor-pointer transition-all shadow-sm group ${
                 isSelected 
-                  ? 'bg-gradient-to-r from-[#FF0D69]/25 via-[#D60058]/15 to-transparent border-[#FF0D69] shadow-[0_0_20px_rgba(255,13,105,0.25)]' 
-                  : 'glass-panel-elevated border-[#FF1A75]/15 hover:border-[#FF0D69]/50'
+                  ? 'bg-gradient-to-r from-[#FFFFFF]/25 via-[#D60058]/15 to-transparent border-[#FFFFFF] shadow-[0_0_20px_rgba(255,13,105,0.25)]' 
+                  : 'glass-panel-elevated border-[#FF1A75]/15 hover:border-[#FFFFFF]/50'
               }`}
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -720,18 +720,18 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                     }`}
                   />
                   {conv.isOnline && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#100B12]" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#090A0E]" />
                   )}
                 </div>
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <h4 className="text-xs font-bold text-[#FFF2F6] truncate">{conv.title}</h4>
+                    <h4 className="text-xs font-bold text-[#F3F4F6] truncate">{conv.title}</h4>
                     {conv.isVerified && (
                       <ShieldCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" />
                     )}
                     {conv.isPinned && (
-                      <Pin className="w-3 h-3 text-[#FF0D69] flex-shrink-0" />
+                      <Pin className="w-3 h-3 text-[#FFFFFF] flex-shrink-0" />
                     )}
                   </div>
                   <p className={`text-[11px] truncate mt-0.5 ${conv.unreadCount > 0 ? 'text-[#FFB8D2] font-bold' : 'text-[#C49DB2]'}`}>
@@ -747,11 +747,11 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                 <span className="text-[10px] text-[#82586E]">{conv.lastMessage?.timestamp}</span>
                 {conv.unreadCount > 0 ? (
-                  <span className="w-4 h-4 rounded-full bg-[#FF0D69] text-[#FFF2F6] text-[9px] font-black flex items-center justify-center shadow-[0_0_8px_#FF0D69]">
+                  <span className="w-4 h-4 rounded-full bg-[#FFFFFF] text-[#F3F4F6] text-[9px] font-black flex items-center justify-center shadow-[0_0_8px_#FFFFFF]">
                     {conv.unreadCount}
                   </span>
                 ) : conv.isPinned ? (
-                  <span className="text-[10px] text-[#FF0D69]">Pinned</span>
+                  <span className="text-[10px] text-[#FFFFFF]">Pinned</span>
                 ) : null}
               </div>
             </div>
@@ -767,20 +767,20 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   const renderActiveConversation = () => {
     if (!currentConv) {
       return (
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-[#7A6975]">
-          <div className="w-16 h-16 rounded-full glass-panel flex items-center justify-center mb-3 text-[#FF4F87]">
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-[#6B7280]">
+          <div className="w-16 h-16 rounded-full glass-panel flex items-center justify-center mb-3 text-[#FFFFFF]">
             <Sparkles className="w-8 h-8" />
           </div>
-          <h3 className="text-sm font-bold text-[#FFF1F3]">Select a conversation</h3>
-          <p className="text-xs text-[#B9A8B3] mt-1">Choose from your matches, friends, or personal cloud.</p>
+          <h3 className="text-sm font-bold text-[#F3F4F6]">Select a conversation</h3>
+          <p className="text-xs text-[#9CA3AF] mt-1">Choose from your matches, friends, or personal cloud.</p>
         </div>
       );
     }
 
     return (
-      <div className="flex-1 flex flex-col h-full bg-[#100B12] animate-fadeIn relative overflow-hidden">
+      <div className="flex-1 flex flex-col h-full bg-[#090A0E] animate-fadeIn relative overflow-hidden">
         {/* Header */}
-        <div className="px-4 py-3 glass-panel-elevated flex items-center justify-between border-b border-[#FF78A8]/20 z-30">
+        <div className="px-4 py-3 glass-panel-elevated flex items-center justify-between border-b border-[rgba(255,255,255,0.20)]/20 z-30">
           <div className="flex items-center gap-3">
             {/* Show back arrow on mobile */}
             {!isDesktopLayout && (
@@ -789,7 +789,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                   setActiveConversationId(null);
                   if (onClearActiveProfileOverride) onClearActiveProfileOverride();
                 }}
-                className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#B9A8B3] hover:text-[#FFF1F3] cursor-pointer"
+                className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#9CA3AF] hover:text-[#F3F4F6] cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
@@ -806,23 +806,23 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 <img 
                   src={currentConv.avatar} 
                   alt={currentConv.title} 
-                  className="w-10 h-10 rounded-2xl object-cover border border-[#FF78A8]/40"
+                  className="w-10 h-10 rounded-2xl object-cover border border-[rgba(255,255,255,0.20)]/40"
                 />
                 {currentConv.isOnline && (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#100B12]" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#090A0E]" />
                 )}
               </div>
 
               <div>
                 <div className="flex items-center gap-1">
-                  <h3 className="text-xs font-bold text-[#FFF1F3]">{currentConv.title}</h3>
+                  <h3 className="text-xs font-bold text-[#F3F4F6]">{currentConv.title}</h3>
                   {currentConv.isVerified && (
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                   )}
                 </div>
-                <span className="text-[10px] text-[#B9A8B3]">
+                <span className="text-[10px] text-[#9CA3AF]">
                   {typingPartnerText ? (
-                    <span className="text-[#FF4F87] font-semibold animate-pulse">{typingPartnerText}</span>
+                    <span className="text-[#FFFFFF] font-semibold animate-pulse">{typingPartnerText}</span>
                   ) : (
                     currentConv.lastSeenText
                   )}
@@ -836,35 +836,35 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             {/* Fullscreen / Edge-to-Edge Web Toggle */}
             <button
               onClick={() => setIsEdgeToEdge(!isEdgeToEdge)}
-              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FFFFFF] cursor-pointer"
               title={isEdgeToEdge ? "Exit Fullscreen Web View" : "Fullscreen Telegram Web View"}
             >
-              {isEdgeToEdge ? <Minimize2 className="w-4 h-4 text-[#FF0D69]" /> : <Maximize2 className="w-4 h-4" />}
+              {isEdgeToEdge ? <Minimize2 className="w-4 h-4 text-[#FFFFFF]" /> : <Maximize2 className="w-4 h-4" />}
             </button>
             <button
               onClick={() => setIsSearchActive(!isSearchActive)}
-              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FFFFFF] cursor-pointer"
               title="Search Messages (Ctrl+F)"
             >
               <Search className="w-4 h-4" />
             </button>
             <button
               onClick={() => startCall('voice')}
-              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FFFFFF] cursor-pointer"
               title="Encrypted Voice Call"
             >
               <Phone className="w-4 h-4" />
             </button>
             <button
               onClick={() => startCall('video')}
-              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FFFFFF] cursor-pointer"
               title="Encrypted Video Call"
             >
               <Video className="w-4 h-4" />
             </button>
             <button
               onClick={() => setIsChatSettingsOpen(!isChatSettingsOpen)}
-              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
+              className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FFFFFF] cursor-pointer"
               title="Chat Options & Privacy"
             >
               <MoreVertical className="w-4 h-4" />
@@ -874,15 +874,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
         {/* Chat Settings & Privacy Drawer */}
         {isChatSettingsOpen && (
-          <div className="absolute right-4 top-14 w-60 rounded-3xl glass-panel-elevated p-3 border border-[#FF78A8]/30 z-40 shadow-2xl space-y-1 animate-fadeIn text-xs">
+          <div className="absolute right-4 top-14 w-60 rounded-3xl glass-panel-elevated p-3 border border-[rgba(255,255,255,0.20)]/30 z-40 shadow-2xl space-y-1 animate-fadeIn text-xs">
             <button
               onClick={() => {
                 alert("Notifications muted for 8 hours.");
                 setIsChatSettingsOpen(false);
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
             >
-              <VolumeX className="w-4 h-4 text-[#B9A8B3]" />
+              <VolumeX className="w-4 h-4 text-[#9CA3AF]" />
               <span>Mute Notifications</span>
             </button>
 
@@ -891,9 +891,9 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 alert("Conversation archived.");
                 setIsChatSettingsOpen(false);
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
             >
-              <Archive className="w-4 h-4 text-[#B9A8B3]" />
+              <Archive className="w-4 h-4 text-[#9CA3AF]" />
               <span>Archive Conversation</span>
             </button>
 
@@ -902,9 +902,9 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 alert("Auto-delete set to 24 hours.");
                 setIsChatSettingsOpen(false);
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
             >
-              <Clock className="w-4 h-4 text-[#FF78A8]" />
+              <Clock className="w-4 h-4 text-[rgba(255,255,255,0.20)]" />
               <span>Auto-Delete (24h)</span>
             </button>
 
@@ -923,16 +923,16 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
         {/* In-Chat Search Bar */}
         {isSearchActive && (
-          <div className="px-4 py-2 bg-[#1B121D] border-b border-[#FF78A8]/20 flex items-center gap-2 animate-fadeIn">
-            <Search className="w-4 h-4 text-[#FF4F87]" />
+          <div className="px-4 py-2 bg-[#12141B] border-b border-[rgba(255,255,255,0.20)]/20 flex items-center gap-2 animate-fadeIn">
+            <Search className="w-4 h-4 text-[#FFFFFF]" />
             <input
               type="text"
               value={inChatSearchQuery}
               onChange={(e) => setInChatSearchQuery(e.target.value)}
               placeholder="Search words in this chat..."
-              className="flex-1 bg-transparent text-xs text-[#FFF1F3] placeholder-[#7A6975] focus:outline-none"
+              className="flex-1 bg-transparent text-xs text-[#F3F4F6] placeholder-[#6B7280] focus:outline-none"
             />
-            <button onClick={() => { setIsSearchActive(false); setInChatSearchQuery(''); }} className="text-[#B9A8B3] hover:text-white">
+            <button onClick={() => { setIsSearchActive(false); setInChatSearchQuery(''); }} className="text-[#9CA3AF] hover:text-white">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -940,17 +940,17 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
         {/* Pinned Message Banner */}
         {pinnedMessage && (
-          <div className="px-4 py-2 bg-[#1B121D] border-b border-[#FF78A8]/20 flex items-center justify-between text-xs animate-fadeIn">
+          <div className="px-4 py-2 bg-[#12141B] border-b border-[rgba(255,255,255,0.20)]/20 flex items-center justify-between text-xs animate-fadeIn">
             <div className="flex items-center gap-2 truncate">
-              <Pin className="w-3.5 h-3.5 text-[#FF4F87] flex-shrink-0" />
+              <Pin className="w-3.5 h-3.5 text-[#FFFFFF] flex-shrink-0" />
               <div className="truncate">
-                <span className="text-[10px] font-bold text-[#FFB4CE] block">Pinned Message:</span>
-                <span className="text-[11px] text-[#FFF1F3] truncate block">{pinnedMessage.text}</span>
+                <span className="text-[10px] font-bold text-[#E5E7EB] block">Pinned Message:</span>
+                <span className="text-[11px] text-[#F3F4F6] truncate block">{pinnedMessage.text}</span>
               </div>
             </div>
             <button
               onClick={() => handleTogglePin(pinnedMessage)}
-              className="text-[10px] text-[#B9A8B3] hover:text-rose-400 ml-2"
+              className="text-[10px] text-[#9CA3AF] hover:text-rose-400 ml-2"
               title="Unpin"
             >
               <X className="w-3.5 h-3.5" />
@@ -999,7 +999,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                   >
                     {/* Replying To preview banner */}
                     {msg.replyTo && (
-                      <div className="text-[10px] text-[#FFB8D2] mb-1 px-3 py-1 rounded-xl bg-black/50 border-l-2 border-[#FF0D69] max-w-[75%] backdrop-blur-md">
+                      <div className="text-[10px] text-[#FFB8D2] mb-1 px-3 py-1 rounded-xl bg-black/50 border-l-2 border-[#FFFFFF] max-w-[75%] backdrop-blur-md">
                         <span className="font-bold">Replied to {msg.replyTo.senderName}:</span>
                         <p className="truncate italic">{msg.replyTo.textSnippet}</p>
                       </div>
@@ -1018,7 +1018,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                         {/* Floating Translucent Pill (Telegram Authenticity) */}
                         <div className="absolute bottom-0 right-0 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white/90 shadow-md">
                           <span>{msg.timestamp}</span>
-                          {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FF0D69]" />}
+                          {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FFFFFF]" />}
                         </div>
                       </div>
                     ) : msg.type === 'sticker' ? (
@@ -1034,7 +1034,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                         />
                         <div className="absolute bottom-1 right-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white/90 shadow-md">
                           <span>{msg.timestamp}</span>
-                          {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FF0D69]" />}
+                          {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FFFFFF]" />}
                         </div>
                       </div>
                     ) : (
@@ -1043,8 +1043,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                         onClick={() => setSelectedMessageForMenu(msg)}
                         className={`relative max-w-[80%] p-3 text-xs space-y-1 shadow-md cursor-pointer transition-transform active:scale-[0.98] ${cornerClass} ${
                           msg.isOutgoing
-                            ? 'bg-gradient-to-r from-[#FF0D69] via-[#E0005C] to-[#B30044] text-[#FFF2F6] shadow-[0_4px_18px_rgba(255,13,105,0.35)]'
-                            : 'bg-[#24061A]/85 border border-[#FF1A75]/25 backdrop-blur-xl text-[#FFF2F6]'
+                            ? 'bg-gradient-to-r from-[#FFFFFF] via-[#E0005C] to-[#B30044] text-[#F3F4F6] shadow-[0_4px_18px_rgba(255,13,105,0.35)]'
+                            : 'bg-[#24061A]/85 border border-[#FF1A75]/25 backdrop-blur-xl text-[#F3F4F6]'
                         }`}
                       >
                       {/* Media Image Attachment with Lightbox Viewer */}
@@ -1079,7 +1079,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                       )}
 
                       {/* Metadata: Time, Status, Edited */}
-                      <div className={`flex items-center justify-end gap-1.5 text-[9px] ${msg.isOutgoing ? 'text-white/70' : 'text-[#B9A8B3]'}`}>
+                      <div className={`flex items-center justify-end gap-1.5 text-[9px] ${msg.isOutgoing ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
                         {msg.isEdited && <span>edited</span>}
                         <span>{msg.timestamp}</span>
                         {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-white" />}
@@ -1093,10 +1093,10 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                       {msg.reactions.map((r, i) => (
                         <span 
                           key={i}
-                          className="px-2 py-0.5 rounded-full bg-[#1B121D] border border-[#FF78A8]/30 text-[10px] font-bold text-[#FFF1F3] flex items-center gap-1 shadow-sm"
+                          className="px-2 py-0.5 rounded-full bg-[#12141B] border border-[rgba(255,255,255,0.20)]/30 text-[10px] font-bold text-[#F3F4F6] flex items-center gap-1 shadow-sm"
                         >
                           <span>{r.emoji}</span>
-                          {r.count > 1 && <span className="text-[9px] text-[#FFB4CE]">{r.count}</span>}
+                          {r.count > 1 && <span className="text-[9px] text-[#E5E7EB]">{r.count}</span>}
                         </span>
                       ))}
                     </div>
@@ -1110,33 +1110,33 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
         {/* Reply / Edit Preview Bar */}
         {replyingTo && (
-          <div className="px-4 py-2 bg-[#1B121D] border-t border-[#FF78A8]/20 flex items-center justify-between text-xs animate-fadeIn">
+          <div className="px-4 py-2 bg-[#12141B] border-t border-[rgba(255,255,255,0.20)]/20 flex items-center justify-between text-xs animate-fadeIn">
             <div className="flex items-center gap-2 truncate">
-              <Reply className="w-4 h-4 text-[#FF4F87]" />
+              <Reply className="w-4 h-4 text-[#FFFFFF]" />
               <div className="truncate">
-                <span className="text-[10px] font-bold text-[#FFB4CE] block">Replying to {replyingTo.senderName}:</span>
-                <span className="text-[11px] text-[#FFF1F3] truncate block">{replyingTo.text}</span>
+                <span className="text-[10px] font-bold text-[#E5E7EB] block">Replying to {replyingTo.senderName}:</span>
+                <span className="text-[11px] text-[#F3F4F6] truncate block">{replyingTo.text}</span>
               </div>
             </div>
-            <button onClick={() => setReplyingTo(null)} className="text-[#B9A8B3] hover:text-white">
+            <button onClick={() => setReplyingTo(null)} className="text-[#9CA3AF] hover:text-white">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {editingMessage && (
-          <div className="px-4 py-2 bg-[#1B121D] border-t border-[#FF78A8]/20 flex items-center justify-between text-xs animate-fadeIn">
+          <div className="px-4 py-2 bg-[#12141B] border-t border-[rgba(255,255,255,0.20)]/20 flex items-center justify-between text-xs animate-fadeIn">
             <div className="flex items-center gap-2 truncate">
               <Edit2 className="w-4 h-4 text-amber-400" />
               <div className="truncate">
                 <span className="text-[10px] font-bold text-amber-300 block">Editing message:</span>
-                <span className="text-[11px] text-[#FFF1F3] truncate block">{editingMessage.text}</span>
+                <span className="text-[11px] text-[#F3F4F6] truncate block">{editingMessage.text}</span>
               </div>
             </div>
             <button onClick={() => {
               setEditingMessage(null);
               setInputMessage('');
-            }} className="text-[#B9A8B3] hover:text-white">
+            }} className="text-[#9CA3AF] hover:text-white">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -1144,24 +1144,24 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
         {/* Emoji / Sticker / Luck Drawer (Telegram Benchmark) */}
         {isEmojiPickerOpen && (
-          <div className="h-56 bg-[#1B121D] border-t border-[#FF78A8]/20 flex flex-col animate-fadeIn select-none">
+          <div className="h-56 bg-[#12141B] border-t border-[rgba(255,255,255,0.20)]/20 flex flex-col animate-fadeIn select-none">
             {/* Header Tabs */}
-            <div className="flex items-center justify-around border-b border-[#FF78A8]/10 py-1.5 text-xs font-bold">
+            <div className="flex items-center justify-around border-b border-[rgba(255,255,255,0.20)]/10 py-1.5 text-xs font-bold">
               <button 
                 onClick={() => setPickerTab('luck')} 
-                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'luck' ? 'bg-[#FF4F87] text-white shadow-md' : 'text-[#B9A8B3] hover:text-white'}`}
+                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'luck' ? 'bg-[#FFFFFF] text-white shadow-md' : 'text-[#9CA3AF] hover:text-white'}`}
               >
                 <span>🎰 Telegram Luck</span>
               </button>
               <button 
                 onClick={() => setPickerTab('emoji')} 
-                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'emoji' ? 'bg-[#FF4F87] text-white shadow-md' : 'text-[#B9A8B3] hover:text-white'}`}
+                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'emoji' ? 'bg-[#FFFFFF] text-white shadow-md' : 'text-[#9CA3AF] hover:text-white'}`}
               >
                 <span>😀 Emojis</span>
               </button>
               <button 
                 onClick={() => setPickerTab('stickers')} 
-                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'stickers' ? 'bg-[#FF4F87] text-white shadow-md' : 'text-[#B9A8B3] hover:text-white'}`}
+                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'stickers' ? 'bg-[#FFFFFF] text-white shadow-md' : 'text-[#9CA3AF] hover:text-white'}`}
               >
                 <span>🌟 Stickers</span>
               </button>
@@ -1173,31 +1173,31 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 {/* 1. Slot Machine */}
                 <button
                   onClick={() => handleSendMessage('🎰')}
-                  className="p-2.5 rounded-2xl glass-panel-elevated border border-[#FF78A8]/30 hover:border-[#FF4F87] flex flex-col items-center gap-1 text-center cursor-pointer hover:scale-105 transition-all shadow-md group"
+                  className="p-2.5 rounded-2xl glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 hover:border-[#FFFFFF] flex flex-col items-center gap-1 text-center cursor-pointer hover:scale-105 transition-all shadow-md group"
                 >
                   <div className="text-3xl filter drop-shadow">🎰</div>
-                  <span className="text-[10px] font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE]">Slot Machine</span>
-                  <span className="text-[8px] text-[#7A6975]">Jackpot 777</span>
+                  <span className="text-[10px] font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB]">Slot Machine</span>
+                  <span className="text-[8px] text-[#6B7280]">Jackpot 777</span>
                 </button>
 
                 {/* 2. 3D Dice */}
                 <button
                   onClick={() => handleSendMessage('🎲')}
-                  className="p-2.5 rounded-2xl glass-panel-elevated border border-[#FF78A8]/30 hover:border-[#FF4F87] flex flex-col items-center gap-1 text-center cursor-pointer hover:scale-105 transition-all shadow-md group"
+                  className="p-2.5 rounded-2xl glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 hover:border-[#FFFFFF] flex flex-col items-center gap-1 text-center cursor-pointer hover:scale-105 transition-all shadow-md group"
                 >
                   <div className="text-3xl filter drop-shadow">🎲</div>
-                  <span className="text-[10px] font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE]">Rolling Dice</span>
-                  <span className="text-[8px] text-[#7A6975]">1 to 6 roll</span>
+                  <span className="text-[10px] font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB]">Rolling Dice</span>
+                  <span className="text-[8px] text-[#6B7280]">1 to 6 roll</span>
                 </button>
 
                 {/* 3. Flipping Coin */}
                 <button
                   onClick={() => handleSendMessage('🪙')}
-                  className="p-2.5 rounded-2xl glass-panel-elevated border border-[#FF78A8]/30 hover:border-[#FF4F87] flex flex-col items-center gap-1 text-center cursor-pointer hover:scale-105 transition-all shadow-md group"
+                  className="p-2.5 rounded-2xl glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 hover:border-[#FFFFFF] flex flex-col items-center gap-1 text-center cursor-pointer hover:scale-105 transition-all shadow-md group"
                 >
                   <div className="text-3xl filter drop-shadow">🪙</div>
-                  <span className="text-[10px] font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE]">Coin Toss</span>
-                  <span className="text-[8px] text-[#7A6975]">Heads or Tails</span>
+                  <span className="text-[10px] font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB]">Coin Toss</span>
+                  <span className="text-[8px] text-[#6B7280]">Heads or Tails</span>
                 </button>
               </div>
             )}
@@ -1222,13 +1222,13 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               <div className="flex-1 overflow-y-auto p-2 no-scrollbar space-y-3">
                 {installedPacks.map((pack: any) => (
                   <div key={pack.id} className="space-y-1">
-                    <span className="text-[10px] font-bold text-[#FFB4CE] px-1">{pack.name}</span>
+                    <span className="text-[10px] font-bold text-[#E5E7EB] px-1">{pack.name}</span>
                     <div className="grid grid-cols-4 gap-2">
                       {pack.stickers?.map((stk: any) => (
                         <button
                           key={stk.id}
                           onClick={() => handleSendMessage(stk.emoji_association, 'sticker', stk.asset_url)}
-                          className="p-1 rounded-xl glass-panel hover:border-[#FF4F87]/60 flex items-center justify-center cursor-pointer hover:scale-105 transition-all"
+                          className="p-1 rounded-xl glass-panel hover:border-[#FFFFFF]/60 flex items-center justify-center cursor-pointer hover:scale-105 transition-all"
                         >
                           <img src={stk.asset_url} alt="Sticker" className="w-12 h-12 rounded-lg object-cover" />
                         </button>
@@ -1243,14 +1243,14 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
         {/* Action Dock (Telegram + Dating System) */}
         {isActionDockOpen && (
-          <div className="p-4 bg-[#1B121D] border-t border-[#FF78A8]/20 grid grid-cols-4 gap-3 animate-fadeIn">
+          <div className="p-4 bg-[#12141B] border-t border-[rgba(255,255,255,0.20)]/20 grid grid-cols-4 gap-3 animate-fadeIn">
             <button
               onClick={() => {
                 if (onOpenGame) onOpenGame();
               }}
-              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#F3F4F6] hover:text-[#FFFFFF] cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87]">
+              <div className="w-10 h-10 rounded-xl bg-[#FFFFFF]/20 flex items-center justify-center text-[#FFFFFF]">
                 <Gamepad2 className="w-5 h-5" />
               </div>
               <span className="text-[10px] font-bold">Games</span>
@@ -1260,7 +1260,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               onClick={() => {
                 if (onOpenLuckyDice) onOpenLuckyDice();
               }}
-              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#F3F4F6] hover:text-[#FFFFFF] cursor-pointer"
             >
               <div className="w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center text-amber-300">
                 <Dices className="w-5 h-5" />
@@ -1270,7 +1270,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
             <button
               onClick={() => handleSendMessage("Sending you an animated Lucky Rose! 🌹 (+15 Chemistry)", 'gift_event')}
-              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#F3F4F6] hover:text-[#FFFFFF] cursor-pointer"
             >
               <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400">
                 <Gift className="w-5 h-5" />
@@ -1280,7 +1280,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
             <button
               onClick={() => handleSendMessage("Shared Track: 'Resonance' - Home (Lo-Fi Ambient)", 'text')}
-              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#FFF1F3] hover:text-[#FF4F87] cursor-pointer"
+              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#F3F4F6] hover:text-[#FFFFFF] cursor-pointer"
             >
               <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
                 <Music className="w-5 h-5" />
@@ -1292,7 +1292,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
         {/* Composer / Audio Recorder Bar */}
         {isRecordingVoice ? (
-          <div className="p-3 bg-[#1B121D] border-t border-rose-500/40 flex items-center justify-between gap-3 animate-fadeIn">
+          <div className="p-3 bg-[#12141B] border-t border-rose-500/40 flex items-center justify-between gap-3 animate-fadeIn">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
               <span className="text-xs font-bold text-rose-400">
@@ -1303,7 +1303,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={cancelVoiceRecording}
-                className="px-3 py-1.5 rounded-xl glass-panel text-xs text-[#B9A8B3] hover:text-white cursor-pointer"
+                className="px-3 py-1.5 rounded-xl glass-panel text-xs text-[#9CA3AF] hover:text-white cursor-pointer"
               >
                 Cancel
               </button>
@@ -1323,7 +1323,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 onClick={() => setIsActionDockOpen(!isActionDockOpen)}
                 className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
                   isActionDockOpen 
-                    ? 'bg-[#FF0D69] text-white shadow-[0_0_16px_rgba(255,13,105,0.8)]' 
+                    ? 'bg-[#FFFFFF] text-white shadow-[0_0_16px_rgba(255,13,105,0.8)]' 
                     : 'glass-panel text-[#C49DB2] hover:text-white'
                 }`}
                 title="Interactive Action Dock"
@@ -1334,7 +1334,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               <button
                 onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
                 className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
-                  isEmojiPickerOpen ? 'text-[#FF0D69] bg-[#FF0D69]/15' : 'text-[#C49DB2] hover:text-white'
+                  isEmojiPickerOpen ? 'text-[#FFFFFF] bg-[#FFFFFF]/15' : 'text-[#C49DB2] hover:text-white'
                 }`}
                 title="Emoji, Stickers & Telegram Luck"
               >
@@ -1349,11 +1349,11 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                   onChange={(e) => handleTypingNotice(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder={editingMessage ? "Update message (Esc to cancel)..." : `Message ${currentConv.title}...`}
-                  className="w-full pl-4 pr-10 py-3 rounded-2xl glass-panel text-xs text-[#FFF2F6] placeholder-[#82586E] focus:outline-none focus:border-[#FF0D69]"
+                  className="w-full pl-4 pr-10 py-3 rounded-2xl glass-panel text-xs text-[#F3F4F6] placeholder-[#82586E] focus:outline-none focus:border-[#FFFFFF]"
                 />
                 <button 
                   onClick={startVoiceRecording}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C49DB2] hover:text-[#FF0D69] cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C49DB2] hover:text-[#FFFFFF] cursor-pointer"
                   title="Hold or Click to Record Voice Note"
                 >
                   <Mic className="w-4 h-4" />
@@ -1363,7 +1363,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               <button
                 onClick={() => handleSendMessage()}
                 disabled={!inputMessage.trim()}
-                className="w-11 h-11 rounded-2xl pink-gradient-btn flex items-center justify-center text-[#FFF2F6] disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-transform active:scale-95"
+                className="w-11 h-11 rounded-2xl gray-glass-btn flex items-center justify-center text-[#F3F4F6] disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-transform active:scale-95"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -1409,10 +1409,10 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         >
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-3xl glass-panel-elevated p-4 border border-[#FF78A8]/30 space-y-3 pink-ambient-glow"
+            className="w-full max-w-sm rounded-3xl glass-panel-elevated p-4 border border-[rgba(255,255,255,0.20)]/30 space-y-3 glass-panel"
           >
             {/* Emoji Reaction Bar */}
-            <div className="flex items-center justify-around py-2 border-b border-[#FF78A8]/15 text-2xl">
+            <div className="flex items-center justify-around py-2 border-b border-[rgba(255,255,255,0.20)]/15 text-2xl">
               {['❤️', '🔥', '✨', '🌹', '😂', '😮'].map(emoji => (
                 <button
                   key={emoji}
@@ -1432,9 +1432,9 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                   setSelectedMessageForMenu(null);
                   composerInputRef.current?.focus();
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
               >
-                <Reply className="w-4 h-4 text-[#FF4F87]" />
+                <Reply className="w-4 h-4 text-[#FFFFFF]" />
                 <span>Reply</span>
               </button>
 
@@ -1444,15 +1444,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                   alert("Copied to clipboard!");
                   setSelectedMessageForMenu(null);
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
               >
-                <Copy className="w-4 h-4 text-[#B9A8B3]" />
+                <Copy className="w-4 h-4 text-[#9CA3AF]" />
                 <span>Copy Text</span>
               </button>
 
               <button
                 onClick={() => handleSaveToSavedMessages(selectedMessageForMenu)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
               >
                 <Bookmark className="w-4 h-4 text-amber-400" />
                 <span>Save to Personal Cloud</span>
@@ -1460,9 +1460,9 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
               <button
                 onClick={() => handleTogglePin(selectedMessageForMenu)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
               >
-                <Pin className="w-4 h-4 text-[#FF78A8]" />
+                <Pin className="w-4 h-4 text-[rgba(255,255,255,0.20)]" />
                 <span>{selectedMessageForMenu.isPinned ? 'Unpin' : 'Pin to Header'}</span>
               </button>
 
@@ -1474,7 +1474,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                     setSelectedMessageForMenu(null);
                     composerInputRef.current?.focus();
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#FFF1F3] hover:bg-white/5 cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
                 >
                   <Edit2 className="w-4 h-4 text-amber-300" />
                   <span>Edit Message (or press Up arrow)</span>
@@ -1513,14 +1513,14 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       {activeMediaViewerUrl && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col justify-between p-4 animate-fadeIn">
           <div className="flex items-center justify-between text-white p-2">
-            <span className="text-xs font-bold text-[#FFB4CE]">Media Viewer</span>
+            <span className="text-xs font-bold text-[#E5E7EB]">Media Viewer</span>
             <div className="flex items-center gap-3">
               <a 
                 href={activeMediaViewerUrl} 
                 download 
                 target="_blank" 
                 rel="noreferrer"
-                className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-white hover:text-[#FF4F87]"
+                className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-white hover:text-[#FFFFFF]"
               >
                 <Download className="w-4 h-4" />
               </a>
@@ -1541,7 +1541,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             />
           </div>
 
-          <div className="flex justify-center pb-4 text-xs text-[#B9A8B3]">
+          <div className="flex justify-center pb-4 text-xs text-[#9CA3AF]">
             <span>Press Esc to close</span>
           </div>
         </div>
@@ -1549,15 +1549,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
       {/* WebRTC Video / Voice Call Modal */}
       {isCalling && (
-        <div className="fixed inset-0 z-50 bg-[#100B12]/95 backdrop-blur-xl flex flex-col items-center justify-between p-6 text-center animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-[#090A0E]/95 backdrop-blur-xl flex flex-col items-center justify-between p-6 text-center animate-fadeIn">
           <div className="pt-6 space-y-2">
-            <h3 className="text-lg font-black text-[#FFF1F3]">{currentConv?.title}</h3>
-            <p className="text-xs text-[#FFB4CE]">
+            <h3 className="text-lg font-black text-[#F3F4F6]">{currentConv?.title}</h3>
+            <p className="text-xs text-[#E5E7EB]">
               Connected • {Math.floor(callDuration / 60)}:{(callDuration % 60).toString().padStart(2, '0')}
             </p>
           </div>
 
-          <div className="relative w-full max-w-sm flex-1 flex items-center justify-center my-4 overflow-hidden rounded-3xl bg-black/60 border border-[#FF78A8]/30">
+          <div className="relative w-full max-w-sm flex-1 flex items-center justify-center my-4 overflow-hidden rounded-3xl bg-black/60 border border-[rgba(255,255,255,0.20)]/30">
             {isCalling === 'video' ? (
               <div className="relative w-full h-full min-h-[300px]">
                 <video 
@@ -1571,7 +1571,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                   autoPlay 
                   muted 
                   playsInline 
-                  className="absolute bottom-4 right-4 w-28 h-36 rounded-2xl object-cover border-2 border-[#FF4F87] shadow-xl" 
+                  className="absolute bottom-4 right-4 w-28 h-36 rounded-2xl object-cover border-2 border-[#FFFFFF] shadow-xl" 
                 />
               </div>
             ) : (
@@ -1579,13 +1579,13 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 <img 
                   src={currentConv?.avatar || MOCK_PROFILES[0].avatar} 
                   alt={currentConv?.title || 'User'} 
-                  className="w-28 h-28 rounded-full object-cover mx-auto border-4 border-[#FF4F87] shadow-[0_0_30px_rgba(255,79,135,0.7)]"
+                  className="w-28 h-28 rounded-full object-cover mx-auto border-4 border-[#FFFFFF] shadow-[0_0_30px_rgba(255,79,135,0.7)]"
                 />
                 <div className="flex justify-center gap-1">
                   {[40, 80, 60, 100, 75, 45].map((h, i) => (
                     <div 
                       key={i} 
-                      className="w-1 bg-[#FF4F87] rounded-full animate-pulse" 
+                      className="w-1 bg-[#FFFFFF] rounded-full animate-pulse" 
                       style={{ height: `${h * 0.3}px`, animationDelay: `${i * 150}ms` }} 
                     />
                   ))}
@@ -1606,7 +1606,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 }
               }}
               className={`w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-colors ${
-                isMuted ? 'bg-rose-500 text-white' : 'glass-panel text-[#FFF1F3]'
+                isMuted ? 'bg-rose-500 text-white' : 'glass-panel text-[#F3F4F6]'
               }`}
             >
               {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -1624,7 +1624,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                   }
                 }}
                 className={`w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-colors ${
-                  !isVideoEnabled ? 'bg-rose-500 text-white' : 'glass-panel text-[#FFF1F3]'
+                  !isVideoEnabled ? 'bg-rose-500 text-white' : 'glass-panel text-[#F3F4F6]'
                 }`}
               >
                 {!isVideoEnabled ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 
 import { dailyConnectionClient } from '../services/dailyConnectionApiClient';
+import { GlassModal, GlassButton } from './klyven';
 import type { 
   DailyTab, 
   DailyAssignmentItem, 
@@ -654,20 +655,18 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
       )}
 
       {/* ===================================================================== */}
-      {/* 5. MODAL: SHAREABLE QUOTE CARD                                        */}
+      {/* 5. MODAL: SHAREABLE QUOTE CARD (Klyven GlassModal)                     */}
       {/* ===================================================================== */}
-      {isShareModalOpen && currentItem && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="w-full max-w-md bg-[#12141B] border border-white/10 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
-            <button 
-              onClick={() => setIsShareModalOpen(false)}
-              className="absolute top-4 right-4 p-1 rounded-xl text-zinc-400 hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
+      {currentItem && (
+        <GlassModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          title="Shareable Daily Thought"
+          subtitle="Inspire connection and thoughtful reflection across your social channels"
+        >
+          <div className="space-y-6">
             {/* The Visual Card */}
-            <div className="p-6 rounded-2xl bg-gradient-to-b from-white/[0.06] to-transparent border border-white/10 space-y-4 text-center relative overflow-hidden shadow-inner">
+            <div className="p-6 rounded-2xl bg-gradient-to-b from-white/[0.08] to-transparent border border-white/10 space-y-4 text-center relative overflow-hidden shadow-inner">
               <span className="text-xl">✧</span>
               <p className="text-base sm:text-lg font-black text-white font-serif leading-relaxed">
                 "{currentItem.quote_one_liner}"
@@ -683,19 +682,21 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
             </div>
 
             <div className="flex items-center gap-2">
-              <button
+              <GlassButton
+                variant="primary"
+                size="md"
                 onClick={() => {
                   navigator.clipboard.writeText(`"${currentItem.quote_one_liner}" — ${currentItem.category_name} (via Soulverse)`);
                   alert("Quote copied to clipboard!");
                   setIsShareModalOpen(false);
                 }}
-                className="flex-1 py-2.5 rounded-xl gray-glass-btn text-white text-xs font-bold shadow-md hover:brightness-110 cursor-pointer text-center"
+                className="w-full"
               >
                 Copy Text for Telegram / Instagram
-              </button>
+              </GlassButton>
             </div>
           </div>
-        </div>
+        </GlassModal>
       )}
 
       {/* ===================================================================== */}

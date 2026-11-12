@@ -53,8 +53,8 @@ export const VoiceWaveformPlayer: React.FC<VoiceWaveformPlayerProps> = ({
         onClick={handleTogglePlay}
         className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-md transition-transform active:scale-95 ${
           isOutgoing 
-            ? 'bg-white text-[#FF4F87]' 
-            : 'bg-[#FF4F87] text-white'
+            ? 'bg-white text-[#FFFFFF]' 
+            : 'bg-[#FFFFFF] text-white'
         }`}
       >
         {isPlaying ? (
@@ -76,8 +76,8 @@ export const VoiceWaveformPlayer: React.FC<VoiceWaveformPlayerProps> = ({
               style={{ height: `${Math.max(20, amp)}%` }}
               className={`w-1 rounded-full transition-all duration-150 ${
                 isPlayed
-                  ? (isOutgoing ? 'bg-white shadow-[0_0_4px_#FFF]' : 'bg-[#FF4F87] shadow-[0_0_4px_#FF4F87]')
-                  : (isOutgoing ? 'bg-white/35' : 'bg-[#B9A8B3]/40')
+                  ? (isOutgoing ? 'bg-white shadow-[0_0_4px_#FFF]' : 'bg-[#FFFFFF] shadow-[0_0_4px_#FFFFFF]')
+                  : (isOutgoing ? 'bg-white/35' : 'bg-[#9CA3AF]/40')
               }`}
             />
           );
@@ -86,7 +86,7 @@ export const VoiceWaveformPlayer: React.FC<VoiceWaveformPlayerProps> = ({
 
       {/* Duration & Speed Pill */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
-        <span className={`text-[10px] font-medium ${isOutgoing ? 'text-white/80' : 'text-[#B9A8B3]'}`}>
+        <span className={`text-[10px] font-medium ${isOutgoing ? 'text-white/80' : 'text-[#9CA3AF]'}`}>
           {formattedDuration}
         </span>
 
@@ -95,7 +95,7 @@ export const VoiceWaveformPlayer: React.FC<VoiceWaveformPlayerProps> = ({
           className={`px-1.5 py-0.5 rounded text-[9px] font-black cursor-pointer transition-colors ${
             isOutgoing 
               ? 'bg-white/20 text-white hover:bg-white/30' 
-              : 'bg-black/40 text-[#FFB4CE] hover:bg-black/60'
+              : 'bg-black/40 text-[#E5E7EB] hover:bg-black/60'
           }`}
           title="Change playback speed"
         >

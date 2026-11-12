@@ -2,35 +2,59 @@
 
 :root {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
   color-scheme: dark;
 
-  /* Gray & Glass UI Theme - Neutral Obsidian & Silver Glass */
-  --color-obsidian: #090A0E;
-  --color-graphite: #12141B;
-  --color-slate-elevated: #181B24;
+  /* Klyven × Soulverse: Titanium Glass & Obsidian Architecture */
+  --bg-primary: #090A0E;
+  --bg-secondary: #12141B;
+  --bg-elevated: #181B24;
+  --bg-surface: #20232E;
+  --bg-overlay: rgba(9, 10, 14, 0.88);
 
-  /* Frosted Glass Translucent Bases */
-  --color-dark-glass: rgba(18, 20, 27, 0.65);
-  --color-dark-glass-elevated: rgba(24, 27, 36, 0.78);
-  --color-glass-border: rgba(255, 255, 255, 0.09);
-  --color-glass-border-hover: rgba(255, 255, 255, 0.20);
-  --color-glass-highlight: rgba(255, 255, 255, 0.06);
+  /* Translucent Acrylic Glass Foundations */
+  --glass-panel-bg: rgba(18, 20, 27, 0.65);
+  --glass-card-bg: rgba(16, 18, 24, 0.58);
+  --glass-elevated-bg: rgba(24, 27, 36, 0.78);
+  --glass-subtle-bg: rgba(255, 255, 255, 0.04);
+  --glass-action-bg: rgba(28, 30, 38, 0.82);
 
-  /* Silver / Cool Neutral Highlights */
+  /* Specular Highlight Rim (Klyven Pillar 3 - Physical Glass Reflection) */
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-border-hover: rgba(255, 255, 255, 0.22);
+  --glass-border-active: rgba(255, 255, 255, 0.40);
+  --glass-specular: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.20);
+  --glass-specular-bright: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.35);
+
+  /* Monochrome Titanium & Cool Silver Hierarchy */
   --color-silver-light: #F4F5F7;
   --color-silver-muted: #9CA3AF;
-  --color-ambient-silver: rgba(255, 255, 255, 0.05);
-
+  --color-silver-dark: #6B7280;
   --color-text-main: #F3F4F6;
   --color-text-muted: #9CA3AF;
-  --color-highlight-silver: rgba(255, 255, 255, 0.90);
+  --color-ambient-silver: rgba(255, 255, 255, 0.05);
+
+  /* Kinetic Spring Physics Curves (Klyven Pillar 4) */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-fast: 0.15s var(--ease-spring);
+  --transition-base: 0.22s var(--ease-spring);
+  --transition-smooth: 0.3s var(--ease-in-out-smooth);
+
+  /* Shadows & Ambient Halos */
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 28px -4px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 48px -8px rgba(0, 0, 0, 0.75);
+  --shadow-modal: 0 24px 64px -12px rgba(0, 0, 0, 0.90);
+  --shadow-silver-glow: 0 0 28px rgba(255, 255, 255, 0.12);
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #090A0E;
-  color: #F3F4F6;
+  background-color: var(--bg-primary);
+  color: var(--color-text-main);
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
@@ -40,120 +64,167 @@ body {
   selection-color: #FFFFFF;
 }
 
-/* Translucent Frosted Glassmorphism Surfaces */
+/* ========================================================================= */
+/* KLYVEN TACTILE SURFACES & SPECULAR ACRYLIC GLASS                          */
+/* ========================================================================= */
+
+.glass-panel,
 .dark-glass {
-  background: rgba(18, 20, 27, 0.65);
-  backdrop-filter: blur(24px) saturate(120%);
-  -webkit-backdrop-filter: blur(24px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  background: var(--glass-panel-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45), var(--glass-specular);
+  transition: all var(--transition-base);
 }
 
+.glass-panel-elevated,
 .dark-glass-elevated {
-  background: rgba(24, 27, 36, 0.78);
-  backdrop-filter: blur(28px) saturate(130%);
-  -webkit-backdrop-filter: blur(28px) saturate(130%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+  background: var(--glass-elevated-bg);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 44px 0 rgba(0, 0, 0, 0.60), var(--glass-specular-bright);
 }
 
+.glass-card,
 .dark-glass-card {
-  background: rgba(16, 18, 24, 0.55);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
-  transition: all 0.25s ease;
+  background: var(--glass-card-bg);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.40), var(--glass-specular);
+  transition: transform 0.22s var(--ease-spring), border-color 0.22s var(--ease-spring), box-shadow 0.22s var(--ease-spring), background 0.22s var(--ease-spring);
 }
 
+.glass-card:hover,
 .dark-glass-card:hover {
-  background: rgba(24, 27, 36, 0.70);
-  border-color: rgba(255, 255, 255, 0.20);
-  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+  background: rgba(24, 27, 36, 0.72);
+  border-color: var(--glass-border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.65), var(--glass-specular-bright), 0 0 20px -2px rgba(255, 255, 255, 0.06);
 }
 
+.glass-panel-subtle,
 .dark-glass-pill {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-subtle-bg);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.10);
+  transition: all var(--transition-fast);
 }
 
+.glass-panel-subtle:hover,
 .dark-glass-pill:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--glass-border-hover);
 }
 
-.dark-glass-silver-glow {
-  box-shadow: 0 0 25px -4px rgba(255, 255, 255, 0.15);
-}
+/* ========================================================================= */
+/* KLYVEN TACTILE ACTION BUTTONS (SPRING RECOIL & SPECULAR BEVELS)           */
+/* ========================================================================= */
 
-/* Outgoing message bubble: sleek silver frosted glass */
-.msg-bubble-outgoing {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.08) 100%);
+.glass-btn,
+.gray-glass-btn,
+.silver-gradient-btn,
+.light-red-gradient-btn,
+.rose-gradient-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.07) 100%);
   color: #FFFFFF;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.40), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.15s var(--ease-spring), background 0.15s var(--ease-spring), border-color 0.15s var(--ease-spring), box-shadow 0.15s var(--ease-spring);
+  cursor: pointer;
+  user-select: none;
 }
 
-/* Incoming message bubble: frosted dark translucent glass */
+.glass-btn:hover,
+.gray-glass-btn:hover,
+.silver-gradient-btn:hover,
+.light-red-gradient-btn:hover,
+.rose-gradient-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgba(255, 255, 255, 0.40);
+  box-shadow: 0 6px 24px -2px rgba(255, 255, 255, 0.12), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.glass-btn:active,
+.gray-glass-btn:active,
+.silver-gradient-btn:active,
+.light-red-gradient-btn:active,
+.rose-gradient-btn:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.50);
+}
+
+/* Primary Titanium Bullion Button (High-Contrast Hero CTA) */
+.glass-btn-primary,
+.silver-solid-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  color: #090A0E;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 20px -2px rgba(255, 255, 255, 0.30);
+  transition: transform 0.15s var(--ease-spring), background 0.15s var(--ease-spring), box-shadow 0.15s var(--ease-spring);
+  cursor: pointer;
+  user-select: none;
+}
+
+.glass-btn-primary:hover,
+.silver-solid-btn:hover {
+  background: #E5E7EB;
+  box-shadow: 0 6px 28px -2px rgba(255, 255, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.glass-btn-primary:active,
+.silver-solid-btn:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 12px rgba(255, 255, 255, 0.25);
+}
+
+/* Outgoing & Incoming Message Bubbles */
+.msg-bubble-outgoing {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
+  color: #FFFFFF;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.40), inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+}
+
 .msg-bubble-incoming {
   background: rgba(20, 22, 30, 0.72);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #F3F4F6;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.30), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Frosted Silver / Gray Glass Buttons */
-.gray-glass-btn,
-.silver-gradient-btn,
-.light-red-gradient-btn,
-.rose-gradient-btn {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.07) 100%);
-  color: #FFFFFF;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
-  transition: all 0.2s ease;
+/* Swiss Aviation Micro-Metadata (Klyven Pillar 5) */
+.label-micro {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--color-silver-muted);
 }
 
-.gray-glass-btn:hover,
-.silver-gradient-btn:hover,
-.light-red-gradient-btn:hover,
-.rose-gradient-btn:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.12) 100%);
-  border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 6px 24px -2px rgba(255, 255, 255, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
-.gray-glass-btn:active,
-.silver-gradient-btn:active,
-.light-red-gradient-btn:active,
-.rose-gradient-btn:active {
-  transform: scale(0.98);
-}
-
-/* Solid Silver Accent Button */
-.silver-solid-btn {
-  background: #FFFFFF;
-  color: #090A0E;
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.90);
-  box-shadow: 0 4px 18px -2px rgba(255, 255, 255, 0.25);
-  transition: all 0.2s ease;
-}
-
-.silver-solid-btn:hover {
-  background: #E5E7EB;
-  box-shadow: 0 6px 24px -2px rgba(255, 255, 255, 0.35);
-}
-
-/* Subtle Silver/White Gradients for text & accents */
+/* Gradients for text & accents */
 .text-rose-gradient,
 .text-silver-gradient {
   background: linear-gradient(135deg, #FFFFFF 0%, #D1D5DB 60%, #9CA3AF 100%);
@@ -161,7 +232,15 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* Hide scrollbars on native feel carousels while keeping scrollability */
+/* Ambient Badges & Status */
+.ambient-badge-silver,
+.ambient-badge-crimson {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+}
+
+/* Hide scrollbars */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -174,37 +253,40 @@ body {
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 16px);
 }
-
-/* Ambient Badges & Accents - Neutral Frosted Glass */
-.ambient-badge-crimson,
-.ambient-badge-silver {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #FFFFFF;
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 16px);
 }
 
-.ambient-badge-violet {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #E5E7EB;
+/* ========================================================================= */
+/* KLYVEN KINETIC KEYFRAMES & UTILITIES                                      */
+/* ========================================================================= */
+
+@keyframes klyvenShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
-.ambient-badge-blue {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #E5E7EB;
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
 }
 
-.ambient-badge-teal {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #E5E7EB;
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.10), transparent);
+  animation: klyvenShimmer 1.8s infinite;
 }
 
-.ambient-badge-amber {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #E5E7EB;
+@keyframes klyvenPulseGlow {
+  0%, 100% { opacity: 0.2; transform: scale(0.98); }
+  50% { opacity: 0.45; transform: scale(1.02); }
+}
+
+.animate-pulse-glow {
+  animation: klyvenPulseGlow 3s ease-in-out infinite;
 }
 
 /* Accessibility: Support Reduced Motion Settings */

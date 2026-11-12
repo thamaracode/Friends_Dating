@@ -75,12 +75,12 @@ export const MyCharacterBuilder: React.FC<MyCharacterBuilderProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between px-1">
         <div>
-          <div className="flex items-center gap-1.5 text-xs font-black text-[#FFB4CE]">
-            <Film className="w-4 h-4 text-[#FF4F87]" />
+          <div className="flex items-center gap-1.5 text-xs font-black text-[#E5E7EB]">
+            <Film className="w-4 h-4 text-[#FFFFFF]" />
             <span>MY CHARACTER UNIVERSE</span>
           </div>
-          <h1 className="text-xl font-black text-[#FFF1F3] tracking-tight">Introduce Yourself Imaginatively</h1>
-          <p className="text-xs text-[#B9A8B3]">Skip the boring biography. Show your fictional alter ego, cinema tropes, and mind.</p>
+          <h1 className="text-xl font-black text-[#F3F4F6] tracking-tight">Introduce Yourself Imaginatively</h1>
+          <p className="text-xs text-[#9CA3AF]">Skip the boring biography. Show your fictional alter ego, cinema tropes, and mind.</p>
         </div>
       </div>
 
@@ -90,8 +90,8 @@ export const MyCharacterBuilder: React.FC<MyCharacterBuilderProps> = ({
           onClick={() => setActivePack('universal')}
           className={`flex-1 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${
             activePack === 'universal' 
-              ? 'bg-[#FF4F87] text-[#FFF1F3] shadow-[0_0_12px_rgba(255,79,135,0.6)]' 
-              : 'text-[#B9A8B3] hover:text-[#FFF1F3]'
+              ? 'bg-[#FFFFFF] text-[#F3F4F6] shadow-[0_0_12px_rgba(255,79,135,0.6)]' 
+              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
           }`}
         >
           Universal Pack
@@ -100,8 +100,8 @@ export const MyCharacterBuilder: React.FC<MyCharacterBuilderProps> = ({
           onClick={() => setActivePack('men')}
           className={`flex-1 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${
             activePack === 'men' 
-              ? 'bg-[#FF4F87] text-[#FFF1F3] shadow-[0_0_12px_rgba(255,79,135,0.6)]' 
-              : 'text-[#B9A8B3] hover:text-[#FFF1F3]'
+              ? 'bg-[#FFFFFF] text-[#F3F4F6] shadow-[0_0_12px_rgba(255,79,135,0.6)]' 
+              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
           }`}
         >
           Men’s Prompts
@@ -110,8 +110,8 @@ export const MyCharacterBuilder: React.FC<MyCharacterBuilderProps> = ({
           onClick={() => setActivePack('women')}
           className={`flex-1 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${
             activePack === 'women' 
-              ? 'bg-[#FF4F87] text-[#FFF1F3] shadow-[0_0_12px_rgba(255,79,135,0.6)]' 
-              : 'text-[#B9A8B3] hover:text-[#FFF1F3]'
+              ? 'bg-[#FFFFFF] text-[#F3F4F6] shadow-[0_0_12px_rgba(255,79,135,0.6)]' 
+              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
           }`}
         >
           Women’s Prompts
@@ -119,99 +119,99 @@ export const MyCharacterBuilder: React.FC<MyCharacterBuilderProps> = ({
       </div>
 
       {/* Quote Generator Card */}
-      <div className="p-4 rounded-3xl glass-panel-elevated border border-[#FF78A8]/30 space-y-3 pink-ambient-glow relative overflow-hidden">
+      <div className="p-4 rounded-3xl glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 space-y-3 glass-panel relative overflow-hidden">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-[#FFB4CE]">
-            <Quote className="w-4 h-4 text-[#FF4F87]" />
+          <div className="flex items-center gap-1.5 text-xs font-bold text-[#E5E7EB]">
+            <Quote className="w-4 h-4 text-[#FFFFFF]" />
             <span>Personality Quote Generator</span>
           </div>
           <button
             onClick={handleNextQuote}
-            className="flex items-center gap-1 text-xs text-[#FF4F87] hover:text-[#FFB4CE] font-bold cursor-pointer transition-colors"
+            className="flex items-center gap-1 text-xs text-[#FFFFFF] hover:text-[#E5E7EB] font-bold cursor-pointer transition-colors"
           >
             <Shuffle className="w-3.5 h-3.5" />
             <span>Roll Another</span>
           </button>
         </div>
 
-        <p className="text-sm font-medium text-[#FFF1F3] italic leading-relaxed pl-2 border-l-2 border-[#FF4F87]">
+        <p className="text-sm font-medium text-[#F3F4F6] italic leading-relaxed pl-2 border-l-2 border-[#FFFFFF]">
           "{currentQuote.text}"
         </p>
 
-        <div className="flex items-center justify-between text-[11px] text-[#B9A8B3] pt-1">
-          <span>Vibe: <strong className="text-[#FFB4CE]">{currentQuote.authorOrMood}</strong></span>
+        <div className="flex items-center justify-between text-[11px] text-[#9CA3AF] pt-1">
+          <span>Vibe: <strong className="text-[#E5E7EB]">{currentQuote.authorOrMood}</strong></span>
           <span className="text-[10px] text-emerald-400 font-semibold">Active on Character Card</span>
         </div>
       </div>
 
       {/* Cinematic Personality Questions Inputs */}
       <div className="space-y-3">
-        <span className="text-[10px] uppercase font-bold text-[#FFB4CE] tracking-wider px-1">
+        <span className="text-[10px] uppercase font-bold text-[#E5E7EB] tracking-wider px-1">
           Cinematic Personality Elements
         </span>
 
         {/* 1. Life Movie Title */}
         <div className="p-3.5 rounded-2xl glass-panel space-y-1.5">
-          <label className="text-xs font-bold text-[#FFF1F3] flex items-center justify-between">
+          <label className="text-xs font-bold text-[#F3F4F6] flex items-center justify-between">
             <span>🎬 If my life were an indie movie, it would be called:</span>
           </label>
           <input 
             type="text"
             value={lifeMovieTitle}
             onChange={(e) => setLifeMovieTitle(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-[#100B12]/80 border border-[#FF78A8]/20 text-xs text-[#FFF1F3] focus:outline-none focus:border-[#FF4F87]"
+            className="w-full px-3 py-2 rounded-xl bg-[#090A0E]/80 border border-[rgba(255,255,255,0.20)]/20 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
           />
         </div>
 
         {/* 2. Played by actor */}
         <div className="p-3.5 rounded-2xl glass-panel space-y-1.5">
-          <label className="text-xs font-bold text-[#FFF1F3] flex items-center justify-between">
+          <label className="text-xs font-bold text-[#F3F4F6] flex items-center justify-between">
             <span>🎭 My character would be played by:</span>
           </label>
           <input 
             type="text"
             value={playedByActor}
             onChange={(e) => setPlayedByActor(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-[#100B12]/80 border border-[#FF78A8]/20 text-xs text-[#FFF1F3] focus:outline-none focus:border-[#FF4F87]"
+            className="w-full px-3 py-2 rounded-xl bg-[#090A0E]/80 border border-[rgba(255,255,255,0.20)]/20 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
           />
         </div>
 
         {/* 3. Villain Origin Story */}
         <div className="p-3.5 rounded-2xl glass-panel space-y-1.5">
-          <label className="text-xs font-bold text-[#FFF1F3] flex items-center justify-between">
+          <label className="text-xs font-bold text-[#F3F4F6] flex items-center justify-between">
             <span>⚡ My villain origin story would be:</span>
           </label>
           <textarea 
             rows={2}
             value={villainOriginStory}
             onChange={(e) => setVillainOriginStory(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-[#100B12]/80 border border-[#FF78A8]/20 text-xs text-[#FFF1F3] focus:outline-none focus:border-[#FF4F87] resize-none"
+            className="w-full px-3 py-2 rounded-xl bg-[#090A0E]/80 border border-[rgba(255,255,255,0.20)]/20 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF] resize-none"
           />
         </div>
 
         {/* 4. Hidden Superpower */}
         <div className="p-3.5 rounded-2xl glass-panel space-y-1.5">
-          <label className="text-xs font-bold text-[#FFF1F3] flex items-center justify-between">
+          <label className="text-xs font-bold text-[#F3F4F6] flex items-center justify-between">
             <span>✨ My hidden superpower that people don't notice at first:</span>
           </label>
           <input 
             type="text"
             value={hiddenSuperpower}
             onChange={(e) => setHiddenSuperpower(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-[#100B12]/80 border border-[#FF78A8]/20 text-xs text-[#FFF1F3] focus:outline-none focus:border-[#FF4F87]"
+            className="w-full px-3 py-2 rounded-xl bg-[#090A0E]/80 border border-[rgba(255,255,255,0.20)]/20 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
           />
         </div>
 
         {/* 5. Fictional Universe */}
         <div className="p-3.5 rounded-2xl glass-panel space-y-1.5">
-          <label className="text-xs font-bold text-[#FFF1F3] flex items-center justify-between">
+          <label className="text-xs font-bold text-[#F3F4F6] flex items-center justify-between">
             <span>🌌 The fictional universe I would escape into:</span>
           </label>
           <input 
             type="text"
             value={fictionalUniverse}
             onChange={(e) => setFictionalUniverse(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-[#100B12]/80 border border-[#FF78A8]/20 text-xs text-[#FFF1F3] focus:outline-none focus:border-[#FF4F87]"
+            className="w-full px-3 py-2 rounded-xl bg-[#090A0E]/80 border border-[rgba(255,255,255,0.20)]/20 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF]"
           />
         </div>
       </div>
@@ -220,7 +220,7 @@ export const MyCharacterBuilder: React.FC<MyCharacterBuilderProps> = ({
       <div className="pt-2">
         <button
           onClick={handleSave}
-          className="w-full py-3.5 rounded-2xl pink-gradient-btn font-bold text-xs flex items-center justify-center gap-2 shadow-xl cursor-pointer transition-transform active:scale-95"
+          className="w-full py-3.5 rounded-2xl gray-glass-btn font-bold text-xs flex items-center justify-center gap-2 shadow-xl cursor-pointer transition-transform active:scale-95"
         >
           {savedSuccess ? (
             <>

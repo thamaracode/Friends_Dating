@@ -33,6 +33,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
+import { SearchBar, PulseBadge } from './klyven';
 
 import { CURRENT_USER } from '../mockData';
 import { profileWorldsClient } from '../services/profileWorldsApiClient';
@@ -184,15 +185,12 @@ export const SoulverseWebsiteShell: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: Frosted Dark Glass Search Bar */}
-        <div className="hidden sm:flex flex-1 max-w-lg mx-6 relative">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-4 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
+        {/* Center: Frosted Dark Glass Search Bar with Klyven Tactile Specular Highlight */}
+        <div className="hidden sm:flex flex-1 max-w-lg mx-6">
+          <SearchBar
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={setSearchQuery}
             placeholder="Search people, worlds, memories, or topics..."
-            className="w-full pl-11 pr-4 py-2 rounded-full dark-glass border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
           />
         </div>
 
@@ -200,10 +198,10 @@ export const SoulverseWebsiteShell: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setIsCrisisModalOpen(true)}
-            className="hidden sm:flex px-2.5 py-1 rounded-full dark-glass border border-white/15 text-zinc-300 text-[10px] font-bold items-center gap-1.5 hover:border-white/30 cursor-pointer shadow-sm"
+            className="cursor-pointer transition-transform active:scale-95"
+            title="Immediate Free Crisis Support"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>1926 Safe</span>
+            <PulseBadge label="1926 Safe" variant="live" />
           </button>
 
           <button 

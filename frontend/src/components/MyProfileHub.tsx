@@ -38,17 +38,17 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
   return (
     <div className="w-full max-w-md mx-auto min-h-[calc(100dvh-5.5rem)] flex flex-col space-y-4 px-3 pt-2 pb-24">
       {/* Top Profile Card Header */}
-      <div className="relative rounded-3xl overflow-hidden glass-panel-elevated border border-[#FF78A8]/30 shadow-2xl p-5 space-y-4 pink-ambient-glow">
+      <div className="relative rounded-3xl overflow-hidden glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 shadow-2xl p-5 space-y-4 glass-panel">
         <div className="flex items-center gap-4">
           <div className="relative">
             <img 
               src={profile.avatar} 
               alt={profile.name} 
-              className="w-20 h-20 rounded-2xl object-cover border-2 border-[#FF4F87] shadow-lg"
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-[#FFFFFF] shadow-lg"
             />
             <button 
               onClick={() => alert("Upload new portrait")}
-              className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[#FF4F87] text-white flex items-center justify-center shadow-md cursor-pointer hover:scale-105 transition-transform"
+              className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[#FFFFFF] text-white flex items-center justify-center shadow-md cursor-pointer hover:scale-105 transition-transform"
               title="Change Photo"
             >
               <Camera className="w-3.5 h-3.5" />
@@ -57,29 +57,29 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <h2 className="text-lg font-black text-[#FFF1F3] truncate">{profile.name}</h2>
-              <span className="text-base text-[#FFB4CE] font-bold">{profile.age}</span>
+              <h2 className="text-lg font-black text-[#F3F4F6] truncate">{profile.name}</h2>
+              <span className="text-base text-[#E5E7EB] font-bold">{profile.age}</span>
             </div>
-            <p className="text-xs text-[#B9A8B3] mt-0.5">@{profile.username} • {profile.location}</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">@{profile.username} • {profile.location}</p>
 
             {/* Profile Strength Bar */}
             <div className="mt-2 space-y-1">
               <div className="flex items-center justify-between text-[10px]">
-                <span className="text-[#FFB4CE] font-bold">Profile Strength</span>
+                <span className="text-[#E5E7EB] font-bold">Profile Strength</span>
                 <span className="text-emerald-400 font-bold">88% (Complete)</span>
               </div>
               <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-[#FF4F87] to-[#FF78A8] rounded-full w-[88%]" />
+                <div className="h-full bg-gradient-to-r from-[#FFFFFF] to-[rgba(255,255,255,0.20)] rounded-full w-[88%]" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Quick Mode Pill Actions */}
-        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#FF78A8]/15">
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[rgba(255,255,255,0.20)]/15">
           <button
             onClick={() => onNavigateSubsystem('my_world')}
-            className="py-2.5 px-3 rounded-2xl glass-panel text-xs font-bold text-[#FFF1F3] hover:text-[#FF4F87] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+            className="py-2.5 px-3 rounded-2xl glass-panel text-xs font-bold text-[#F3F4F6] hover:text-[#FFFFFF] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
           >
             <Edit3 className="w-3.5 h-3.5" />
             <span>Edit 8-Chapters</span>
@@ -96,37 +96,37 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
       </div>
 
       {/* Digital Life: Social & Creator Profiles */}
-      <div className="rounded-3xl glass-panel-elevated p-3 border border-[#FF78A8]/25 shadow-xl">
+      <div className="rounded-3xl glass-panel-elevated p-3 border border-[rgba(255,255,255,0.20)]/25 shadow-xl">
         <DigitalLifeHub userId={profile.id} isOwner={true} />
       </div>
 
       {/* MULTI-DIMENSIONAL IDENTITY & PROFILE WORLDS */}
       <div className="space-y-2">
-        <span className="text-[10px] uppercase font-bold text-[#FFB4CE] tracking-wider px-1">Multi-Dimensional Identity</span>
+        <span className="text-[10px] uppercase font-bold text-[#E5E7EB] tracking-wider px-1">Multi-Dimensional Identity</span>
 
-        <div className="rounded-3xl glass-panel-elevated divide-y divide-[#FF78A8]/10 overflow-hidden border border-[#FF78A8]/20">
+        <div className="rounded-3xl glass-panel-elevated divide-y divide-[rgba(255,255,255,0.20)]/10 overflow-hidden border border-[rgba(255,255,255,0.20)]/20">
           {/* Profile Worlds Hub */}
           <div 
             onClick={() => onNavigateSubsystem('profile_worlds')}
-            className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group bg-gradient-to-r from-[#FF0D69]/15 via-transparent to-transparent"
+            className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group bg-gradient-to-r from-[#FFFFFF]/15 via-transparent to-transparent"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FF0D69] to-[#FF3B88] flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FFFFFF] to-[#E5E7EB] flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
                 <Globe2 className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-black text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">
+                  <h4 className="text-xs font-black text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">
                     Profile Worlds
                   </h4>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#FF4F87]/20 text-[#FFD6E3] border border-[#FF4F87]/40">
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#FFFFFF]/20 text-[#F3F4F6] border border-[#FFFFFF]/40">
                     5 Dimensions
                   </span>
                 </div>
-                <p className="text-[10px] text-[#B9A8B3] mt-0.5">Real Life, Cinematic Noir, Inner World, 2030 Future & Fantasy</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-0.5">Real Life, Cinematic Noir, Inner World, 2030 Future & Fantasy</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
 
           {/* Personal README.md (GitHub Markdown • 5000 Chars) */}
@@ -135,22 +135,22 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
             className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#26061D] to-[#12020E] border border-[#FF4F87]/40 flex items-center justify-center text-[#FF4F87] shadow-md group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#26061D] to-[#12141B] border border-[#FFFFFF]/40 flex items-center justify-center text-[#FFFFFF] shadow-md group-hover:scale-105 transition-transform">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">
+                  <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">
                     Personal README.md
                   </h4>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     5,000 Chars Max
                   </span>
                 </div>
-                <p className="text-[10px] text-[#B9A8B3] mt-0.5">GitHub Markdown manifesto, checklists, tables & code</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-0.5">GitHub Markdown manifesto, checklists, tables & code</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
 
           {/* Living Identity Autobiography & Life Timeline */}
@@ -159,46 +159,46 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
             className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87] shadow-md group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-2xl bg-[#FFFFFF]/20 flex items-center justify-center text-[#FFFFFF] shadow-md group-hover:scale-105 transition-transform">
                 <History className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">
+                  <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">
                     Living Identity & Year Memoir
                   </h4>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
                     Chronological
                   </span>
                 </div>
-                <p className="text-[10px] text-[#B9A8B3] mt-0.5">Custom sections, Q&As, timeline eras & Then-vs-Now analysis</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-0.5">Custom sections, Q&As, timeline eras & Then-vs-Now analysis</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
         </div>
       </div>
 
       {/* Personality & Entertainment Systems */}
       <div className="space-y-2">
-        <span className="text-[10px] uppercase font-bold text-[#FFB4CE] tracking-wider px-1">Personality & Lucky Universe</span>
+        <span className="text-[10px] uppercase font-bold text-[#E5E7EB] tracking-wider px-1">Personality & Lucky Universe</span>
 
-        <div className="rounded-3xl glass-panel-elevated divide-y divide-[#FF78A8]/10 overflow-hidden border border-[#FF78A8]/20">
+        <div className="rounded-3xl glass-panel-elevated divide-y divide-[rgba(255,255,255,0.20)]/10 overflow-hidden border border-[rgba(255,255,255,0.20)]/20">
           {/* My Character / Cinematic Universe */}
           <div 
             onClick={() => onNavigateSubsystem('character_builder')}
             className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#FF4F87] to-[#FF78A8] flex items-center justify-center text-white shadow-md">
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#FFFFFF] to-[rgba(255,255,255,0.20)] flex items-center justify-center text-white shadow-md">
                 <Film className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">My Character Universe</h4>
-                <p className="text-[10px] text-[#B9A8B3]">Cinematic questions, villain story, & quotes</p>
+                <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">My Character Universe</h4>
+                <p className="text-[10px] text-[#9CA3AF]">Cinematic questions, villain story, & quotes</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
 
           {/* Lucky Universe & Coin Wallet */}
@@ -211,11 +211,11 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
                 <Dices className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Lucky Universe & Dice</h4>
-                <p className="text-[10px] text-[#B9A8B3]">Roll daily 3D dice, unlock themed cubes & wallet</p>
+                <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">Lucky Universe & Dice</h4>
+                <p className="text-[10px] text-[#9CA3AF]">Roll daily 3D dice, unlock themed cubes & wallet</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
 
           {/* Mini-Games Engine */}
@@ -228,11 +228,11 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
                 <Sliders className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Truth or Dare & Mini-Games</h4>
-                <p className="text-[10px] text-[#B9A8B3]">Turn-based multiplayer dilemmas & challenges</p>
+                <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">Truth or Dare & Mini-Games</h4>
+                <p className="text-[10px] text-[#9CA3AF]">Turn-based multiplayer dilemmas & challenges</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
 
           {/* Blind Chemistry Anonymous Mode */}
@@ -245,35 +245,35 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
                 <Eye className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Blind Chemistry Discovery</h4>
-                <p className="text-[10px] text-[#B9A8B3]">Anonymous-first matching with progressive reveal</p>
+                <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">Blind Chemistry Discovery</h4>
+                <p className="text-[10px] text-[#9CA3AF]">Anonymous-first matching with progressive reveal</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
         </div>
       </div>
 
       {/* Identity & Subsystems Hub */}
       <div className="space-y-2">
-        <span className="text-[10px] uppercase font-bold text-[#FFB4CE] tracking-wider px-1">Identity & Subsystems</span>
+        <span className="text-[10px] uppercase font-bold text-[#E5E7EB] tracking-wider px-1">Identity & Subsystems</span>
 
-        <div className="rounded-3xl glass-panel-elevated divide-y divide-[#FF78A8]/10 overflow-hidden border border-[#FF78A8]/20">
+        <div className="rounded-3xl glass-panel-elevated divide-y divide-[rgba(255,255,255,0.20)]/10 overflow-hidden border border-[rgba(255,255,255,0.20)]/20">
           {/* Social Growth 30-Day Ladder */}
           <div 
             onClick={() => onNavigateSubsystem('social_growth')}
             className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87]">
+              <div className="w-9 h-9 rounded-2xl bg-[#FFFFFF]/20 flex items-center justify-center text-[#FFFFFF]">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Social Growth Ladder</h4>
-                <p className="text-[10px] text-[#B9A8B3]">Day 3 of 30 • Overcome conversation hesitation</p>
+                <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">Social Growth Ladder</h4>
+                <p className="text-[10px] text-[#9CA3AF]">Day 3 of 30 • Overcome conversation hesitation</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
 
           {/* Viral Share Engine & Story Cards */}
@@ -282,15 +282,15 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
             className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87]">
+              <div className="w-9 h-9 rounded-2xl bg-[#FFFFFF]/20 flex items-center justify-center text-[#FFFFFF]">
                 <Heart className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Instagram Story Card Engine</h4>
-                <p className="text-[10px] text-[#B9A8B3]">Aesthetic 9:16 cards & friendship manifestos</p>
+                <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">Instagram Story Card Engine</h4>
+                <p className="text-[10px] text-[#9CA3AF]">Aesthetic 9:16 cards & friendship manifestos</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
 
           {/* Events & Gatherings */}
@@ -299,15 +299,15 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
             className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87]">
+              <div className="w-9 h-9 rounded-2xl bg-[#FFFFFF]/20 flex items-center justify-center text-[#FFFFFF]">
                 <Calendar className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Events & Watch Parties</h4>
-                <p className="text-[10px] text-[#B9A8B3]">Rooftops, movie rooms, and safe meetups</p>
+                <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">Events & Watch Parties</h4>
+                <p className="text-[10px] text-[#9CA3AF]">Rooftops, movie rooms, and safe meetups</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
 
           {/* Privacy & Data Governance Centre */}
@@ -316,15 +316,15 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
             className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87]">
+              <div className="w-9 h-9 rounded-2xl bg-[#FFFFFF]/20 flex items-center justify-center text-[#FFFFFF]">
                 <Lock className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Privacy & Data Governance</h4>
-                <p className="text-[10px] text-[#B9A8B3]">DSAR export, provenance, and consent rules</p>
+                <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">Privacy & Data Governance</h4>
+                <p className="text-[10px] text-[#9CA3AF]">DSAR export, provenance, and consent rules</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
 
           {/* Universal Accounts Directory */}
@@ -333,15 +333,15 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
             className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-[#FF4F87]/20 flex items-center justify-center text-[#FF4F87]">
+              <div className="w-9 h-9 rounded-2xl bg-[#FFFFFF]/20 flex items-center justify-center text-[#FFFFFF]">
                 <Layers className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#FFF1F3] group-hover:text-[#FFB4CE] transition-colors">Universal Connected Accounts</h4>
-                <p className="text-[10px] text-[#B9A8B3]">Google, Spotify, LinkedIn, and 50+ services</p>
+                <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">Universal Connected Accounts</h4>
+                <p className="text-[10px] text-[#9CA3AF]">Google, Spotify, LinkedIn, and 50+ services</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#7A6975] group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:translate-x-0.5 transition-transform" />
           </div>
         </div>
       </div>
@@ -350,13 +350,13 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
       <div className="p-4 rounded-3xl glass-panel space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-bold text-[#FFF1F3]">Incognito Browsing Mode</h4>
-            <p className="text-[10px] text-[#B9A8B3]">Only profiles you like will ever see you</p>
+            <h4 className="text-xs font-bold text-[#F3F4F6]">Incognito Browsing Mode</h4>
+            <p className="text-[10px] text-[#9CA3AF]">Only profiles you like will ever see you</p>
           </div>
           <button
             onClick={() => setIsIncognito(!isIncognito)}
             className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-              isIncognito ? 'bg-[#FF4F87]' : 'bg-black/40 border border-white/20'
+              isIncognito ? 'bg-[#FFFFFF]' : 'bg-black/40 border border-white/20'
             }`}
           >
             <div 

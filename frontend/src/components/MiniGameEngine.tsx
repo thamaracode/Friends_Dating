@@ -86,12 +86,12 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between px-1">
         <div>
-          <div className="flex items-center gap-1.5 text-xs font-black text-[#FFB4CE]">
-            <Gamepad2 className="w-4 h-4 text-[#FF4F87]" />
+          <div className="flex items-center gap-1.5 text-xs font-black text-[#E5E7EB]">
+            <Gamepad2 className="w-4 h-4 text-[#FFFFFF]" />
             <span>MINI-GAME CONNECTION ENGINE</span>
           </div>
-          <h1 className="text-xl font-black text-[#FFF1F3] tracking-tight">Play with {partnerName}</h1>
-          <p className="text-xs text-[#B9A8B3]">Consensual games with server-validated turns & safe skip mechanisms.</p>
+          <h1 className="text-xl font-black text-[#F3F4F6] tracking-tight">Play with {partnerName}</h1>
+          <p className="text-xs text-[#9CA3AF]">Consensual games with server-validated turns & safe skip mechanisms.</p>
         </div>
       </div>
 
@@ -101,8 +101,8 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
           onClick={() => setActiveGame('truth_or_dare')}
           className={`flex-1 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
             activeGame === 'truth_or_dare'
-              ? 'bg-[#FF4F87] text-[#FFF1F3] shadow-[0_0_12px_rgba(255,79,135,0.6)]'
-              : 'text-[#B9A8B3] hover:text-[#FFF1F3]'
+              ? 'bg-[#FFFFFF] text-[#F3F4F6] shadow-[0_0_12px_rgba(255,79,135,0.6)]'
+              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
           }`}
         >
           Truth or Dare
@@ -112,8 +112,8 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
           onClick={() => setActiveGame('would_you_rather')}
           className={`flex-1 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
             activeGame === 'would_you_rather'
-              ? 'bg-[#FF4F87] text-[#FFF1F3] shadow-[0_0_12px_rgba(255,79,135,0.6)]'
-              : 'text-[#B9A8B3] hover:text-[#FFF1F3]'
+              ? 'bg-[#FFFFFF] text-[#F3F4F6] shadow-[0_0_12px_rgba(255,79,135,0.6)]'
+              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
           }`}
         >
           Would You Rather
@@ -131,8 +131,8 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
                 onClick={() => setTodCategory(cat)}
                 className={`px-3 py-1 rounded-full text-[11px] font-bold capitalize whitespace-nowrap cursor-pointer transition-all ${
                   todCategory === cat 
-                    ? 'bg-[#FF4F87] text-[#FFF1F3]' 
-                    : 'glass-panel text-[#B9A8B3]'
+                    ? 'bg-[#FFFFFF] text-[#F3F4F6]' 
+                    : 'glass-panel text-[#9CA3AF]'
                 }`}
               >
                 {cat}
@@ -146,8 +146,8 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
               onClick={() => handlePickRandomTod('truth')}
               className={`py-3.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md ${
                 selectedTodType === 'truth'
-                  ? 'bg-gradient-to-tr from-[#FF4F87] to-[#FF78A8] text-white shadow-[0_0_15px_rgba(255,79,135,0.5)]'
-                  : 'glass-panel text-[#B9A8B3] hover:text-white'
+                  ? 'bg-gradient-to-tr from-[#FFFFFF] to-[rgba(255,255,255,0.20)] text-white shadow-[0_0_15px_rgba(255,79,135,0.5)]'
+                  : 'glass-panel text-[#9CA3AF] hover:text-white'
               }`}
             >
               <HelpCircle className="w-4 h-4" />
@@ -158,8 +158,8 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
               onClick={() => handlePickRandomTod('dare')}
               className={`py-3.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md ${
                 selectedTodType === 'dare'
-                  ? 'bg-gradient-to-tr from-[#FF4F87] to-[#FF78A8] text-white shadow-[0_0_15px_rgba(255,79,135,0.5)]'
-                  : 'glass-panel text-[#B9A8B3] hover:text-white'
+                  ? 'bg-gradient-to-tr from-[#FFFFFF] to-[rgba(255,255,255,0.20)] text-white shadow-[0_0_15px_rgba(255,79,135,0.5)]'
+                  : 'glass-panel text-[#9CA3AF] hover:text-white'
               }`}
             >
               <Flame className="w-4 h-4" />
@@ -168,15 +168,15 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
           </div>
 
           {/* Current Card */}
-          <div className="p-5 rounded-3xl glass-panel-elevated border border-[#FF78A8]/30 space-y-4 pink-ambient-glow">
+          <div className="p-5 rounded-3xl glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 space-y-4 glass-panel">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FF4F87]/20 text-[#FFB4CE]">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FFFFFF]/20 text-[#E5E7EB]">
                 {currentTodItem.type.toUpperCase()} • {currentTodItem.category.toUpperCase()}
               </span>
               <span className="text-[10px] text-emerald-400 font-bold">Consensual Play</span>
             </div>
 
-            <h3 className="text-base font-black text-[#FFF1F3] leading-relaxed">
+            <h3 className="text-base font-black text-[#F3F4F6] leading-relaxed">
               "{currentTodItem.prompt}"
             </h3>
 
@@ -188,21 +188,21 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
                   value={playerAnswer}
                   onChange={(e) => setPlayerAnswer(e.target.value)}
                   placeholder="Type your response to send to your match..."
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#100B12]/80 border border-[#FF78A8]/20 text-xs text-[#FFF1F3] focus:outline-none focus:border-[#FF4F87] resize-none"
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#090A0E]/80 border border-[rgba(255,255,255,0.20)]/20 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#FFFFFF] resize-none"
                 />
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleSubmitTod}
                     disabled={!playerAnswer.trim()}
-                    className="flex-1 py-2.5 rounded-xl pink-gradient-btn text-xs font-bold disabled:opacity-40 cursor-pointer"
+                    className="flex-1 py-2.5 rounded-xl gray-glass-btn text-xs font-bold disabled:opacity-40 cursor-pointer"
                   >
                     Submit Answer To Chat
                   </button>
 
                   <button
                     onClick={() => handlePickRandomTod(selectedTodType)}
-                    className="px-3 py-2.5 rounded-xl glass-panel text-xs text-[#B9A8B3] hover:text-[#FFF1F3] cursor-pointer"
+                    className="px-3 py-2.5 rounded-xl glass-panel text-xs text-[#9CA3AF] hover:text-[#F3F4F6] cursor-pointer"
                   >
                     Skip
                   </button>
@@ -216,7 +216,7 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
                 </span>
                 <button
                   onClick={() => handlePickRandomTod(selectedTodType)}
-                  className="text-xs text-[#FFF1F3] font-bold underline"
+                  className="text-xs text-[#F3F4F6] font-bold underline"
                 >
                   Play Another →
                 </button>
@@ -229,8 +229,8 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
       {/* GAME 2: WOULD YOU RATHER */}
       {activeGame === 'would_you_rather' && (
         <div className="space-y-4">
-          <div className="p-5 rounded-3xl glass-panel-elevated border border-[#FF78A8]/30 space-y-4 pink-ambient-glow text-center">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#FFB4CE]">
+          <div className="p-5 rounded-3xl glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 space-y-4 glass-panel text-center">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#E5E7EB]">
               Would You Rather Scenario #{wyrIndex + 1}
             </span>
 
@@ -239,43 +239,43 @@ export const MiniGameEngine: React.FC<MiniGameEngineProps> = ({
               onClick={() => handleVoteWyr('A')}
               className={`p-4 rounded-2xl border text-left cursor-pointer transition-all ${
                 wyrVotedOption === 'A'
-                  ? 'bg-[#FF4F87]/20 border-[#FF4F87] shadow-[0_0_15px_rgba(255,79,135,0.4)]'
-                  : 'glass-panel border-white/10 hover:border-[#FF78A8]/40'
+                  ? 'bg-[#FFFFFF]/20 border-[#FFFFFF] shadow-[0_0_15px_rgba(255,79,135,0.4)]'
+                  : 'glass-panel border-white/10 hover:border-[rgba(255,255,255,0.20)]/40'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-[#FFF1F3]">Option A</span>
+                <span className="text-xs font-black text-[#F3F4F6]">Option A</span>
                 {wyrVotedOption && (
-                  <span className="text-xs font-bold text-[#FFB4CE]">{currentWyrItem.votesCountA}% agreed</span>
+                  <span className="text-xs font-bold text-[#E5E7EB]">{currentWyrItem.votesCountA}% agreed</span>
                 )}
               </div>
-              <p className="text-xs text-[#FFF1F3] mt-1">{currentWyrItem.optionA}</p>
+              <p className="text-xs text-[#F3F4F6] mt-1">{currentWyrItem.optionA}</p>
             </div>
 
-            <div className="text-[11px] font-bold text-[#7A6975] uppercase">— OR —</div>
+            <div className="text-[11px] font-bold text-[#6B7280] uppercase">— OR —</div>
 
             {/* Option B */}
             <div 
               onClick={() => handleVoteWyr('B')}
               className={`p-4 rounded-2xl border text-left cursor-pointer transition-all ${
                 wyrVotedOption === 'B'
-                  ? 'bg-[#FF4F87]/20 border-[#FF4F87] shadow-[0_0_15px_rgba(255,79,135,0.4)]'
-                  : 'glass-panel border-white/10 hover:border-[#FF78A8]/40'
+                  ? 'bg-[#FFFFFF]/20 border-[#FFFFFF] shadow-[0_0_15px_rgba(255,79,135,0.4)]'
+                  : 'glass-panel border-white/10 hover:border-[rgba(255,255,255,0.20)]/40'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-[#FFF1F3]">Option B</span>
+                <span className="text-xs font-black text-[#F3F4F6]">Option B</span>
                 {wyrVotedOption && (
-                  <span className="text-xs font-bold text-[#FFB4CE]">{currentWyrItem.votesCountB}% agreed</span>
+                  <span className="text-xs font-bold text-[#E5E7EB]">{currentWyrItem.votesCountB}% agreed</span>
                 )}
               </div>
-              <p className="text-xs text-[#FFF1F3] mt-1">{currentWyrItem.optionB}</p>
+              <p className="text-xs text-[#F3F4F6] mt-1">{currentWyrItem.optionB}</p>
             </div>
 
             {wyrVotedOption && (
               <button
                 onClick={handleNextWyr}
-                className="w-full py-2.5 rounded-xl pink-gradient-btn text-xs font-bold cursor-pointer"
+                className="w-full py-2.5 rounded-xl gray-glass-btn text-xs font-bold cursor-pointer"
               >
                 Next Dilemma →
               </button>

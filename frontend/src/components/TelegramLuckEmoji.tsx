@@ -270,7 +270,7 @@ export const TelegramLuckEmoji: React.FC<TelegramLuckEmojiProps> = ({
 
         {/* Small floating badge */}
         {!isAnimating && (
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.2 rounded-full bg-black/60 border border-white/20 text-[9px] font-bold text-[#FFB4CE] shadow-md uppercase">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.2 rounded-full bg-black/60 border border-white/20 text-[9px] font-bold text-[#E5E7EB] shadow-md uppercase">
             {isHeads ? 'Heads' : 'Tails'}
           </span>
         )}

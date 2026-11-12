@@ -776,20 +776,20 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col p-4">
           <div className="flex items-center justify-between pb-3 border-b border-white/10 max-w-5xl w-full mx-auto">
             <div>
-              <h3 className="text-sm font-bold text-[#F2EBF0] font-serif flex items-center gap-2">
+              <h3 className="text-sm font-bold text-[#F3F4F6] font-serif flex items-center gap-2">
                 <span>{activeGameToPlay.game_title}</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                   Sandboxed & Isolated
                 </span>
               </h3>
-              <span className="text-[10px] text-[#A898A7]">Hosted by {activeGameToPlay.provider_name}</span>
+              <span className="text-[10px] text-[#9CA3AF]">Hosted by {activeGameToPlay.provider_name}</span>
             </div>
             <button
               onClick={() => {
                 setIsGameLauncherOpen(false);
                 setActiveGameToPlay(null);
               }}
-              className="p-2 rounded-full dark-glass text-[#A898A7] hover:text-white border border-white/10"
+              className="p-2 rounded-full dark-glass text-[#9CA3AF] hover:text-white border border-white/10"
             >
               <X className="w-4 h-4" />
             </button>
