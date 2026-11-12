@@ -25,7 +25,8 @@ import {
   ExternalLink, 
   ChevronRight, 
   Sparkles, 
-  AlertTriangle 
+  AlertTriangle,
+  ShieldAlert
 } from 'lucide-react';
 import { 
   loadDiscoverySettings, 
@@ -130,13 +131,23 @@ export const SoulverseSettingsPage: React.FC = () => {
           </div>
         </div>
 
-        <button
-          onClick={handleSaveAll}
-          className="px-4 py-2 rounded-2xl gray-glass-btn text-xs font-bold shadow-md cursor-pointer flex items-center gap-2 self-end sm:self-auto"
-        >
-          {savedToast ? <Check className="w-4 h-4 text-emerald-300" /> : <Sparkles className="w-4 h-4 text-zinc-300" />}
-          <span>{savedToast ? 'Settings Saved!' : 'Save Preferences'}</span>
-        </button>
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <a
+            href="#admin"
+            className="px-3.5 py-2 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] text-white border border-white/15 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-md"
+            title="Open Admin Operations Console"
+          >
+            <ShieldAlert className="w-4 h-4 text-emerald-400" />
+            <span>Admin Ops</span>
+          </a>
+          <button
+            onClick={handleSaveAll}
+            className="px-4 py-2 rounded-2xl gray-glass-btn text-xs font-bold shadow-md cursor-pointer flex items-center gap-2"
+          >
+            {savedToast ? <Check className="w-4 h-4 text-emerald-300" /> : <Sparkles className="w-4 h-4 text-zinc-300" />}
+            <span>{savedToast ? 'Settings Saved!' : 'Save Preferences'}</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. NAVIGATION TABS */}
@@ -903,6 +914,30 @@ export const SoulverseSettingsPage: React.FC = () => {
                   account.keyboardShortcuts ? 'left-7 bg-[#090A0E]' : 'left-1 bg-white'
                 }`} />
               </button>
+            </div>
+          </div>
+
+          {/* PLATFORM OPERATIONS / ADMIN PORTAL */}
+          <div className="p-5 rounded-3xl dark-glass border border-emerald-500/20 bg-emerald-950/10 space-y-3 shadow-lg">
+            <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block">
+              Governance & Operations
+            </span>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-emerald-400" />
+                  <span>Admin Operations Console</span>
+                </h4>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  Manage platform users, liveness verification, Spotify audio presets, and discovery engine weights.
+                </p>
+              </div>
+              <a
+                href="#admin"
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-colors cursor-pointer shrink-0 ml-3"
+              >
+                Launch Console
+              </a>
             </div>
           </div>
 

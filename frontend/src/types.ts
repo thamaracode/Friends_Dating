@@ -12,7 +12,8 @@ export type SoulverseRoute =
   | 'account'
   | 'settings'
   | 'more'
-  | 'journal';
+  | 'journal'
+  | 'admin';
 
 export type ExperienceTab = 
   | 'home'

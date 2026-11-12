@@ -95,7 +95,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       const hash = window.location.hash.replace('#', '') as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
         'home', 'daily', 'discover', 'connections', 'messages', 'profile', 
-        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal'
+        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin'
       ];
       if (validRoutes.includes(hash)) {
         setCurrentRoute(hash);
@@ -143,7 +143,8 @@ export const SoulverseWebsiteShell: React.FC = () => {
     { id: 'profile' as SoulverseRoute, label: 'Profile', icon: User },
     { id: 'worlds' as SoulverseRoute, label: 'Explore Worlds', icon: Globe2 },
     { id: 'timeline' as SoulverseRoute, label: 'Life Timeline', icon: Calendar },
-    { id: 'settings' as SoulverseRoute, label: 'Settings', icon: Settings }
+    { id: 'settings' as SoulverseRoute, label: 'Settings', icon: Settings },
+    { id: 'admin' as SoulverseRoute, label: 'Admin Ops', icon: ShieldAlert, badge: 'Ops' }
   ];
 
   const fallbackWorlds = [
@@ -515,8 +516,13 @@ export const SoulverseWebsiteShell: React.FC = () => {
               onOpenQuestions={() => navigateTo('timeline')}
               onOpenDigitalLife={() => navigateTo('profile')}
               onOpenCrisis={() => setIsCrisisModalOpen(true)}
-              onOpenAdmin={() => navigateTo('account')}
+              onOpenAdmin={() => navigateTo('admin')}
             />
+          )}
+
+          {/* PAGE 12: ADMIN DASHBOARD */}
+          {currentRoute === 'admin' && (
+            <AdminDashboard />
           )}
 
         </main>
