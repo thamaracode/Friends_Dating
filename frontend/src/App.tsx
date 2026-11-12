@@ -1,8 +1,13 @@
 import React from 'react';
 import { SoulverseWebsiteShell } from './components/SoulverseWebsiteShell';
+import { SpotifyMusicProvider } from './context/SpotifyMusicContext';
 
 export function App() {
-  return <SoulverseWebsiteShell />;
+  return (
+    <SpotifyMusicProvider>
+      <SoulverseWebsiteShell />
+    </SpotifyMusicProvider>
+  );
 }
 
 export default App;

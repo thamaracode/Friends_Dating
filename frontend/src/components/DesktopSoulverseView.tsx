@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { CURRENT_USER } from '../mockData';
 import { profileWorldsClient } from '../services/profileWorldsApiClient';
+import { SpotifyPlayerWidget } from './SpotifyPlayerWidget';
 import type { MainNavTab, ExperienceTab } from '../types';
 import type { ProfileWorld } from '../types/profileWorlds';
 
@@ -60,7 +61,6 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
   const [profile] = useState(CURRENT_USER);
   const [worlds, setWorlds] = useState<ProfileWorld[]>([]);
   const [activeTab, setActiveTab] = useState<'worlds' | 'about' | 'timeline' | 'collections' | 'connections'>('worlds');
-  const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Default iconic showcase worlds matching Luna's profile screenshot
@@ -462,32 +462,8 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
           </div>
         </div>
 
-        {/* 4. Currently Playing Card */}
-        <div className="p-4 rounded-3xl dark-glass border border-white/[0.08] space-y-2 shadow-lg">
-          <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider block">Currently Playing</span>
-          
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl dark-glass border border-white/15 flex items-center justify-center text-white shrink-0 shadow-sm">
-              <Music className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-xs font-bold text-white truncate">Nightcore Dreams ✧</h4>
-              <p className="text-[10px] text-zinc-400 truncate">Chill Lo-Fi Ambient</p>
-            </div>
-            <button
-              onClick={() => setIsPlayingMusic(!isPlayingMusic)}
-              className="p-2 rounded-full dark-glass hover:bg-white/[0.08] text-white hover:scale-105 transition-transform cursor-pointer border border-white/10"
-              title={isPlayingMusic ? 'Pause' : 'Play'}
-            >
-              {isPlayingMusic ? <Pause className="w-3.5 h-3.5 text-white" /> : <Play className="w-3.5 h-3.5 fill-white text-white" />}
-            </button>
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full h-1 bg-black/40 rounded-full overflow-hidden mt-1">
-            <div className="w-2/3 h-full bg-white/70 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
-          </div>
-        </div>
+        {/* 4. Currently Playing Card (Integrated Spotify Music Player) */}
+        <SpotifyPlayerWidget variant="card" />
 
         {/* 5. Quick Access 2x2 Grid */}
         <div className="p-4 rounded-3xl dark-glass border border-white/[0.08] space-y-2 shadow-lg">

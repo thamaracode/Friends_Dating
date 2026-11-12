@@ -63,6 +63,9 @@ import { DigitalLifeHub } from './DigitalLifeHub';
 import { LivingIdentityProfileView } from './LivingIdentityProfileView';
 import { AdminDashboard } from './AdminDashboard';
 import { CinematicAmbientBackground } from './CinematicAmbientBackground';
+import { SpotifyPlayerWidget } from './SpotifyPlayerWidget';
+import { LinkSpotifyModal } from './LinkSpotifyModal';
+import { useSpotifyMusic } from '../context/SpotifyMusicContext';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -71,6 +74,14 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const [inspectedProfile, setInspectedProfile] = useState<UserProfile | null>(null);
   const [activeChatProfileOverride, setActiveChatProfileOverride] = useState<UserProfile | null>(null);
   
+  // Spotify Music Context Integration
+  const { 
+    track: musicTrack, 
+    isPlaying: isMusicPlaying, 
+    setIsPlayerExpanded, 
+    setIsLinkModalOpen 
+  } = useSpotifyMusic();
+
   // Modals & Panels
   const [isCrisisModalOpen, setIsCrisisModalOpen] = useState(false);
   const [isReadmeModalOpen, setIsReadmeModalOpen] = useState(false);
@@ -148,7 +159,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
     <div className="min-h-screen bg-[#090A0E] text-zinc-100 flex flex-col font-sans selection:bg-white/20 selection:text-white relative overflow-x-hidden">
       
       {/* Dark Void with Ambient Silver Glass Background */}
-      <CinematicAmbientBackground />
+      <CinematicAmbientBackground currentRoute={currentRoute} />
 
       {/* ===================================================================== */}
       {/* 1. TOP GLOBAL SEARCH & FROSTED DARK GLASS HEADER                      */}
@@ -194,8 +205,27 @@ export const SoulverseWebsiteShell: React.FC = () => {
           />
         </div>
 
-        {/* Right: Actions, 1926 Hotline, and Account Menu */}
+        {/* Right: Actions, 1926 Hotline, Spotify Player, and Account Menu */}
         <div className="flex items-center gap-2.5">
+          {/* Integrated Spotify Music Player Top Pill */}
+          <button
+            onClick={() => setIsPlayerExpanded(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full dark-glass hover:bg-white/[0.08] border border-white/10 text-xs text-zinc-300 hover:text-white transition-all cursor-pointer group"
+            title="Spotify Music Player • Click to expand player or link your Spotify"
+          >
+            <div className={`w-3.5 h-3.5 flex items-center justify-center ${isMusicPlaying ? 'text-[#1DB954]' : 'text-zinc-400 group-hover:text-white'}`}>
+              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.503 17.309c-.215.353-.675.467-1.028.252-2.816-1.722-6.36-2.112-10.536-1.157-.403.092-.806-.157-.899-.56-.092-.403.157-.806.56-.899 4.568-1.044 8.5-608 11.651 1.336.353.215.467.675.252 1.028zm1.47-3.264c-.27.441-.849.582-1.29.312-3.224-1.982-8.14-2.556-11.954-1.398-.499.151-1.028-.135-1.179-.634-.151-.499.135-1.028.634-1.179 4.364-1.325 9.789-.684 13.477 1.583.441.27.582.849.312 1.29zm.126-3.41c-3.864-2.295-10.244-2.508-13.935-1.387-.594.18-1.226-.154-1.406-.748-.18-.594.154-1.226.748-1.406 4.246-1.29 11.289-1.042 15.744 1.604.535.317.71 1.01.393 1.545-.317.535-1.01.71-1.545.393z"/>
+              </svg>
+            </div>
+            <span className="hidden md:inline text-[11px] font-medium max-w-[110px] truncate">
+              {musicTrack.title}
+            </span>
+            {isMusicPlaying && (
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1DB954] shadow-[0_0_6px_rgba(29,185,84,0.8)] shrink-0" />
+            )}
+          </button>
+
           <button
             onClick={() => setIsCrisisModalOpen(true)}
             className="cursor-pointer transition-transform active:scale-95"
@@ -524,6 +554,13 @@ export const SoulverseWebsiteShell: React.FC = () => {
         isOpen={isCrisisModalOpen}
         onClose={() => setIsCrisisModalOpen(false)} 
       />
+
+      {/* ===================================================================== */}
+      {/* 4. SPOTIFY MUSIC PLAYER (Persistent Dock, Expanded Embed, Link Modal) */}
+      {/* ===================================================================== */}
+      <SpotifyPlayerWidget variant="mini-dock" />
+      <SpotifyPlayerWidget variant="expanded" />
+      <LinkSpotifyModal />
     </div>
   );
 };

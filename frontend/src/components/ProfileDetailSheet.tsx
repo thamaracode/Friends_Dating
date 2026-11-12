@@ -49,8 +49,6 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
   onInitiateChat,
   onSuperLike
 }) => {
-  if (!profile) return null;
-
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [activeLayer, setActiveLayer] = useState<'public' | 'worlds' | 'readme' | 'dating' | 'private'>('public');
   const [profileMarkdown, setProfileMarkdown] = useState<ProfileMarkdown | null>(null);
@@ -68,7 +66,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
     traits: []
   });
 
-  const isSelf = profile.id === CURRENT_USER.id;
+  const isSelf = profile ? profile.id === CURRENT_USER.id : false;
 
   useEffect(() => {
     if (profile?.id) {
@@ -92,7 +90,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
   }, [profile?.id, isSelf]);
 
   const handleSavePrivateNote = async () => {
-    if (!profile.id || isSelf) return;
+    if (!profile || !profile.id || isSelf) return;
     setIsSavingNote(true);
     try {
       await identityUniverseClient.saveViewerNote(profile.id, privateNote, 'usr_me');
@@ -106,7 +104,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
   };
 
   const handleVote = async (type: 'like' | 'dislike') => {
-    if (isSelf) return;
+    if (!profile || !profile.id || isSelf) return;
     try {
       const active = await identityUniverseClient.castVote(profile.id, type, 'usr_me');
       setSocialFeedback(prev => ({
@@ -125,7 +123,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
   };
 
   const handleToggleTrait = async (slug: string) => {
-    if (isSelf) return;
+    if (!profile || !profile.id || isSelf) return;
     try {
       const active = await identityUniverseClient.toggleTraitVote(profile.id, slug, 'usr_me');
       setSocialFeedback(prev => {
@@ -158,6 +156,8 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
     { slug: 'reliable', label: '🛡️ Reliable' },
     { slug: 'romantic', label: '🌹 Romantic' }
   ];
+
+  if (!profile) return null;
 
   const photos = profile.photos && profile.photos.length > 0 
     ? profile.photos 

@@ -3,30 +3,31 @@ import {
   X, 
   Minus, 
   Square, 
-  Search, 
   Send, 
   Smile, 
   Paperclip, 
-  Mic, 
-  Phone, 
-  Video, 
-  MoreVertical, 
-  Pin, 
+  Search, 
+  Check, 
   CheckCheck, 
-  ArrowLeft,
-  Bookmark,
-  ShieldCheck,
-  Sparkles,
-  Lock,
-  Menu,
-  Moon,
+  Pin, 
+  Lock, 
+  Sparkles, 
+  MessageSquare,
   Settings,
-  HelpCircle
+  MoreVertical,
+  Phone,
+  Video,
+  User,
+  Compass,
+  Menu
 } from 'lucide-react';
-import { TelegramLuckEmoji } from './TelegramLuckEmoji';
-import { VoiceWaveformPlayer } from './VoiceWaveformPlayer';
 import { chatClient } from '../services/chatApiClient';
-import type { ChatMessage, ConversationItem, ChatFolderType } from '../types/messaging';
+import { TelegramLuckEmoji } from './TelegramLuckEmoji';
+import type { 
+  ConversationItem, 
+  ChatMessage, 
+  ChatFolderType 
+} from '../types/messaging';
 
 interface TelegramWebWindowProps {
   isOpen: boolean;
@@ -39,8 +40,6 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
   onClose,
   initialConversationId
 }) => {
-  if (!isOpen) return null;
-
   const [isMaximized, setIsMaximized] = useState(false);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(initialConversationId || 'conv_alex');
@@ -134,18 +133,20 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
     return true;
   });
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 animate-fadeIn">
       {/* Telegram Web Window Frame */}
       <div 
-        className={`w-full bg-[#180412] border border-[#FF1A75]/30 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden transition-all duration-200 ${
+        className={`w-full bg-[#090A0E] border border-white/15 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden transition-all duration-200 ${
           isMaximized 
             ? 'h-full max-h-screen rounded-none' 
             : 'max-w-6xl h-[90vh] max-h-[900px]'
         }`}
       >
         {/* Titlebar with macOS / Windows Window Controls */}
-        <div className="px-4 py-2.5 bg-[#12141B] border-b border-[#FF1A75]/20 flex items-center justify-between select-none">
+        <div className="px-4 py-2.5 bg-[#12141B] border-b border-white/10 flex items-center justify-between select-none">
           {/* Left: Window Dots & App Brand */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -167,17 +168,17 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
             </div>
             <div className="h-4 w-px bg-white/10 ml-1" />
             <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#FFFFFF] to-[#E5E7EB] flex items-center justify-center text-white text-[10px] font-black shadow-[0_0_10px_#FFFFFF]">
-                F
+              <div className="w-5 h-5 rounded-full bg-white/15 border border-white/25 flex items-center justify-center text-white text-[10px] font-black shadow-sm">
+                S
               </div>
-              <span className="text-xs font-bold text-[#F3F4F6] tracking-wide">
-                Telegram Web • Velvet Wine & Magenta Smoke
+              <span className="text-xs font-bold text-white tracking-wide">
+                Soulverse Telegram Web • Titanium Glass
               </span>
             </div>
           </div>
 
           {/* Right: Window Status */}
-          <div className="flex items-center gap-2 text-[11px] text-[#FFB8D2]">
+          <div className="flex items-center gap-2 text-[11px] text-zinc-400">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Encrypted Cloud (WSS)</span>
           </div>
@@ -189,38 +190,38 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
           {/* ========================================================= */}
           {/* LEFT COLUMN: CHAT LIST SIDEBAR (Telegram Web K Spec)      */}
           {/* ========================================================= */}
-          <div className="w-80 sm:w-92 border-r border-[#FF1A75]/20 flex flex-col bg-[#14030F]">
+          <div className="w-80 sm:w-92 border-r border-white/10 flex flex-col bg-[#090A0E]">
             {/* Top Bar: Hamburger + Search */}
             <div className="p-3 pb-2 flex items-center gap-2">
               <button 
                 onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                className="w-9 h-9 rounded-xl glass-panel flex items-center justify-center text-[#C49DB2] hover:text-white cursor-pointer"
+                className="w-9 h-9 rounded-xl dark-glass flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer"
                 title="Menu"
               >
                 <Menu className="w-4 h-4" />
               </button>
               <div className="relative flex-1">
-                <Search className="w-3.5 h-3.5 text-[#C49DB2] absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input 
                   type="text" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search" 
-                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-black/40 border border-[#FF1A75]/20 text-xs text-[#F3F4F6] placeholder-[#82586E] focus:outline-none focus:border-[#FFFFFF]"
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30"
                 />
               </div>
             </div>
 
             {/* Folder Tabs */}
-            <div className="flex items-center gap-1 px-3 py-1.5 border-b border-[#FF1A75]/15 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1 px-3 py-1.5 border-b border-white/10 overflow-x-auto no-scrollbar">
               {(['all', 'matches', 'unread', 'archived'] as ChatFolderType[]).map(f => (
                 <button
                   key={f}
                   onClick={() => setActiveFolder(f)}
                   className={`px-3 py-1 rounded-full text-xs font-bold capitalize transition-all cursor-pointer whitespace-nowrap ${
                     activeFolder === f 
-                      ? 'bg-gradient-to-r from-[#FFFFFF] to-[#E0005C] text-white shadow-[0_0_10px_rgba(255,13,105,0.6)]' 
-                      : 'text-[#C49DB2] hover:text-white'
+                      ? 'bg-white text-[#090A0E] shadow-sm' 
+                      : 'text-zinc-400 hover:text-white'
                   }`}
                 >
                   {f}
@@ -238,8 +239,8 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
                     onClick={() => setActiveConvId(conv.id)}
                     className={`p-2.5 rounded-2xl flex items-center justify-between gap-2.5 cursor-pointer transition-all ${
                       isSelected 
-                        ? 'bg-[#FFFFFF] text-white shadow-md' 
-                        : 'hover:bg-white/5 text-[#F3F4F6]'
+                        ? 'bg-white/15 text-white shadow-sm border border-white/20' 
+                        : 'hover:bg-white/5 text-zinc-200'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -250,27 +251,23 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
                           className="w-11 h-11 rounded-2xl object-cover border border-white/10" 
                         />
                         {conv.isOnline && (
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#140D18]" />
+                          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#090A0E]" />
                         )}
                       </div>
 
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1">
-                          <h4 className="text-xs font-bold truncate">{conv.title}</h4>
-                          {conv.isVerified && <ShieldCheck className="w-3 h-3 text-emerald-300" />}
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-xs font-bold text-white truncate">{conv.title}</h4>
+                          {conv.isPinned && <Pin className="w-2.5 h-2.5 text-zinc-400" />}
                         </div>
-                        <p className={`text-[11px] truncate mt-0.5 ${isSelected ? 'text-white/80' : 'text-[#9CA3AF]'}`}>
-                          {conv.lastMessage?.text || 'No messages yet'}
-                        </p>
+                        <p className="text-[11px] text-zinc-400 truncate mt-0.5">{conv.lastMessage?.text || 'No messages yet'}</p>
                       </div>
                     </div>
 
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <span className={`text-[10px] ${isSelected ? 'text-white/70' : 'text-[#6B7280]'}`}>
-                        {conv.lastMessage?.timestamp}
-                      </span>
+                      <span className="text-[10px] text-zinc-500 font-mono">{conv.lastMessage?.timestamp || ''}</span>
                       {conv.unreadCount > 0 && (
-                        <span className={`w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center ${isSelected ? 'bg-white text-[#FFFFFF]' : 'bg-[#FFFFFF] text-white'}`}>
+                        <span className={`w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center ${isSelected ? 'bg-white text-[#090A0E]' : 'bg-white/20 text-white'}`}>
                           {conv.unreadCount}
                         </span>
                       )}
@@ -282,47 +279,48 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
           </div>
 
           {/* ========================================================= */}
-          {/* RIGHT COLUMN: MAIN CHAT PANEL (Telegram Web Wallpaper)   */}
+          {/* RIGHT COLUMN: ACTIVE CHAT TIMELINE (Telegram Web K Spec)  */}
           {/* ========================================================= */}
           {currentConv ? (
-            <div className="flex-1 flex flex-col bg-[#0D0209] relative overflow-hidden">
-              
-              {/* Telegram Topbar */}
-              <div className="px-4 py-3 bg-[#180412]/95 backdrop-blur-md border-b border-[#FF1A75]/20 flex items-center justify-between z-20">
+            <div className="flex-1 flex flex-col bg-[#12141B]/50 relative">
+              {/* Active Header */}
+              <div className="px-4 py-3 bg-[#090A0E]/95 backdrop-blur-md border-b border-white/10 flex items-center justify-between z-20">
                 <div className="flex items-center gap-3">
                   <img 
                     src={currentConv.avatar} 
                     alt={currentConv.title} 
-                    className="w-10 h-10 rounded-2xl object-cover border border-[#FF1A75]/30" 
+                    className="w-10 h-10 rounded-2xl object-cover border border-white/15" 
                   />
                   <div>
-                    <h3 className="text-xs font-bold text-[#F3F4F6]">{currentConv.title}</h3>
-                    <span className="text-[10px] text-[#C49DB2]">{currentConv.lastSeenText}</span>
+                    <h3 className="text-xs font-bold text-white flex items-center gap-1">
+                      <span>{currentConv.title}</span>
+                    </h3>
+                    <span className="text-[10px] text-zinc-400">{currentConv.lastSeenText}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1">
-                  <button className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FFFFFF] cursor-pointer">
+                  <button className="w-8 h-8 rounded-full dark-glass flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer">
                     <Search className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FFFFFF] cursor-pointer">
+                  <button className="w-8 h-8 rounded-full dark-glass flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer">
                     <Phone className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-[#FFFFFF] cursor-pointer">
+                  <button className="w-8 h-8 rounded-full dark-glass flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer">
                     <Video className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-[#C49DB2] hover:text-white cursor-pointer">
+                  <button className="w-8 h-8 rounded-full dark-glass flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer">
                     <MoreVertical className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Chat Timeline Canvas (Telegram Wallpaper) */}
+              {/* Chat Timeline Canvas */}
               <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar telegram-chat-wallpaper">
                 
                 {/* Floating Date Badge */}
                 <div className="flex justify-center my-2">
-                  <span className="px-3 py-0.5 rounded-full bg-black/60 border border-[#FF1A75]/25 text-[10px] font-bold text-[#FFB8D2] shadow-sm backdrop-blur-md">
+                  <span className="px-3 py-0.5 rounded-full bg-black/60 border border-white/15 text-[10px] font-bold text-zinc-300 shadow-sm backdrop-blur-md">
                     Today
                   </span>
                 </div>
@@ -341,7 +339,7 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
                         />
                         <div className="absolute bottom-0 right-0 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white shadow-md">
                           <span>{msg.timestamp}</span>
-                          {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FFFFFF]" />}
+                          {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-white" />}
                         </div>
                       </div>
                     ) : (
@@ -349,12 +347,12 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
                       <div
                         className={`relative max-w-[75%] p-3 rounded-2xl text-xs space-y-1 shadow-md ${
                           msg.isOutgoing
-                            ? 'bg-gradient-to-r from-[#FFFFFF] via-[#E0005C] to-[#B30044] text-[#F3F4F6] rounded-br-xs shadow-[0_4px_16px_rgba(255,13,105,0.35)]'
-                            : 'bg-[#24061A]/85 text-[#F3F4F6] rounded-bl-xs border border-[#FF1A75]/25 backdrop-blur-xl'
+                            ? 'msg-bubble-outgoing rounded-br-xs'
+                            : 'msg-bubble-incoming rounded-bl-xs'
                         }`}
                       >
                         <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                        <div className={`flex items-center justify-end gap-1 text-[9px] ${msg.isOutgoing ? 'text-white/80' : 'text-[#82586E]'}`}>
+                        <div className={`flex items-center justify-end gap-1 text-[9px] ${msg.isOutgoing ? 'text-white/80' : 'text-zinc-400'}`}>
                           <span>{msg.timestamp}</span>
                           {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-white" />}
                         </div>
@@ -366,17 +364,17 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
 
               {/* Emoji / Luck Drawer */}
               {isEmojiPickerOpen && (
-                <div className="h-48 bg-[#17101B] border-t border-[rgba(255,255,255,0.20)]/20 flex flex-col animate-fadeIn select-none">
-                  <div className="flex items-center justify-around border-b border-[rgba(255,255,255,0.20)]/10 py-1.5 text-xs font-bold">
+                <div className="h-48 bg-[#181B24] border-t border-white/10 flex flex-col animate-fadeIn select-none">
+                  <div className="flex items-center justify-around border-b border-white/10 py-1.5 text-xs font-bold">
                     <button 
                       onClick={() => setPickerTab('luck')} 
-                      className={`px-3 py-1 rounded-full cursor-pointer ${pickerTab === 'luck' ? 'bg-[#FFFFFF] text-white' : 'text-[#9CA3AF]'}`}
+                      className={`px-3 py-1 rounded-full cursor-pointer ${pickerTab === 'luck' ? 'bg-white text-[#090A0E]' : 'text-zinc-400'}`}
                     >
                       🎰 Telegram Luck
                     </button>
                     <button 
                       onClick={() => setPickerTab('emoji')} 
-                      className={`px-3 py-1 rounded-full cursor-pointer ${pickerTab === 'emoji' ? 'bg-[#FFFFFF] text-white' : 'text-[#9CA3AF]'}`}
+                      className={`px-3 py-1 rounded-full cursor-pointer ${pickerTab === 'emoji' ? 'bg-white text-[#090A0E]' : 'text-zinc-400'}`}
                     >
                       😀 Emojis
                     </button>
@@ -386,7 +384,7 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
                     <div className="flex-1 p-3 flex items-center justify-around">
                       <button
                         onClick={() => handleSend('🎰')}
-                        className="p-2 rounded-2xl glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 hover:border-[#FFFFFF] flex flex-col items-center gap-1 cursor-pointer hover:scale-105 transition-transform"
+                        className="p-2 rounded-2xl dark-glass border border-white/10 hover:border-white/30 flex flex-col items-center gap-1 cursor-pointer hover:scale-105 transition-transform"
                       >
                         <div className="text-3xl">🎰</div>
                         <span className="text-[10px] font-bold text-white">Slot Machine</span>
@@ -394,7 +392,7 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
 
                       <button
                         onClick={() => handleSend('🎲')}
-                        className="p-2 rounded-2xl glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 hover:border-[#FFFFFF] flex flex-col items-center gap-1 cursor-pointer hover:scale-105 transition-transform"
+                        className="p-2 rounded-2xl dark-glass border border-white/10 hover:border-white/30 flex flex-col items-center gap-1 cursor-pointer hover:scale-105 transition-transform"
                       >
                         <div className="text-3xl">🎲</div>
                         <span className="text-[10px] font-bold text-white">3D Dice</span>
@@ -402,7 +400,7 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
 
                       <button
                         onClick={() => handleSend('🪙')}
-                        className="p-2 rounded-2xl glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 hover:border-[#FFFFFF] flex flex-col items-center gap-1 cursor-pointer hover:scale-105 transition-transform"
+                        className="p-2 rounded-2xl dark-glass border border-white/10 hover:border-white/30 flex flex-col items-center gap-1 cursor-pointer hover:scale-105 transition-transform"
                       >
                         <div className="text-3xl">🪙</div>
                         <span className="text-[10px] font-bold text-white">Eagle Coin</span>
@@ -421,11 +419,11 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
               )}
 
               {/* Composer */}
-              <div className="p-3 bg-[#17101B] border-t border-[rgba(255,255,255,0.20)]/20 flex items-center gap-2">
+              <div className="p-3 bg-[#090A0E] border-t border-white/10 flex items-center gap-2">
                 <button
                   onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
                   className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
-                    isEmojiPickerOpen ? 'text-[#FFFFFF]' : 'glass-panel text-[#9CA3AF] hover:text-white'
+                    isEmojiPickerOpen ? 'text-white' : 'dark-glass text-zinc-400 hover:text-white'
                   }`}
                   title="Emoji & Luck"
                 >
@@ -439,7 +437,7 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
                     onChange={(e) => setInputVal(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                     placeholder="Write a message..."
-                    className="w-full px-4 py-2.5 rounded-2xl bg-black/40 border border-[rgba(255,255,255,0.20)]/20 text-xs text-[#F3F4F6] placeholder-[#6B7280] focus:outline-none focus:border-[#FFFFFF]"
+                    className="w-full px-4 py-2.5 rounded-2xl bg-white/[0.04] border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30"
                   />
                 </div>
 
@@ -453,8 +451,8 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-[#6B7280]">
-              <Sparkles className="w-12 h-12 text-[#FFFFFF] mb-2" />
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-zinc-500">
+              <Sparkles className="w-12 h-12 text-zinc-400 mb-2" />
               <h3 className="text-sm font-bold text-white">Select a chat to start messaging</h3>
             </div>
           )}
