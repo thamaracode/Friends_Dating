@@ -25,7 +25,19 @@ import {
   Heart, 
   UserX, 
   Flag, 
-  Check 
+  Check,
+  Network,
+  Code,
+  Key,
+  Layers,
+  RotateCcw,
+  Database,
+  ArrowRight,
+  Save,
+  CheckSquare,
+  FileJson,
+  DollarSign,
+  History
 } from 'lucide-react';
 import { MOCK_PROFILES } from '../mockData';
 import { useSpotifyMusic, CURATED_SPOTIFY_PRESETS, SpotifyPreset } from '../context/SpotifyMusicContext';
@@ -68,18 +80,53 @@ export const AdminDashboard: React.FC = () => {
   const [adminFeatures, setAdminFeatures] = useState<AdminFeature[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [adoptionStats, setAdoptionStats] = useState<FeatureAdoptionStat[]>([]);
-  const [systemSubTab, setSystemSubTab] = useState<'flags' | 'audit' | 'analytics'>('flags');
+  const [systemSubTab, setSystemSubTab] = useState<
+    'flags' | 'dependencies' | 'config' | 'rbac' | 'subscriptions' | 'versions' | 'audit' | 'analytics' | 'ops'
+  >('flags');
   const [killModalFeature, setKillModalFeature] = useState<AdminFeature | null>(null);
   const [killReason, setKillReason] = useState('');
   const [rolloutModalFeature, setRolloutModalFeature] = useState<AdminFeature | null>(null);
   const [rolloutPercentageInput, setRolloutPercentageInput] = useState(100);
   const [rolloutReason, setRolloutReason] = useState('');
 
+  // Dependency DAG Graph State
+  const [dependencyGraph, setDependencyGraph] = useState<any[]>([]);
+  const [testDepSource, setTestDepSource] = useState('feat_dating');
+  const [testDepTarget, setTestDepTarget] = useState('feat_spotify_ambient');
+  const [cycleCheckResult, setCycleCheckResult] = useState<any>(null);
+
+  // Remote Config JSON Tuner State
+  const [selectedConfigFeature, setSelectedConfigFeature] = useState<string>('feat_dating');
+  const [customConfigJson, setCustomConfigJson] = useState('{\n  "max_daily_likes": 100,\n  "superlike_cooldown_hours": 24\n}');
+  const [configSaveStatus, setConfigSaveStatus] = useState<string | null>(null);
+
+  // RBAC Roles State
+  const [adminRoles, setAdminRoles] = useState<any[]>([]);
+  const [assignRoleUserId, setAssignRoleUserId] = useState('usr_me');
+  const [assignRoleId, setAssignRoleId] = useState('super_admin');
+  const [assignRoleStatus, setAssignRoleStatus] = useState<string | null>(null);
+
+  // Subscription Entitlements State
+  const [subscriptionData, setSubscriptionData] = useState<{ tiers: any[]; matrix: any[] }>({ tiers: [], matrix: [] });
+
+  // Configuration Versions State
+  const [configVersions, setConfigVersions] = useState<any[]>([]);
+  const [newSnapshotSummary, setNewSnapshotSummary] = useState('');
+  const [rollbackVersionId, setRollbackVersionId] = useState<string | null>(null);
+  const [rollbackReason, setRollbackReason] = useState('');
+
+  // System Ops State
+  const [opsFeedback, setOpsFeedback] = useState<string | null>(null);
+
   // Fetch live backend feature management data
   const refreshAdminControlLayer = () => {
     FeatureControlService.getAdminFeatures().then(setAdminFeatures).catch(console.error);
     FeatureControlService.getAuditLogs().then(setAuditLogs).catch(console.error);
     FeatureControlService.getAdoptionStats().then(setAdoptionStats).catch(console.error);
+    FeatureControlService.getDependencyGraph().then(setDependencyGraph).catch(console.error);
+    FeatureControlService.getAdminRoles().then(setAdminRoles).catch(console.error);
+    FeatureControlService.getSubscriptionEntitlements().then(setSubscriptionData).catch(console.error);
+    FeatureControlService.getConfigurationVersions().then(setConfigVersions).catch(console.error);
   };
 
   React.useEffect(() => {
@@ -1084,42 +1131,50 @@ export const AdminDashboard: React.FC = () => {
       {activeTab === 'system' && (
         <div className="space-y-6 animate-fadeIn">
           
-          {/* Sub-navigation tabs: Flags & Rollout, Audit Logs, Analytics */}
-          <div className="flex items-center justify-between p-4 rounded-3xl dark-glass border border-white/10 shadow-lg">
+          {/* Sub-navigation tabs: 9 Enterprise Administration Destinations */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-3xl dark-glass border border-white/10 shadow-lg">
             <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider font-serif">
-                The Control Layer: Platform Administration
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider font-serif flex items-center gap-2">
+                <span>The Control Layer: Enterprise Console</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Refine Architecture
+                </span>
               </h3>
               <p className="text-[11px] text-zinc-400 mt-0.5">
-                Manage global availability, controlled % rollouts, emergency kill-switches, and audit governance.
+                Centralized management of flags, DAG topology, hot JSON config, RBAC authorization, and versioning.
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.04] border border-white/10 text-xs">
-              <button
-                onClick={() => setSystemSubTab('flags')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
-                  systemSubTab === 'flags' ? 'bg-white text-[#090A0E]' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                Feature Flags ({adminFeatures.length})
-              </button>
-              <button
-                onClick={() => setSystemSubTab('audit')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
-                  systemSubTab === 'audit' ? 'bg-white text-[#090A0E]' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                Audit Logs ({auditLogs.length})
-              </button>
-              <button
-                onClick={() => setSystemSubTab('analytics')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
-                  systemSubTab === 'analytics' ? 'bg-white text-[#090A0E]' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                Adoption Telemetry
-              </button>
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/10 text-xs overflow-x-auto no-scrollbar">
+              {[
+                { id: 'flags', label: `Flags (${adminFeatures.length})`, icon: Sliders },
+                { id: 'dependencies', label: `DAG (${dependencyGraph.length})`, icon: Network },
+                { id: 'config', label: 'Remote Config', icon: Code },
+                { id: 'rbac', label: `RBAC (${adminRoles.length})`, icon: Key },
+                { id: 'subscriptions', label: 'Tiers', icon: DollarSign },
+                { id: 'versions', label: `Snapshots (${configVersions.length})`, icon: History },
+                { id: 'audit', label: `Audit (${auditLogs.length})`, icon: ShieldCheck },
+                { id: 'analytics', label: 'Adoption', icon: Activity },
+                { id: 'ops', label: 'SQLite Ops', icon: Database }
+              ].map(sub => {
+                const Icon = sub.icon || Sliders;
+                const isActive = systemSubTab === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    onClick={() => {
+                      setSystemSubTab(sub.id as any);
+                      refreshAdminControlLayer();
+                    }}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                      isActive ? 'bg-white text-[#090A0E] shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{sub.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -1226,7 +1281,528 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* SUB-TAB 2: AUDIT GOVERNANCE LOGS */}
+          {/* SUB-TAB 2: FEATURE DEPENDENCY DAG & CYCLE DETECTOR */}
+          {systemSubTab === 'dependencies' && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* DAG Overview & Cycle Testing Simulator */}
+              <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-serif">
+                      Dependency Graph & Cycle Prevention Simulator
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Ensures modular stability. Adding dependency links is pre-validated to prevent circular deadlocks.
+                    </p>
+                  </div>
+                  <GlassButton 
+                    variant="subtle" 
+                    onClick={() => FeatureControlService.getDependencyGraph().then(setDependencyGraph)}
+                    className="text-xs py-1 px-3 self-start sm:self-auto"
+                  >
+                    Refresh Topology
+                  </GlassButton>
+                </div>
+
+                {/* Interactive Simulator */}
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3">
+                  <span className="text-xs font-bold text-white block">
+                    Test Proposed Dependency Link:
+                  </span>
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <select
+                      value={testDepSource}
+                      onChange={(e) => setTestDepSource(e.target.value)}
+                      className="w-full sm:w-auto flex-1 bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white"
+                    >
+                      {adminFeatures.map(f => (
+                        <option key={f.id} value={f.id}>{f.name} ({f.id})</option>
+                      ))}
+                    </select>
+
+                    <div className="flex items-center gap-1 text-zinc-400 font-mono text-xs">
+                      <span>depends on</span>
+                      <ArrowRight className="w-4 h-4 text-zinc-300" />
+                    </div>
+
+                    <select
+                      value={testDepTarget}
+                      onChange={(e) => setTestDepTarget(e.target.value)}
+                      className="w-full sm:w-auto flex-1 bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white"
+                    >
+                      {adminFeatures.map(f => (
+                        <option key={f.id} value={f.id}>{f.name} ({f.id})</option>
+                      ))}
+                    </select>
+
+                    <GlassButton
+                      variant="primary"
+                      onClick={async () => {
+                        const res = await FeatureControlService.validateDependency(testDepSource, testDepTarget);
+                        setCycleCheckResult(res);
+                      }}
+                      className="w-full sm:w-auto text-xs py-2 px-4 whitespace-nowrap"
+                    >
+                      Validate Safety
+                    </GlassButton>
+                  </div>
+
+                  {cycleCheckResult && (
+                    <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+                      cycleCheckResult.isCyclic 
+                        ? 'bg-rose-500/15 border-rose-500/30 text-rose-300' 
+                        : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                    }`}>
+                      {cycleCheckResult.isCyclic ? (
+                        <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                      )}
+                      <span>{cycleCheckResult.message || cycleCheckResult.error}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Nodes Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto no-scrollbar">
+                  {dependencyGraph.map(node => (
+                    <div key={node.id} className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 text-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white truncate">{node.name}</span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-zinc-300">
+                          {node.category}
+                        </span>
+                      </div>
+
+                      {/* Prerequisites */}
+                      <div>
+                        <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">
+                          Prerequisites ({node.prerequisites?.length || 0}):
+                        </span>
+                        {node.prerequisites && node.prerequisites.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {node.prerequisites.map((p: any) => (
+                              <span key={p.id} className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-mono text-zinc-300">
+                                {p.id.replace('feat_', '')} {p.isOptional && '(optional)'}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-zinc-500 italic">None (Root Module)</span>
+                        )}
+                      </div>
+
+                      {/* Dependants */}
+                      <div className="pt-1 border-t border-white/[0.04]">
+                        <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">
+                          Downstream Dependants ({node.dependants?.length || 0}):
+                        </span>
+                        {node.dependants && node.dependants.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {node.dependants.map((d: any) => (
+                              <span key={d.id} className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-300">
+                                {d.id.replace('feat_', '')}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-zinc-500 italic">None (Leaf Module)</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SUB-TAB 3: REMOTE CONFIG JSON TUNER */}
+          {systemSubTab === 'config' && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-serif">
+                      Remote Configuration JSON Tuner (Flagsmith/Unleash Pattern)
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Hot-reload module runtime thresholds without needing client application rebuilds.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={selectedConfigFeature}
+                      onChange={(e) => {
+                        setSelectedConfigFeature(e.target.value);
+                        const feat = adminFeatures.find(f => f.id === e.target.value);
+                        if (feat && feat.customConfig) {
+                          setCustomConfigJson(JSON.stringify(feat.customConfig, null, 2));
+                        }
+                      }}
+                      className="bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white"
+                    >
+                      {adminFeatures.map(f => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-mono text-zinc-400 text-[11px]">Payload (JSON):</span>
+                    {configSaveStatus && (
+                      <span className="text-xs text-emerald-400 font-bold">{configSaveStatus}</span>
+                    )}
+                  </div>
+                  <textarea
+                    value={customConfigJson}
+                    onChange={(e) => setCustomConfigJson(e.target.value)}
+                    rows={8}
+                    className="w-full bg-black/80 font-mono text-xs text-emerald-300 p-3.5 rounded-2xl border border-white/15 focus:outline-none focus:border-white/40"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <GlassButton
+                    variant="primary"
+                    onClick={async () => {
+                      try {
+                        const parsed = JSON.parse(customConfigJson);
+                        const ok = await FeatureControlService.updateRemoteConfig(
+                          selectedConfigFeature,
+                          parsed,
+                          'Remote config updated via enterprise console'
+                        );
+                        if (ok) {
+                          setConfigSaveStatus('✓ Configuration saved and hot-reloaded!');
+                          setTimeout(() => setConfigSaveStatus(null), 3000);
+                          refreshAdminControlLayer();
+                        } else {
+                          setConfigSaveStatus('Error saving remote config');
+                        }
+                      } catch (err: any) {
+                        alert('Invalid JSON syntax: ' + err.message);
+                      }
+                    }}
+                    className="text-xs py-2 px-4 font-bold flex items-center gap-1.5"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Deploy Configuration Payload</span>
+                  </GlassButton>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SUB-TAB 4: CASBIN-STYLE RBAC ROLES & PERMISSIONS */}
+          {systemSubTab === 'rbac' && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-serif">
+                      Casbin RBAC Roles & Policy Authorization Engine
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Hierarchical role boundaries with granular domain and action permissions.
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-white/10 text-zinc-300">
+                    {adminRoles.length} Roles Active
+                  </span>
+                </div>
+
+                {/* Role Assignment Bar */}
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row items-center gap-2 text-xs">
+                  <span className="font-bold text-white shrink-0">Assign Role:</span>
+                  <input
+                    type="text"
+                    value={assignRoleUserId}
+                    onChange={(e) => setAssignRoleUserId(e.target.value)}
+                    placeholder="User ID (e.g. usr_me)"
+                    className="w-full sm:w-48 bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 text-white"
+                  />
+                  <select
+                    value={assignRoleId}
+                    onChange={(e) => setAssignRoleId(e.target.value)}
+                    className="w-full sm:w-48 bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 text-white"
+                  >
+                    {adminRoles.map(r => (
+                      <option key={r.id} value={r.id}>{r.name} (Lvl {r.hierarchy_level})</option>
+                    ))}
+                  </select>
+                  <GlassButton
+                    variant="primary"
+                    onClick={async () => {
+                      const res = await FeatureControlService.assignAdminRole(assignRoleUserId, assignRoleId);
+                      if (res.success) {
+                        setAssignRoleStatus('Role successfully assigned!');
+                        setTimeout(() => setAssignRoleStatus(null), 3000);
+                        refreshAdminControlLayer();
+                      } else {
+                        setAssignRoleStatus(res.error || 'Failed to assign role');
+                      }
+                    }}
+                    className="w-full sm:w-auto text-xs py-1.5 px-3 font-bold"
+                  >
+                    Grant Role
+                  </GlassButton>
+                  {assignRoleStatus && (
+                    <span className="text-xs text-emerald-400 font-bold ml-2">{assignRoleStatus}</span>
+                  )}
+                </div>
+
+                {/* Roles Table */}
+                <div className="space-y-3 max-h-[50vh] overflow-y-auto no-scrollbar">
+                  {adminRoles.map(role => (
+                    <div key={role.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-white font-serif">{role.name}</span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-zinc-300">
+                            {role.id}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-bold text-emerald-400 font-mono">
+                          Hierarchy Level {role.hierarchy_level}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-zinc-400 leading-relaxed">
+                        {role.description}
+                      </p>
+
+                      <div className="flex items-center gap-2 pt-2 border-t border-white/[0.04] flex-wrap">
+                        <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+                          Assigned Users ({role.assignedUsers?.length || 0}):
+                        </span>
+                        {role.assignedUsers && role.assignedUsers.length > 0 ? (
+                          role.assignedUsers.map((u: any) => (
+                            <span key={u.user_id} className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-mono text-zinc-300">
+                              {u.user_id} ({u.user_name || 'Admin'})
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[10px] text-zinc-500 italic">No direct assignments</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SUB-TAB 5: SUBSCRIPTION ENTITLEMENTS MATRIX */}
+          {systemSubTab === 'subscriptions' && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-serif">
+                      Subscription Tier Entitlements Matrix
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Define which modules are accessible per user membership level (Free, Plus, Sovereign VIP).
+                    </p>
+                  </div>
+                  <GlassButton
+                    variant="subtle"
+                    onClick={() => FeatureControlService.getSubscriptionEntitlements().then(setSubscriptionData)}
+                    className="text-xs py-1 px-3"
+                  >
+                    Sync Matrix
+                  </GlassButton>
+                </div>
+
+                <div className="space-y-2 max-h-[55vh] overflow-y-auto no-scrollbar">
+                  {subscriptionData.matrix?.map((row: any) => (
+                    <div key={row.featureId} className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="min-w-0">
+                        <span className="font-bold text-white block">{row.name}</span>
+                        <span className="text-[10px] text-zinc-400 font-mono">{row.category}</span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {['free', 'plus', 'sovereign'].map(tier => {
+                          const isAllowed = row.allowedTiers?.includes(tier);
+                          return (
+                            <button
+                              key={tier}
+                              onClick={async () => {
+                                const nextTiers = isAllowed
+                                  ? row.allowedTiers.filter((t: string) => t !== tier)
+                                  : [...(row.allowedTiers || []), tier];
+                                await FeatureControlService.updateSubscriptionEntitlements(row.featureId, nextTiers);
+                                FeatureControlService.getSubscriptionEntitlements().then(setSubscriptionData);
+                                showToast(`Updated ${row.name} entitlements`);
+                              }}
+                              className={`px-3 py-1.5 rounded-xl border font-bold capitalize transition-all cursor-pointer ${
+                                isAllowed
+                                  ? 'bg-white text-[#090A0E] border-white shadow-sm'
+                                  : 'bg-white/[0.02] text-zinc-500 border-white/10 hover:text-zinc-300'
+                              }`}
+                            >
+                              {tier}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SUB-TAB 6: CONFIGURATION VERSIONING & 1-CLICK ROLLBACK */}
+          {systemSubTab === 'versions' && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-serif">
+                      Configuration Versioning & Snapshot Rollback
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Create point-in-time snapshots of the entire feature layer and roll back instantly with an audit trail.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Snapshot tag summary..."
+                      value={newSnapshotSummary}
+                      onChange={(e) => setNewSnapshotSummary(e.target.value)}
+                      className="bg-black/60 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white"
+                    />
+                    <GlassButton
+                      variant="primary"
+                      onClick={async () => {
+                        if (!newSnapshotSummary.trim()) {
+                          alert('Please enter a change summary for the snapshot');
+                          return;
+                        }
+                        const res = await FeatureControlService.createConfigurationSnapshot(newSnapshotSummary.trim());
+                        if (res.success) {
+                          setNewSnapshotSummary('');
+                          FeatureControlService.getConfigurationVersions().then(setConfigVersions);
+                          showToast(`Snapshot v${res.versionNumber} created!`);
+                        }
+                      }}
+                      className="text-xs py-1.5 px-3 font-bold whitespace-nowrap"
+                    >
+                      Snapshot Now
+                    </GlassButton>
+                  </div>
+                </div>
+
+                {/* Snapshots List */}
+                <div className="space-y-2.5 max-h-[50vh] overflow-y-auto no-scrollbar">
+                  {configVersions.map(ver => (
+                    <div key={ver.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white font-serif text-sm">
+                            Version {ver.version_number}
+                          </span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-zinc-300">
+                            {ver.id}
+                          </span>
+                          <span className="text-[10px] text-zinc-400">by {ver.created_by}</span>
+                        </div>
+                        <p className="text-zinc-300 text-xs">
+                          {ver.change_summary}
+                        </p>
+                        <span className="text-[10px] text-zinc-500 font-mono block">
+                          {new Date(ver.created_at).toLocaleString()}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={async () => {
+                          const reason = prompt(`Rollback to Version ${ver.version_number}? Enter audit governance reason:`);
+                          if (!reason) return;
+                          const res = await FeatureControlService.rollbackConfiguration(ver.id, reason);
+                          if (res.success) {
+                            refreshAdminControlLayer();
+                            showToast(`Rolled back to v${res.rolledBackToVersion}!`);
+                          }
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Rollback</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SUB-TAB 9: SQLITE SYSTEM OPERATIONS */}
+          {systemSubTab === 'ops' && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-4">
+                <div className="pb-3 border-b border-white/10">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider font-serif">
+                    Database Maintenance & WAL Operations
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    Perform low-level SQLite WAL checkpoints, storage vacuuming, and health checks.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2">
+                    <span className="font-bold text-sm text-white block">WAL Checkpoint (TRUNCATE)</span>
+                    <p className="text-xs text-zinc-400">
+                      Flushes write-ahead log pages to the main database file and resets log size.
+                    </p>
+                    <GlassButton
+                      variant="primary"
+                      onClick={async () => {
+                        const res = await FeatureControlService.walCheckpoint();
+                        setOpsFeedback(res.message || 'WAL Checkpoint executed');
+                        setTimeout(() => setOpsFeedback(null), 3000);
+                      }}
+                      className="text-xs py-1.5 px-3 font-bold mt-2"
+                    >
+                      Run Checkpoint
+                    </GlassButton>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2">
+                    <span className="font-bold text-sm text-white block">Database VACUUM</span>
+                    <p className="text-xs text-zinc-400">
+                      Rebuilds database file to reclaim unused space and defragment indices.
+                    </p>
+                    <GlassButton
+                      variant="primary"
+                      onClick={async () => {
+                        const res = await FeatureControlService.vacuumDatabase();
+                        setOpsFeedback(res.message || 'Database VACUUM executed');
+                        setTimeout(() => setOpsFeedback(null), 3000);
+                      }}
+                      className="text-xs py-1.5 px-3 font-bold mt-2"
+                    >
+                      Execute VACUUM
+                    </GlassButton>
+                  </div>
+                </div>
+
+                {opsFeedback && (
+                  <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
+                    ✓ {opsFeedback}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {systemSubTab === 'audit' && (
             <div className="space-y-3">
               <div className="p-4 rounded-3xl dark-glass border border-white/10 space-y-2">

@@ -99,6 +99,7 @@ export interface AdminFeature {
     is_optional: number;
     fallback_note?: string;
   }>;
+  customConfig?: Record<string, any>;
   flagUpdatedAt?: number;
 }
 

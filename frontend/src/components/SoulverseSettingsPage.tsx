@@ -35,17 +35,23 @@ import {
   saveVisibilitySettings, 
   loadAccountPreferences, 
   saveAccountPreferences,
+  loadUserAttributes,
+  saveUserAttributes,
   DiscoverySettings,
   VisibilitySettings,
-  AccountPreferences
+  AccountPreferences,
+  FullUserAttributes
 } from '../types/tinderFeatures';
 import { GlassModal, GlassButton, GlassPrimaryButton } from './klyven';
+import { LifestyleSelectModal, LifestyleCategoryKey } from './control/LifestyleSelectModal';
 
 export const SoulverseSettingsPage: React.FC = () => {
   // State loaded from localStorage with rich defaults
   const [discovery, setDiscovery] = useState<DiscoverySettings>(loadDiscoverySettings);
   const [visibility, setVisibility] = useState<VisibilitySettings>(loadVisibilitySettings);
   const [account, setAccount] = useState<AccountPreferences>(loadAccountPreferences);
+  const [userAttributes, setUserAttributes] = useState<FullUserAttributes>(loadUserAttributes);
+  const [activeLifestyleCategory, setActiveLifestyleCategory] = useState<LifestyleCategoryKey | null>(null);
 
   // Active section tab
   const [activeTab, setActiveTab] = useState<'discovery' | 'visibility' | 'account' | 'preferences' | 'safety'>('discovery');
@@ -444,6 +450,42 @@ export const SoulverseSettingsPage: React.FC = () => {
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* LIFESTYLE & DETAILS QUICK SELECTORS (Image 1) */}
+          <div className="p-5 rounded-3xl dark-glass border border-white/[0.08] space-y-3 shadow-lg">
+            <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider block">
+              Lifestyle & Passions (Profile Essentials)
+            </span>
+
+            <div className="space-y-1">
+              {[
+                { key: 'interests' as LifestyleCategoryKey, label: 'Interests', current: 'Travel, Coffee, Deep Talks' },
+                { key: 'lookingFor' as LifestyleCategoryKey, label: 'Looking for', current: userAttributes.lifestyle.lookingFor || 'Select' },
+                { key: 'languages' as LifestyleCategoryKey, label: 'Add languages', current: discovery.preferredLanguages.join(', ') || 'Select' },
+                { key: 'zodiac' as LifestyleCategoryKey, label: 'Zodiac', current: userAttributes.essentials.zodiac || 'Select' },
+                { key: 'education' as LifestyleCategoryKey, label: 'Education', current: userAttributes.essentials.education || 'Select' },
+                { key: 'familyPlans' as LifestyleCategoryKey, label: 'Family Plans', current: userAttributes.lifestyle.familyPlans || 'Select' },
+                { key: 'communicationStyle' as LifestyleCategoryKey, label: 'Communication Style', current: userAttributes.lifestyle.communicationStyle || 'Select' },
+                { key: 'loveStyle' as LifestyleCategoryKey, label: 'Love Style', current: userAttributes.lifestyle.loveStyle || 'Select' },
+                { key: 'pets' as LifestyleCategoryKey, label: 'Pets', current: userAttributes.lifestyle.pets || 'Select' },
+                { key: 'drinking' as LifestyleCategoryKey, label: 'Drinking', current: userAttributes.lifestyle.drinking || 'Select' },
+                { key: 'smoking' as LifestyleCategoryKey, label: 'Smoking', current: userAttributes.lifestyle.smoking || 'Select' },
+                { key: 'workout' as LifestyleCategoryKey, label: 'Workout', current: userAttributes.lifestyle.workout || 'Select' }
+              ].map(item => (
+                <div
+                  key={item.key}
+                  onClick={() => setActiveLifestyleCategory(item.key)}
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.04] transition-colors cursor-pointer text-xs"
+                >
+                  <span className="font-semibold text-zinc-200">{item.label}</span>
+                  <div className="flex items-center gap-2 text-zinc-400">
+                    <span className="text-[11px] font-medium text-white truncate max-w-[180px]">{item.current}</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -1176,6 +1218,39 @@ export const SoulverseSettingsPage: React.FC = () => {
           </div>
         </div>
       </GlassModal>
+
+      {/* Lifestyle Select Modal (Image 1) */}
+      {activeLifestyleCategory && (
+        <LifestyleSelectModal
+          category={activeLifestyleCategory}
+          isOpen={Boolean(activeLifestyleCategory)}
+          onClose={() => setActiveLifestyleCategory(null)}
+          currentValue={
+            activeLifestyleCategory === 'languages' 
+              ? discovery.preferredLanguages 
+              : ((userAttributes.lifestyle as any)[activeLifestyleCategory] || (userAttributes.essentials as any)[activeLifestyleCategory] || '')
+          }
+          onSave={(cat, val) => {
+            if (cat === 'languages') {
+              const langs = Array.isArray(val) ? val : [val];
+              const nextDisc = { ...discovery, preferredLanguages: langs };
+              setDiscovery(nextDisc);
+              saveDiscoverySettings(nextDisc);
+              const nextAttrs = { ...userAttributes, essentials: { ...userAttributes.essentials, languages: langs } };
+              setUserAttributes(nextAttrs);
+              saveUserAttributes(nextAttrs);
+            } else if (cat === 'zodiac' || cat === 'education') {
+              const nextAttrs = { ...userAttributes, essentials: { ...userAttributes.essentials, [cat]: String(val) } };
+              setUserAttributes(nextAttrs);
+              saveUserAttributes(nextAttrs);
+            } else {
+              const nextAttrs = { ...userAttributes, lifestyle: { ...userAttributes.lifestyle, [cat]: String(val) } };
+              setUserAttributes(nextAttrs);
+              saveUserAttributes(nextAttrs);
+            }
+          }}
+        />
+      )}
 
     </div>
   );

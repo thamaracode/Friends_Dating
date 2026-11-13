@@ -4547,6 +4547,229 @@ app.post('/api/admin/roles/assign', requireAdminPermission('users', 'write'), (r
   }
 });
 
+// 14. Feature Glossary & Learning System
+app.get('/api/features/glossary', (_req, res) => {
+  const glossary = [
+    {
+      term: 'Ontological Compatibility (HCM)',
+      category: 'Social Discovery',
+      definition: 'A multi-dimensional compatibility index (0–100%) computed from psychological values overlap, communication style harmony, and intellectual interests rather than superficial visual swiping.'
+    },
+    {
+      term: 'Relationship Vault',
+      category: 'Relationships',
+      definition: 'A private personal relationship memory space to track important dates, boundaries, emotional history, and gift ideas. Stored strictly in encrypted client-side storage with zero admin visibility.'
+    },
+    {
+      term: 'Before-You-Talk Briefing',
+      category: 'Messaging',
+      definition: 'An instant contextual memory card accessible directly in chat headers that briefs you on someone\'s boundaries, past commitments, and favorite topics before initiating a deep conversation.'
+    },
+    {
+      term: 'Reality Classification',
+      category: 'Identity Universe',
+      definition: 'A boundary label assigned to personas and narrative worlds (Real Life, Cinematic Story, Fictional Alter-Ego, Professional) that isolates audiences and maintains privacy contexts.'
+    },
+    {
+      term: 'The Unspoken Sanctuary',
+      category: 'Emotional Layer',
+      definition: 'A calm, reflective space comprising the Inner Room mood selector, Midnight Thoughts, curated Unopened Letters from the universe, and an unindexed Unsent Words notebook.'
+    },
+    {
+      term: 'One Question, Two People',
+      category: 'Games & Chemistry',
+      definition: 'A mutual lock-and-reveal question game where two matched partners privately submit answers to a provocative prompt. Responses remain locked until both participate.'
+    },
+    {
+      term: 'Titanium Glass & Obsidian Sanctuary',
+      category: 'Design System',
+      definition: 'Soulverse\'s signature visual language featuring deep black void backgrounds (#090A0E), silver metallic accents, subtle crimson ambient lighting, and frosted glass panels.'
+    },
+    {
+      term: '1926 Safe NIMH Hotline',
+      category: 'Mental Health Safety',
+      definition: 'Instant direct dispatch and contact for free, confidential mental health crisis support, accessible across the app from header buttons and crisis triggers.'
+    }
+  ];
+
+  res.json({ success: true, glossary });
+});
+
+// 15. "What's New in Soulverse" Announcements
+app.get('/api/features/whats-new', (_req, res) => {
+  const announcements = [
+    {
+      id: 'wn_control_layer',
+      title: 'The Control Layer: Modular Personalization',
+      tagline: 'Take total control of your experience with 5 signature presets, granular module toggles, and privacy controls.',
+      date: 'November 2026',
+      badge: 'Major Release',
+      featuresIntroduced: ['feat_relationship_vault', 'feat_the_unspoken', 'feat_two_person_questions'],
+      primaryActionRoute: 'control'
+    },
+    {
+      id: 'wn_spotify_ambient',
+      title: 'Ambient Spotify Integration & Profile Anthems',
+      tagline: 'Stream ambient sanctuary audio through a titanium mini-dock and soundtrack your profile worlds.',
+      date: 'November 2026',
+      badge: 'Feature',
+      featuresIntroduced: ['feat_spotify_ambient'],
+      primaryActionRoute: 'music'
+    },
+    {
+      id: 'wn_unspoken_sanctuary',
+      title: 'The Unspoken: Inner Room & Midnight Thoughts',
+      tagline: 'A gentle emotional discovery layer free of psychological traps, notifications, or manipulative engagement loops.',
+      date: 'November 2026',
+      badge: 'Sanctuary',
+      featuresIntroduced: ['feat_the_unspoken'],
+      primaryActionRoute: 'unspoken'
+    }
+  ];
+
+  res.json({ success: true, announcements });
+});
+
+// 16. Remote Configuration JSON Tuner
+app.put('/api/admin/features/:featureId/config', requireAdminPermission('config', 'write'), (req, res) => {
+  try {
+    const { featureId } = req.params;
+    const { customConfig, reason = 'Remote configuration payload updated by admin' } = req.body;
+
+    if (!customConfig || typeof customConfig !== 'object') {
+      return res.status(400).json({ error: 'customConfig must be a valid JSON object' });
+    }
+
+    const currentFlag = db.prepare('SELECT * FROM feature_flags WHERE feature_id = ?').get(featureId) as any;
+    if (!currentFlag) {
+      return res.status(404).json({ error: 'Feature flag record not found' });
+    }
+
+    const now = Date.now();
+    // Update feature flag with new JSON config
+    db.prepare(`
+      INSERT INTO user_feature_preferences (user_id, feature_id, custom_config_json, updated_at)
+      VALUES ('global_default', ?, ?, ?)
+      ON CONFLICT(user_id, feature_id) DO UPDATE SET
+        custom_config_json = excluded.custom_config_json,
+        updated_at = excluded.updated_at
+    `).run(featureId, JSON.stringify(customConfig), now);
+
+    // Audit log
+    db.prepare(`
+      INSERT INTO configuration_audit_logs (
+        id, admin_id, admin_name, action, target_type, target_id,
+        before_value_json, after_value_json, reason, ip_address, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      `audit_${uuidv4().slice(0, 8)}`,
+      req.adminId || 'usr_me',
+      'Config Admin',
+      'remote_config_tune',
+      'feature',
+      featureId,
+      '{}',
+      JSON.stringify(customConfig),
+      reason.trim(),
+      req.ip || '127.0.0.1',
+      now
+    );
+
+    res.json({ success: true, featureId, customConfig });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update remote config', details: error.message });
+  }
+});
+
+// 17. Subscription Entitlements Management
+app.get('/api/admin/subscriptions/entitlements', requireAdminPermission('features', 'read'), (_req, res) => {
+  try {
+    const features = db.prepare('SELECT id, name, category, is_premium, default_state FROM feature_registry').all() as any[];
+    const flags = db.prepare('SELECT feature_id, allowed_tiers_json FROM feature_flags').all() as any[];
+    const flagMap = new Map(flags.map(f => [f.feature_id, JSON.parse(f.allowed_tiers_json || '[]')]));
+
+    const matrix = features.map(f => ({
+      featureId: f.id,
+      name: f.name,
+      category: f.category,
+      isPremium: Boolean(f.is_premium),
+      allowedTiers: flagMap.get(f.id) || ['free', 'plus', 'sovereign']
+    }));
+
+    res.json({
+      success: true,
+      tiers: [
+        { id: 'free', name: 'Standard Soulverse', badge: 'Free', description: 'Essential social, platonic circles, and messaging' },
+        { id: 'plus', name: 'Soulverse Plus', badge: 'Plus', description: 'Relationship Vault, Incognito mode, and unlimited personas' },
+        { id: 'sovereign', name: 'Sovereign Circle', badge: 'VIP', description: 'Cinematic world audio hosting and advanced AI matching' }
+      ],
+      matrix
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch subscription entitlements', details: error.message });
+  }
+});
+
+app.put('/api/admin/subscriptions/entitlements', requireAdminPermission('features', 'write'), (req, res) => {
+  try {
+    const { featureId, allowedTiers, reason = 'Subscription tier entitlements updated' } = req.body;
+    if (!featureId || !Array.isArray(allowedTiers)) {
+      return res.status(400).json({ error: 'featureId and allowedTiers array are required' });
+    }
+
+    const now = Date.now();
+    db.prepare(`
+      UPDATE feature_flags SET
+        allowed_tiers_json = ?,
+        updated_at = ?
+      WHERE feature_id = ?
+    `).run(JSON.stringify(allowedTiers), now, featureId);
+
+    // Audit log
+    db.prepare(`
+      INSERT INTO configuration_audit_logs (
+        id, admin_id, admin_name, action, target_type, target_id,
+        before_value_json, after_value_json, reason, ip_address, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      `audit_${uuidv4().slice(0, 8)}`,
+      req.adminId || 'usr_me',
+      'Billing Admin',
+      'entitlements_update',
+      'feature',
+      featureId,
+      '{}',
+      JSON.stringify(allowedTiers),
+      reason.trim(),
+      req.ip || '127.0.0.1',
+      now
+    );
+
+    res.json({ success: true, featureId, allowedTiers });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update entitlements', details: error.message });
+  }
+});
+
+// 18. System Operations: WAL Checkpoint & Vacuum
+app.post('/api/admin/system/wal-checkpoint', requireAdminPermission('system', 'write'), (_req, res) => {
+  try {
+    db.pragma('wal_checkpoint(TRUNCATE)');
+    res.json({ success: true, message: 'SQLite WAL checkpoint completed with TRUNCATE' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'WAL checkpoint failed', details: error.message });
+  }
+});
+
+app.post('/api/admin/system/vacuum', requireAdminPermission('system', 'write'), (_req, res) => {
+  try {
+    db.pragma('vacuum');
+    res.json({ success: true, message: 'SQLite database vacuumed and defragmented' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Database vacuum failed', details: error.message });
+  }
+});
+
 
 
 const PORT = 3001;

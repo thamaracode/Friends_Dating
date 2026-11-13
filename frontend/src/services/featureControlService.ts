@@ -601,4 +601,229 @@ export class FeatureControlService {
     const data = await res.json();
     return data.stats || [];
   }
+
+  // 11. Feature Glossary & "What's New" Discovery
+  public static async getGlossary(): Promise<any[]> {
+    try {
+      const res = await fetch(`${API_BASE}/features/glossary`);
+      const data = await res.json();
+      return data.glossary || data.terms || [];
+    } catch (e) {
+      console.error('Failed to fetch glossary', e);
+      return [];
+    }
+  }
+
+  public static async getWhatsNew(): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE}/features/whats-new`);
+      const data = await res.json();
+      return data;
+    } catch (e) {
+      console.error('Failed to fetch whats new', e);
+      return null;
+    }
+  }
+
+  // 12. Feature Dependency DAG Engine
+  public static async getDependencyGraph(): Promise<any[]> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/features/dependency-graph`);
+      const data = await res.json();
+      return data.graph || [];
+    } catch (e) {
+      console.error('Failed to fetch dependency graph', e);
+      return [];
+    }
+  }
+
+  public static async validateDependency(
+    featureId: string, 
+    dependsOnFeatureId: string
+  ): Promise<{ success: boolean; isCyclic?: boolean; message?: string; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/features/dependencies/validate`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-id': 'usr_me'
+        },
+        body: JSON.stringify({ featureId, dependsOnFeatureId })
+      });
+      const data = await res.json();
+      return data;
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  // 13. Configuration Versioning & 1-Click Rollback
+  public static async getConfigurationVersions(): Promise<any[]> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/configuration/versions`, {
+        headers: { 'x-admin-id': 'usr_me' }
+      });
+      const data = await res.json();
+      return data.versions || [];
+    } catch (e) {
+      console.error('Failed to fetch configuration versions', e);
+      return [];
+    }
+  }
+
+  public static async createConfigurationSnapshot(
+    changeSummary: string, 
+    adminId: string = 'usr_me'
+  ): Promise<{ success: boolean; versionId?: string; versionNumber?: number; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/configuration/create-snapshot`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-id': adminId
+        },
+        body: JSON.stringify({ changeSummary, adminId })
+      });
+      return await res.json();
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  public static async rollbackConfiguration(
+    versionId: string, 
+    reason: string, 
+    adminId: string = 'usr_me'
+  ): Promise<{ success: boolean; rolledBackToVersion?: number; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/configuration/rollback/${versionId}`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-id': adminId
+        },
+        body: JSON.stringify({ reason, adminId })
+      });
+      return await res.json();
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  // 14. Casbin RBAC Roles & Permissions
+  public static async getAdminRoles(): Promise<any[]> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/roles`, {
+        headers: { 'x-admin-id': 'usr_me' }
+      });
+      const data = await res.json();
+      return data.roles || [];
+    } catch (e) {
+      console.error('Failed to fetch admin roles', e);
+      return [];
+    }
+  }
+
+  public static async assignAdminRole(
+    userId: string, 
+    roleId: string, 
+    reason: string = 'Role assigned via Admin Console',
+    adminId: string = 'usr_me'
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/roles/assign`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-id': adminId
+        },
+        body: JSON.stringify({ userId, roleId, reason })
+      });
+      return await res.json();
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  // 15. Subscription Entitlements Matrix
+  public static async getSubscriptionEntitlements(): Promise<{ tiers: any[]; matrix: any[] }> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/subscriptions/entitlements`, {
+        headers: { 'x-admin-id': 'usr_me' }
+      });
+      const data = await res.json();
+      return { tiers: data.tiers || [], matrix: data.matrix || [] };
+    } catch (e) {
+      console.error('Failed to fetch subscription entitlements', e);
+      return { tiers: [], matrix: [] };
+    }
+  }
+
+  public static async updateSubscriptionEntitlements(
+    featureId: string, 
+    allowedTiers: string[], 
+    reason: string = 'Tier entitlements updated'
+  ): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/subscriptions/entitlements`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-id': 'usr_me'
+        },
+        body: JSON.stringify({ featureId, allowedTiers, reason })
+      });
+      return res.ok;
+    } catch (e) {
+      console.error('Failed to update subscription entitlements', e);
+      return false;
+    }
+  }
+
+  // 16. Remote Config JSON Editor
+  public static async updateRemoteConfig(
+    featureId: string, 
+    customConfig: any, 
+    reason: string = 'Remote config hot update'
+  ): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/features/${featureId}/config`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-id': 'usr_me'
+        },
+        body: JSON.stringify({ customConfig, reason })
+      });
+      return res.ok;
+    } catch (e) {
+      console.error('Failed to update remote config', e);
+      return false;
+    }
+  }
+
+  // 17. SQLite Database Operations
+  public static async walCheckpoint(): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/system/wal-checkpoint`, {
+        method: 'POST',
+        headers: { 'x-admin-id': 'usr_me' }
+      });
+      return await res.json();
+    } catch (e: any) {
+      return { error: e.message };
+    }
+  }
+
+  public static async vacuumDatabase(): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/system/vacuum`, {
+        method: 'POST',
+        headers: { 'x-admin-id': 'usr_me' }
+      });
+      return await res.json();
+    } catch (e: any) {
+      return { error: e.message };
+    }
+  }
 }
