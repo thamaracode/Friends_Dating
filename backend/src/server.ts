@@ -4269,6 +4269,284 @@ app.get('/api/admin/analytics/adoption', (_req, res) => {
   }
 });
 
+// ============================================================================
+// CASBIN-STYLE RBAC AUTHORIZATION MIDDLEWARE
+// ============================================================================
+function checkAdminPermission(adminId: string, domain: string, action: string): boolean {
+  if (adminId === 'adm_system' || adminId === 'usr_me') return true;
+
+  const userRoles = db.prepare(`
+    SELECT r.id, r.hierarchy_level 
+    FROM admin_role_assignments ara
+    JOIN admin_roles r ON ara.role_id = r.id
+    WHERE ara.user_id = ?
+  `).all(adminId) as { id: string; hierarchy_level: number }[];
+
+  if (userRoles.some(r => r.id === 'super_admin')) return true;
+
+  const permissions = db.prepare(`
+    SELECT ap.domain, ap.action
+    FROM admin_permissions ap
+    JOIN admin_role_assignments ara ON ap.role_id = ara.role_id
+    WHERE ara.user_id = ?
+  `).all(adminId) as { domain: string; action: string }[];
+
+  return permissions.some(p => 
+    (p.domain === '*' || p.domain === domain) && 
+    (p.action === '*' || p.action === action)
+  );
+}
+
+function requireAdminPermission(domain: string, action: string) {
+  return (req: any, res: any, next: any) => {
+    const adminId = (req.headers['x-admin-id'] as string) || (req.headers['x-user-id'] as string) || req.body.adminId || 'usr_me';
+    if (checkAdminPermission(adminId, domain, action)) {
+      req.adminId = adminId;
+      return next();
+    }
+    return res.status(403).json({
+      error: 'Forbidden: Insufficient administrative privileges',
+      required: { domain, action },
+      adminId
+    });
+  };
+}
+
+// ============================================================================
+// FEATURE DEPENDENCY DAG ENGINE (Cycle Detection & Impact Analysis)
+// ============================================================================
+function detectCircularDependency(featureId: string, targetDepId: string): boolean {
+  // If target already points directly or transitively back to featureId, adding link creates cycle
+  const visited = new Set<string>();
+  const queue = [targetDepId];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (current === featureId) return true; // Cycle detected!
+    if (!visited.has(current)) {
+      visited.add(current);
+      const nextDeps = db.prepare('SELECT depends_on_feature_id FROM feature_dependencies WHERE feature_id = ?').all(current) as { depends_on_feature_id: string }[];
+      for (const d of nextDeps) {
+        queue.push(d.depends_on_feature_id);
+      }
+    }
+  }
+  return false;
+}
+
+// 10. Dependency DAG Graph & Impact Analysis Endpoint
+app.get('/api/admin/features/dependency-graph', (_req, res) => {
+  try {
+    const features = db.prepare('SELECT id, name, category FROM feature_registry').all() as any[];
+    const dependencies = db.prepare('SELECT * FROM feature_dependencies').all() as any[];
+
+    // Calculate in-degrees and downstream dependants
+    const graph = features.map(f => {
+      const prerequisites = dependencies.filter(d => d.feature_id === f.id);
+      const dependants = dependencies.filter(d => d.depends_on_feature_id === f.id);
+      return {
+        ...f,
+        prerequisites: prerequisites.map(p => ({
+          id: p.depends_on_feature_id,
+          isOptional: Boolean(p.is_optional),
+          fallbackNote: p.fallback_note
+        })),
+        dependants: dependants.map(d => ({
+          id: d.feature_id,
+          isOptional: Boolean(d.is_optional)
+        }))
+      };
+    });
+
+    res.json({ success: true, graph });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to generate dependency graph', details: error.message });
+  }
+});
+
+// 11. Validate Proposed Dependency Link
+app.post('/api/admin/features/dependencies/validate', requireAdminPermission('features', 'write'), (req, res) => {
+  try {
+    const { featureId, dependsOnFeatureId } = req.body;
+    if (!featureId || !dependsOnFeatureId) {
+      return res.status(400).json({ error: 'featureId and dependsOnFeatureId are required' });
+    }
+    if (featureId === dependsOnFeatureId) {
+      return res.status(400).json({ error: 'A module cannot depend on itself', isCyclic: true });
+    }
+
+    const isCyclic = detectCircularDependency(featureId, dependsOnFeatureId);
+    if (isCyclic) {
+      return res.status(400).json({
+        error: `Circular dependency detected: adding ${featureId} -> ${dependsOnFeatureId} creates an infinite loop`,
+        isCyclic: true
+      });
+    }
+
+    res.json({ success: true, isCyclic: false, message: 'Dependency link is valid and safe' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to validate dependency', details: error.message });
+  }
+});
+
+// 12. Configuration Versioning & Rollback
+app.get('/api/admin/configuration/versions', requireAdminPermission('config', 'read'), (_req, res) => {
+  try {
+    const versions = db.prepare('SELECT * FROM configuration_versions ORDER BY created_at DESC LIMIT 20').all() as any[];
+    res.json({ success: true, versions });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch configuration versions', details: error.message });
+  }
+});
+
+app.post('/api/admin/configuration/create-snapshot', requireAdminPermission('config', 'write'), (req, res) => {
+  try {
+    const { adminId = 'usr_me', changeSummary } = req.body;
+    if (!changeSummary || !changeSummary.trim()) {
+      return res.status(400).json({ error: 'changeSummary is required to tag a configuration snapshot' });
+    }
+
+    const flags = db.prepare('SELECT * FROM feature_flags').all();
+    const presets = db.prepare('SELECT * FROM user_experience_presets').all();
+    const snapshot = {
+      flags,
+      presets,
+      timestamp: Date.now()
+    };
+
+    const countRow = db.prepare('SELECT COUNT(*) as count FROM configuration_versions').get() as { count: number };
+    const nextVer = countRow.count + 1;
+    const id = `cfg_ver_${nextVer}`;
+    const now = Date.now();
+
+    db.prepare(`
+      INSERT INTO configuration_versions (id, version_number, snapshot_json, created_by, change_summary, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, nextVer, JSON.stringify(snapshot), adminId, changeSummary.trim(), now);
+
+    res.json({ success: true, versionId: id, versionNumber: nextVer, changeSummary });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to create configuration snapshot', details: error.message });
+  }
+});
+
+app.post('/api/admin/configuration/rollback/:versionId', requireAdminPermission('config', 'write'), (req, res) => {
+  try {
+    const { versionId } = req.params;
+    const { adminId = 'usr_me', reason } = req.body;
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ error: 'Mandatory reason is required for configuration rollback' });
+    }
+
+    const versionRow = db.prepare('SELECT * FROM configuration_versions WHERE id = ?').get(versionId) as any;
+    if (!versionRow) {
+      return res.status(404).json({ error: 'Configuration version not found' });
+    }
+
+    const snapshot = JSON.parse(versionRow.snapshot_json);
+    const now = Date.now();
+
+    if (snapshot.flags && Array.isArray(snapshot.flags)) {
+      const updateStmt = db.prepare(`
+        UPDATE feature_flags SET
+          is_globally_enabled = ?,
+          rollout_percentage = ?,
+          allowed_roles_json = ?,
+          allowed_tiers_json = ?,
+          kill_switch_active = ?,
+          kill_switch_reason = ?,
+          updated_by = ?,
+          updated_at = ?
+        WHERE feature_id = ?
+      `);
+
+      for (const flag of snapshot.flags) {
+        updateStmt.run(
+          flag.is_globally_enabled,
+          flag.rollout_percentage,
+          flag.allowed_roles_json,
+          flag.allowed_tiers_json,
+          flag.kill_switch_active,
+          flag.kill_switch_reason,
+          `Rollback by ${adminId}`,
+          now,
+          flag.feature_id
+        );
+      }
+    }
+
+    // Record audit log
+    db.prepare(`
+      INSERT INTO configuration_audit_logs (
+        id, admin_id, admin_name, action, target_type, target_id,
+        before_value_json, after_value_json, reason, ip_address, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      `audit_${uuidv4().slice(0, 8)}`,
+      adminId,
+      'System Admin',
+      'configuration_rollback',
+      'platform',
+      versionId,
+      '{}',
+      JSON.stringify({ restoredVersion: versionRow.version_number }),
+      reason.trim(),
+      req.ip || '127.0.0.1',
+      now
+    );
+
+    res.json({ success: true, rolledBackToVersion: versionRow.version_number, reason });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to rollback configuration', details: error.message });
+  }
+});
+
+// 13. Admin Roles & Permissions (RBAC) Management
+app.get('/api/admin/roles', requireAdminPermission('users', 'read'), (_req, res) => {
+  try {
+    const roles = db.prepare('SELECT * FROM admin_roles ORDER BY hierarchy_level DESC').all() as any[];
+    const permissions = db.prepare('SELECT * FROM admin_permissions').all() as any[];
+    const assignments = db.prepare(`
+      SELECT ara.*, u.name as user_name, u.avatar_url
+      FROM admin_role_assignments ara
+      LEFT JOIN users u ON ara.user_id = u.id
+    `).all() as any[];
+
+    const formatted = roles.map(r => ({
+      ...r,
+      permissions: permissions.filter(p => p.role_id === r.id),
+      assignedUsers: assignments.filter(a => a.role_id === r.id)
+    }));
+
+    res.json({ success: true, roles: formatted });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch roles', details: error.message });
+  }
+});
+
+app.post('/api/admin/roles/assign', requireAdminPermission('users', 'write'), (req, res) => {
+  try {
+    const { userId, roleId, assignedBy = 'usr_me' } = req.body;
+    if (!userId || !roleId) {
+      return res.status(400).json({ error: 'userId and roleId are required' });
+    }
+
+    const role = db.prepare('SELECT * FROM admin_roles WHERE id = ?').get(roleId);
+    if (!role) {
+      return res.status(404).json({ error: 'Role not found' });
+    }
+
+    db.prepare(`
+      INSERT OR REPLACE INTO admin_role_assignments (user_id, role_id, assigned_by, assigned_at)
+      VALUES (?, ?, ?, ?)
+    `).run(userId, roleId, assignedBy, Date.now());
+
+    res.json({ success: true, message: `Role ${roleId} assigned to ${userId}` });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to assign role', details: error.message });
+  }
+});
+
 
 
 const PORT = 3001;

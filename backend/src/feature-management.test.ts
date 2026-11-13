@@ -195,4 +195,89 @@ describe('Feature Management & Personalization Architecture (The Control Layer)'
     expect(Array.isArray(body.stats)).toBe(true);
     expect(body.stats.length).toBeGreaterThanOrEqual(16);
   });
+
+  it('8. GET /api/admin/features/dependency-graph returns DAG topology with dependants and prerequisites', async () => {
+    const res = await fetch(`${BASE_URL}/admin/features/dependency-graph`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(Array.isArray(body.graph)).toBe(true);
+
+    const vaultNode = body.graph.find((n: any) => n.id === 'feat_relationship_vault');
+    expect(vaultNode).toBeDefined();
+    expect(Array.isArray(vaultNode.prerequisites)).toBe(true);
+    expect(vaultNode.prerequisites.some((p: any) => p.id === 'feat_friendships')).toBe(true);
+  });
+
+  it('9. POST /api/admin/features/dependencies/validate detects and rejects circular dependencies', async () => {
+    // Attempt to add self-dependency
+    const selfRes = await fetch(`${BASE_URL}/admin/features/dependencies/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        featureId: 'feat_dating',
+        dependsOnFeatureId: 'feat_dating'
+      })
+    });
+    expect(selfRes.status).toBe(400);
+
+    // Attempt to create circular dependency (feat_friendships -> feat_relationship_vault, when vault already depends on friendships)
+    const cyclicRes = await fetch(`${BASE_URL}/admin/features/dependencies/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        featureId: 'feat_friendships',
+        dependsOnFeatureId: 'feat_relationship_vault'
+      })
+    });
+    expect(cyclicRes.status).toBe(400);
+    const cyclicBody = await cyclicRes.json();
+    expect(cyclicBody.isCyclic).toBe(true);
+  });
+
+  it('10. Configuration Versioning & Rollback snapshots platform state and restores accurately', async () => {
+    // Create snapshot
+    const snapRes = await fetch(`${BASE_URL}/admin/configuration/create-snapshot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        adminId: 'usr_me',
+        changeSummary: 'Pre-flight production baseline snapshot'
+      })
+    });
+    expect(snapRes.status).toBe(200);
+    const snapBody = await snapRes.json();
+    expect(snapBody.success).toBe(true);
+    expect(snapBody.versionId).toBeDefined();
+
+    // Rollback to version
+    const rollbackRes = await fetch(`${BASE_URL}/admin/configuration/rollback/${snapBody.versionId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        adminId: 'usr_me',
+        reason: 'Testing safe configuration rollback procedure'
+      })
+    });
+    expect(rollbackRes.status).toBe(200);
+    const rollbackBody = await rollbackRes.json();
+    expect(rollbackBody.success).toBe(true);
+  });
+
+  it('11. Casbin-Style RBAC Authorization enforces role clearance and denies unauthorized callers', async () => {
+    // 'usr_me' has super_admin permission
+    const authRes = await fetch(`${BASE_URL}/admin/roles`, {
+      headers: { 'x-admin-id': 'usr_me' }
+    });
+    expect(authRes.status).toBe(200);
+    const authBody = await authRes.json();
+    expect(authBody.success).toBe(true);
+    expect(authBody.roles.length).toBe(8);
+
+    // Unregistered attacker ID without assigned roles should be denied with HTTP 403
+    const deniedRes = await fetch(`${BASE_URL}/admin/roles`, {
+      headers: { 'x-admin-id': 'unauthorized_attacker_id' }
+    });
+    expect(deniedRes.status).toBe(403);
+  });
 });

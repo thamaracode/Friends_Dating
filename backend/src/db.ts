@@ -975,6 +975,45 @@ export function initDatabase() {
       created_at INTEGER NOT NULL
     );
 
+    -- =========================================================================
+    -- CASBIN-STYLE RBAC AUTHORIZATION SCHEMA
+    -- =========================================================================
+    CREATE TABLE IF NOT EXISTS admin_roles (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL,
+      hierarchy_level INTEGER NOT NULL DEFAULT 1
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_role_assignments (
+      user_id TEXT NOT NULL,
+      role_id TEXT NOT NULL,
+      assigned_by TEXT NOT NULL,
+      assigned_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, role_id),
+      FOREIGN KEY (role_id) REFERENCES admin_roles(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_permissions (
+      id TEXT PRIMARY KEY,
+      role_id TEXT NOT NULL,
+      domain TEXT NOT NULL,
+      action TEXT NOT NULL,
+      FOREIGN KEY (role_id) REFERENCES admin_roles(id) ON DELETE CASCADE
+    );
+
+    -- =========================================================================
+    -- CONFIGURATION VERSIONING & ROLLBACK SCHEMA
+    -- =========================================================================
+    CREATE TABLE IF NOT EXISTS configuration_versions (
+      id TEXT PRIMARY KEY,
+      version_number INTEGER NOT NULL,
+      snapshot_json TEXT NOT NULL,
+      created_by TEXT NOT NULL,
+      change_summary TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_feat_pref_user ON user_feature_preferences(user_id, state);
     CREATE INDEX IF NOT EXISTS idx_audit_created ON configuration_audit_logs(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_feat_usage_time ON feature_usage_events(feature_id, event_type, created_at);
@@ -2387,11 +2426,10 @@ function seedSoulverseExpansionData() {
 
 function seedFeatureControlLayer() {
   const existingCount = db.prepare('SELECT COUNT(*) as count FROM feature_registry').get() as { count: number };
-  if (existingCount.count > 0) return;
-
   const now = Date.now();
 
-  const insertFeature = db.prepare(`
+  if (existingCount.count === 0) {
+    const insertFeature = db.prepare(`
     INSERT OR IGNORE INTO feature_registry (
       id, name, category, tagline, description, default_state, is_user_configurable,
       privacy_level, collected_data_json, visibility_audience, requires_ai,
@@ -2776,4 +2814,74 @@ function seedFeatureControlLayer() {
     '127.0.0.1',
     now
   );
+  }
+
+  // Seed 8 Administrator Roles
+  const roleCount = db.prepare('SELECT COUNT(*) as count FROM admin_roles').get() as { count: number };
+  if (roleCount.count === 0) {
+    const insertRole = db.prepare(`
+      INSERT OR IGNORE INTO admin_roles (id, name, description, hierarchy_level)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    const roles = [
+      { id: 'super_admin', name: 'Super Administrator', description: 'Unrestricted master operations and configuration governance.', level: 100 },
+      { id: 'product_admin', name: 'Product Administrator', description: 'Feature flags, rollout percentages, and experience presets.', level: 80 },
+      { id: 'technical_admin', name: 'Technical Administrator', description: 'Infrastructure health, WAL checkpoints, and API integrations.', level: 80 },
+      { id: 'security_admin', name: 'Security Administrator', description: 'Emergency kill-switches, audit inspection, and trust policies.', level: 90 },
+      { id: 'moderator', name: 'Trust & Safety Moderator', description: 'Report triage, safety queues, and account suspensions.', level: 50 },
+      { id: 'support_admin', name: 'Support Administrator', description: 'User account triage, verification reviews, and assistance.', level: 40 },
+      { id: 'content_admin', name: 'Content Administrator', description: 'Curated quotes, daily prompts, and Spotify music playlists.', level: 40 },
+      { id: 'analyst', name: 'Telemetry Analyst', description: 'Read-only access to aggregated feature adoption analytics.', level: 20 }
+    ];
+
+    for (const r of roles) {
+      insertRole.run(r.id, r.name, r.description, r.level);
+    }
+
+    // Seed Admin Permissions
+    const insertPerm = db.prepare(`
+      INSERT OR IGNORE INTO admin_permissions (id, role_id, domain, action)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    const permissions = [
+      { id: 'perm_super_all', role_id: 'super_admin', domain: '*', action: '*' },
+      { id: 'perm_prod_feat', role_id: 'product_admin', domain: 'features', action: 'write' },
+      { id: 'perm_prod_conf', role_id: 'product_admin', domain: 'config', action: 'write' },
+      { id: 'perm_prod_anal', role_id: 'product_admin', domain: 'analytics', action: 'read' },
+      { id: 'perm_sec_kill', role_id: 'security_admin', domain: 'kill_switch', action: 'trip' },
+      { id: 'perm_sec_audit', role_id: 'security_admin', domain: 'audit', action: 'read' },
+      { id: 'perm_mod_safe', role_id: 'moderator', domain: 'safety', action: 'write' },
+      { id: 'perm_supp_user', role_id: 'support_admin', domain: 'users', action: 'write' },
+      { id: 'perm_cont_edit', role_id: 'content_admin', domain: 'content', action: 'write' },
+      { id: 'perm_anal_read', role_id: 'analyst', domain: 'analytics', action: 'read' }
+    ];
+
+    for (const p of permissions) {
+      insertPerm.run(p.id, p.role_id, p.domain, p.action);
+    }
+
+    // Assign 'usr_me' as super_admin for local governance
+    db.prepare(`
+      INSERT OR IGNORE INTO admin_role_assignments (user_id, role_id, assigned_by, assigned_at)
+      VALUES (?, ?, ?, ?)
+    `).run('usr_me', 'super_admin', 'adm_system', now);
+  }
+
+  // Seed baseline configuration version
+  const verCount = db.prepare('SELECT COUNT(*) as count FROM configuration_versions').get() as { count: number };
+  if (verCount.count === 0) {
+    db.prepare(`
+      INSERT OR IGNORE INTO configuration_versions (id, version_number, snapshot_json, created_by, change_summary, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      'cfg_ver_1',
+      1,
+      JSON.stringify({ activePreset: 'complete', defaultRollout: 100 }),
+      'adm_system',
+      'Baseline configuration version 1.0.0 seeded with all 16 master features',
+      now
+    );
+  }
 }
