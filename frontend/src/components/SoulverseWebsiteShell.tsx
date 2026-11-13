@@ -35,7 +35,8 @@ import {
   Smartphone,
   Monitor,
   Wifi,
-  Battery
+  Battery,
+  Mail
 } from 'lucide-react';
 import { SearchBar, PulseBadge } from './klyven';
 
@@ -73,6 +74,8 @@ import { CinematicAmbientBackground } from './CinematicAmbientBackground';
 import { SpotifyPlayerWidget } from './SpotifyPlayerWidget';
 import { LinkSpotifyModal } from './LinkSpotifyModal';
 import { useSpotifyMusic } from '../context/SpotifyMusicContext';
+import { TheUnspokenSanctuary } from './emotional/TheUnspokenSanctuary';
+import { UnopenedLetterModal } from './emotional/UnopenedLetterModal';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -101,6 +104,8 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const [isCrisisModalOpen, setIsCrisisModalOpen] = useState(false);
   const [isReadmeModalOpen, setIsReadmeModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUnspokenOpen, setIsUnspokenOpen] = useState(false);
+  const [isLetterOpen, setIsLetterOpen] = useState(false);
   const [targetWorldId, setTargetWorldId] = useState<string | null>(null);
 
   // Map route to 5 primary mobile destinations
@@ -118,7 +123,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       const hash = window.location.hash.replace('#', '') as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
         'home', 'daily', 'discover', 'connect', 'connections', 'messages', 'inbox', 'profile', 
-        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin'
+        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken'
       ];
       if (validRoutes.includes(hash)) {
         setCurrentRoute(hash);
@@ -143,6 +148,11 @@ export const SoulverseWebsiteShell: React.FC = () => {
   }, []);
 
   const navigateTo = (route: SoulverseRoute) => {
+    if (route === 'unspoken') {
+      setIsUnspokenOpen(true);
+      setIsMobileMenuOpen(false);
+      return;
+    }
     setCurrentRoute(route);
     window.location.hash = `#${route}`;
     setIsMobileMenuOpen(false);
@@ -189,6 +199,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
   const navItems = [
     { id: 'discover' as SoulverseRoute, label: 'Discover', icon: Compass },
+    { id: 'unspoken' as SoulverseRoute, label: 'The Unspoken', icon: Sparkles, badge: 'Inner' },
     { id: 'connect' as SoulverseRoute, label: 'Connect & Social', icon: Users, badge: 'Live' },
     { id: 'connections' as SoulverseRoute, label: 'Relationship Vault', icon: Heart, badge: 'Vault' },
     { id: 'messages' as SoulverseRoute, label: 'Messages & Rooms', icon: MessageCircle, badge: '3' },
@@ -260,8 +271,28 @@ export const SoulverseWebsiteShell: React.FC = () => {
           )}
         </div>
 
-        {/* Right Actions: 1926 Safety, Device Mode Switcher & Profile Avatar */}
+        {/* Right Actions: 1926 Safety, Unopened Letter, Unspoken, Device Mode Switcher & Profile Avatar */}
         <div className="flex items-center gap-2">
+          {/* Unopened Letter Easter Egg Button */}
+          <button
+            onClick={() => setIsLetterOpen(true)}
+            className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/25 text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 relative"
+            title="You found an unopened letter in the universe..."
+          >
+            <Mail className="w-3.5 h-3.5 text-amber-300" />
+            <span className="hidden md:inline text-[11px] font-medium">Letter</span>
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B] animate-pulse" />
+          </button>
+
+          {/* The Unspoken Sanctuary Quick Button */}
+          <button
+            onClick={() => setIsUnspokenOpen(true)}
+            className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 border border-white/10 text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5"
+            title="Open The Unspoken Sanctuary"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
+            <span className="hidden md:inline text-[11px]">The Unspoken</span>
+          </button>
           {/* Desktop Only: Toggle Mobile Device Frame Preview vs Fluid Canvas */}
           <div className="hidden md:flex items-center bg-white/[0.06] p-0.5 rounded-xl border border-white/10 text-xs">
             <button
@@ -464,6 +495,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
                 onOpenProfile={(p) => setInspectedProfile(p)}
                 onInitiateChat={handleInitiateChat}
                 onOpenDailyHub={() => navigateTo('daily')}
+                onOpenUnspoken={() => setIsUnspokenOpen(true)}
               />
             )}
 
@@ -474,6 +506,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
                 onOpenJournal={() => setIsReadmeModalOpen(true)}
                 onOpenSoloPrompt={() => navigateTo('daily')}
                 onOpenVault={() => navigateTo('connections')}
+                onOpenUnspoken={() => setIsUnspokenOpen(true)}
               />
             )}
 
@@ -496,6 +529,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
                 onNavigateToAdmin={() => navigateTo('admin')}
                 onOpenCharacterBuilder={() => navigateTo('identities')}
                 onEditProfileModal={() => setIsEditProfileModalOpen(true)}
+                onOpenUnspoken={() => setIsUnspokenOpen(true)}
               />
             )}
 
@@ -651,6 +685,18 @@ export const SoulverseWebsiteShell: React.FC = () => {
       <CrisisSupportModal 
         isOpen={isCrisisModalOpen}
         onClose={() => setIsCrisisModalOpen(false)} 
+      />
+
+      {/* The Unspoken Signature Sanctuary Modal */}
+      <TheUnspokenSanctuary
+        isOpen={isUnspokenOpen}
+        onClose={() => setIsUnspokenOpen(false)}
+      />
+
+      {/* Unopened Letter Easter Egg Modal */}
+      <UnopenedLetterModal
+        isOpen={isLetterOpen}
+        onClose={() => setIsLetterOpen(false)}
       />
 
       {/* ===================================================================== */}

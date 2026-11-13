@@ -15,6 +15,7 @@ export type SoulverseRoute =
   | 'settings'
   | 'more'
   | 'journal'
+  | 'unspoken'
   | 'admin';
 
 export type MobilePrimaryTab = 'discover' | 'connect' | 'create' | 'inbox' | 'profile';

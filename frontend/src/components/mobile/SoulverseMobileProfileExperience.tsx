@@ -26,6 +26,7 @@ import {
 import { CURRENT_USER } from '../../mockData';
 import { useSpotifyMusic } from '../../context/SpotifyMusicContext';
 import type { UserProfile } from '../../types';
+import { ContextualEmotionalBanner } from '../emotional/ContextualEmotionalBanner';
 
 interface SoulverseMobileProfileExperienceProps {
   onNavigateToSettings: () => void;
@@ -33,6 +34,7 @@ interface SoulverseMobileProfileExperienceProps {
   onNavigateToAdmin: () => void;
   onOpenCharacterBuilder: () => void;
   onEditProfileModal: () => void;
+  onOpenUnspoken?: () => void;
 }
 
 export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileExperienceProps> = ({
@@ -40,7 +42,8 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
   onNavigateToTimeline,
   onNavigateToAdmin,
   onOpenCharacterBuilder,
-  onEditProfileModal
+  onEditProfileModal,
+  onOpenUnspoken
 }) => {
   const profile = CURRENT_USER;
   const { track: _spotifyTrack, isPlaying: _isSpotifyPlaying, togglePlay: _togglePlay, setIsLinkModalOpen } = useSpotifyMusic();
@@ -279,6 +282,12 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
           </button>
         </div>
       </div>
+
+      {/* CONTEXTUAL EMOTIONAL LAYER ("Beyond What People See") */}
+      <ContextualEmotionalBanner 
+        page="profile" 
+        onOpenUnspoken={onOpenUnspoken} 
+      />
 
       {/* 2. PERSONA SWITCHER PILLS (Real Me, Cinematic Me, Fantasy Life, Aspirational) */}
       <div className="space-y-1.5">

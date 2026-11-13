@@ -46,7 +46,8 @@ import {
   Archive,
   VolumeX,
   UserX,
-  Info
+  Info,
+  Heart
 } from 'lucide-react';
 import { MOCK_PROFILES, CURRENT_USER } from '../mockData';
 import { VoiceWaveformPlayer } from './VoiceWaveformPlayer';
@@ -54,6 +55,7 @@ import { TelegramLuckEmoji } from './TelegramLuckEmoji';
 import { chatClient } from '../services/chatApiClient';
 import { BeforeYouTalkSheet } from './vault/BeforeYouTalkSheet';
 import { RelationshipVaultService } from '../services/relationshipVaultService';
+import { TwoPersonQuestionModal } from './emotional/TwoPersonQuestionModal';
 import type { UserProfile } from '../types';
 import type { 
   ChatMessage, 
@@ -84,6 +86,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isBriefingOpen, setIsBriefingOpen] = useState(false);
+  const [isTwoPersonOpen, setIsTwoPersonOpen] = useState(false);
 
   // Desktop vs Mobile responsive state
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
@@ -844,6 +847,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             >
               <Sparkles className="w-3 h-3 text-rose-300" />
               <span className="hidden sm:inline">Before You Talk</span>
+            </button>
+            {/* One Question, Two People Mutual Game Pill */}
+            <button
+              onClick={() => setIsTwoPersonOpen(true)}
+              className="px-2.5 py-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-sm"
+              title="One Question, Two People Mutual Game"
+            >
+              <Heart className="w-3 h-3 text-purple-300" />
+              <span className="hidden sm:inline">2-Person Q</span>
             </button>
             {/* Fullscreen / Edge-to-Edge Web Toggle */}
             <button
@@ -1667,6 +1679,14 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
           }
         />
       )}
+
+      {/* One Question, Two People Modal */}
+      <TwoPersonQuestionModal
+        isOpen={isTwoPersonOpen}
+        onClose={() => setIsTwoPersonOpen(false)}
+        partnerName={currentConv?.title}
+        partnerAvatar={currentConv?.avatar}
+      />
     </div>
   );
 };

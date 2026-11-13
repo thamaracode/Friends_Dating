@@ -23,17 +23,20 @@ import {
 } from 'lucide-react';
 import { MOCK_PROFILES, CURRENT_USER } from '../../mockData';
 import type { UserProfile } from '../../types';
+import { ContextualEmotionalBanner } from '../emotional/ContextualEmotionalBanner';
 
 interface SoulverseMobileDiscoverExperienceProps {
   onOpenProfile: (profile: UserProfile) => void;
   onInitiateChat: (profile: UserProfile) => void;
   onOpenDailyHub?: () => void;
+  onOpenUnspoken?: () => void;
 }
 
 export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscoverExperienceProps> = ({
   onOpenProfile,
   onInitiateChat,
-  onOpenDailyHub
+  onOpenDailyHub,
+  onOpenUnspoken
 }) => {
   // Discovery View Mode: 'feed' (vertical scrolling) vs 'swipe' (card stack)
   const [viewMode, setViewMode] = useState<'feed' | 'swipe'>('feed');
@@ -146,6 +149,12 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
           </button>
         ))}
       </div>
+
+      {/* 2.5. CONTEXTUAL EMOTIONAL LAYER ("The Question You Weren't Expecting") */}
+      <ContextualEmotionalBanner 
+        page="discover" 
+        onOpenUnspoken={onOpenUnspoken} 
+      />
 
       {/* 3. EMBEDDED DAILY HUMAN CONNECTION INTELLIGENCE CARD */}
       <div className="rounded-3xl dark-glass border border-white/[0.12] p-4 sm:p-5 relative overflow-hidden shadow-2xl">

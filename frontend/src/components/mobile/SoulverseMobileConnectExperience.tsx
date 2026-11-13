@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { MOCK_EVENTS, MOCK_CIRCLES } from '../../mockData';
 import type { FriendsEvent, SocialCircle } from '../../types';
+import { ContextualEmotionalBanner } from '../emotional/ContextualEmotionalBanner';
 
 interface SoulverseMobileConnectExperienceProps {
   onOpenEventDetail?: (event: FriendsEvent) => void;
@@ -28,6 +29,7 @@ interface SoulverseMobileConnectExperienceProps {
   onOpenJournal?: () => void;
   onOpenSoloPrompt?: (promptId: string) => void;
   onOpenVault?: () => void;
+  onOpenUnspoken?: () => void;
 }
 
 export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectExperienceProps> = ({
@@ -35,7 +37,8 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
   onOpenWorld,
   onOpenJournal,
   onOpenSoloPrompt,
-  onOpenVault
+  onOpenVault,
+  onOpenUnspoken
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'vault' | 'events' | 'communities' | 'watch_parties' | 'solo' | 'worlds'>('all');
   const [rsvpStates, setRsvpStates] = useState<Record<string, boolean>>({
@@ -93,6 +96,12 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
           </button>
         ))}
       </div>
+
+      {/* CONTEXTUAL EMOTIONAL LAYER ("Human Connection") */}
+      <ContextualEmotionalBanner 
+        page="connect" 
+        onOpenUnspoken={onOpenUnspoken} 
+      />
 
       {/* ===================================================================== */}
       {/* SECTION 0: PERSONAL RELATIONSHIP MANAGEMENT (RELATIONSHIP VAULT)      */}
