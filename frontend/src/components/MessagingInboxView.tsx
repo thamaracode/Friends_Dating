@@ -52,6 +52,8 @@ import { MOCK_PROFILES, CURRENT_USER } from '../mockData';
 import { VoiceWaveformPlayer } from './VoiceWaveformPlayer';
 import { TelegramLuckEmoji } from './TelegramLuckEmoji';
 import { chatClient } from '../services/chatApiClient';
+import { BeforeYouTalkSheet } from './vault/BeforeYouTalkSheet';
+import { RelationshipVaultService } from '../services/relationshipVaultService';
 import type { UserProfile } from '../types';
 import type { 
   ChatMessage, 
@@ -81,6 +83,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isBriefingOpen, setIsBriefingOpen] = useState(false);
 
   // Desktop vs Mobile responsive state
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
@@ -833,6 +836,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
           {/* Calling, Search & Settings Options */}
           <div className="flex items-center gap-1.5">
+            {/* Before You Talk / Relationship Memory Briefing Pill */}
+            <button
+              onClick={() => setIsBriefingOpen(true)}
+              className="px-2.5 py-1 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-sm"
+              title="Before You Talk Instant Briefing"
+            >
+              <Sparkles className="w-3 h-3 text-rose-300" />
+              <span className="hidden sm:inline">Before You Talk</span>
+            </button>
             {/* Fullscreen / Edge-to-Edge Web Toggle */}
             <button
               onClick={() => setIsEdgeToEdge(!isEdgeToEdge)}
@@ -1639,6 +1651,21 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Before You Talk Briefing Sheet */}
+      {currentConv && (
+        <BeforeYouTalkSheet
+          isOpen={isBriefingOpen}
+          onClose={() => setIsBriefingOpen(false)}
+          profile={
+            RelationshipVaultService.getProfiles().find(p => 
+              p.name.toLowerCase().includes(currentConv.title.toLowerCase()) || 
+              currentConv.title.toLowerCase().includes(p.name.toLowerCase()) ||
+              p.id === currentConv.participantId
+            ) || RelationshipVaultService.getProfiles()[0]
+          }
+        />
       )}
     </div>
   );

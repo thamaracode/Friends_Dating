@@ -27,15 +27,17 @@ interface SoulverseMobileConnectExperienceProps {
   onOpenWorld?: (worldId: string) => void;
   onOpenJournal?: () => void;
   onOpenSoloPrompt?: (promptId: string) => void;
+  onOpenVault?: () => void;
 }
 
 export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectExperienceProps> = ({
   onOpenEventDetail,
   onOpenWorld,
   onOpenJournal,
-  onOpenSoloPrompt
+  onOpenSoloPrompt,
+  onOpenVault
 }) => {
-  const [activeTab, setActiveTab] = useState<'all' | 'events' | 'communities' | 'watch_parties' | 'solo' | 'worlds'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'vault' | 'events' | 'communities' | 'watch_parties' | 'solo' | 'worlds'>('all');
   const [rsvpStates, setRsvpStates] = useState<Record<string, boolean>>({
     'evt_1': true
   });
@@ -53,6 +55,7 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
 
   const filterTabs = [
     { id: 'all' as const, label: 'All Experiences' },
+    { id: 'vault' as const, label: '🔐 Relationship Vault' },
     { id: 'events' as const, label: '🎪 Events & Meetups' },
     { id: 'communities' as const, label: '👥 Communities' },
     { id: 'watch_parties' as const, label: '🍿 Watch Parties' },
@@ -90,6 +93,55 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
           </button>
         ))}
       </div>
+
+      {/* ===================================================================== */}
+      {/* SECTION 0: PERSONAL RELATIONSHIP MANAGEMENT (RELATIONSHIP VAULT)      */}
+      {/* ===================================================================== */}
+      {(activeTab === 'all' || activeTab === 'vault') && (
+        <div className="p-4 sm:p-5 rounded-3xl dark-glass border border-white/15 shadow-xl relative overflow-hidden bg-gradient-to-r from-rose-950/20 via-white/[0.02] to-transparent space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_8px_#F43F5E]" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-300">
+                Core Pillar · Private Memory
+              </span>
+            </div>
+            <button
+              onClick={onOpenVault}
+              className="text-[11px] font-bold text-white hover:text-rose-300 flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <span>Open Vault</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-white tracking-tight">
+              Relationship Vault & Connection Memory
+            </h3>
+            <p className="text-xs text-zinc-300 mt-1 leading-relaxed">
+              Never lose touch with what matters. Access "Before You Talk" instant briefings, promise tracking, and personal memories for your partners and friends.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between pt-1 border-t border-white/[0.08] text-xs">
+            <div className="flex items-center gap-2 text-zinc-400 text-[11px]">
+              <span>🔒 100% Private</span>
+              <span>·</span>
+              <span>⚡ Prospective Memory</span>
+              <span>·</span>
+              <span>🤝 Promise Tracker</span>
+            </div>
+
+            <button
+              onClick={onOpenVault}
+              className="px-3 py-1.5 rounded-xl bg-white text-[#090A0E] text-xs font-bold hover:brightness-110 shadow-md cursor-pointer transition-all"
+            >
+              Launch Vault
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ===================================================================== */}
       {/* SECTION 1: SYNCHRONIZED WATCH PARTIES (Studio Ghibli & Lo-Fi Lounge)   */}

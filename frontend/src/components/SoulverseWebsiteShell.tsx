@@ -190,6 +190,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const navItems = [
     { id: 'discover' as SoulverseRoute, label: 'Discover', icon: Compass },
     { id: 'connect' as SoulverseRoute, label: 'Connect & Social', icon: Users, badge: 'Live' },
+    { id: 'connections' as SoulverseRoute, label: 'Relationship Vault', icon: Heart, badge: 'Vault' },
     { id: 'messages' as SoulverseRoute, label: 'Messages & Rooms', icon: MessageCircle, badge: '3' },
     { id: 'profile' as SoulverseRoute, label: 'My Identities', icon: User },
     { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily' },
@@ -472,6 +473,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
                 onOpenWorld={handleOpenWorld}
                 onOpenJournal={() => setIsReadmeModalOpen(true)}
                 onOpenSoloPrompt={() => navigateTo('daily')}
+                onOpenVault={() => navigateTo('connections')}
               />
             )}
 
