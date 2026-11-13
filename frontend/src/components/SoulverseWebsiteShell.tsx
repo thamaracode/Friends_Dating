@@ -36,7 +36,8 @@ import {
   Monitor,
   Wifi,
   Battery,
-  Mail
+  Mail,
+  Sliders
 } from 'lucide-react';
 import { SearchBar, PulseBadge } from './klyven';
 
@@ -76,6 +77,8 @@ import { LinkSpotifyModal } from './LinkSpotifyModal';
 import { useSpotifyMusic } from '../context/SpotifyMusicContext';
 import { TheUnspokenSanctuary } from './emotional/TheUnspokenSanctuary';
 import { UnopenedLetterModal } from './emotional/UnopenedLetterModal';
+import { UserControlCenterModal } from './control/UserControlCenterModal';
+import { FeatureControlService } from '../services/featureControlService';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -106,7 +109,23 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUnspokenOpen, setIsUnspokenOpen] = useState(false);
   const [isLetterOpen, setIsLetterOpen] = useState(false);
+  const [isControlCenterOpen, setIsControlCenterOpen] = useState(false);
   const [targetWorldId, setTargetWorldId] = useState<string | null>(null);
+
+  // The Control Layer dynamic feature visibility
+  const [visibleFeatures, setVisibleFeatures] = useState<string[]>(() =>
+    FeatureControlService.getEvaluatedFeatures().filter(f => f.effectiveState === 'enabled' && f.isVisible).map(f => f.id)
+  );
+
+  useEffect(() => {
+    FeatureControlService.syncFromBackend();
+    return FeatureControlService.subscribe(() => {
+      const active = FeatureControlService.getEvaluatedFeatures()
+        .filter(f => f.effectiveState === 'enabled' && f.isVisible)
+        .map(f => f.id);
+      setVisibleFeatures(active);
+    });
+  }, []);
 
   // Map route to 5 primary mobile destinations
   const getActiveMobileTab = (): MobilePrimaryTab => {
@@ -197,20 +216,25 @@ export const SoulverseWebsiteShell: React.FC = () => {
     navigateTo('messages');
   };
 
-  const navItems = [
-    { id: 'discover' as SoulverseRoute, label: 'Discover', icon: Compass },
-    { id: 'unspoken' as SoulverseRoute, label: 'The Unspoken', icon: Sparkles, badge: 'Inner' },
-    { id: 'connect' as SoulverseRoute, label: 'Connect & Social', icon: Users, badge: 'Live' },
-    { id: 'connections' as SoulverseRoute, label: 'Relationship Vault', icon: Heart, badge: 'Vault' },
+  const masterNavItems = [
+    { id: 'discover' as SoulverseRoute, label: 'Discover', icon: Compass, featureId: 'feat_dating' },
+    { id: 'unspoken' as SoulverseRoute, label: 'The Unspoken', icon: Sparkles, badge: 'Inner', featureId: 'feat_the_unspoken' },
+    { id: 'connect' as SoulverseRoute, label: 'Connect & Social', icon: Users, badge: 'Live', featureId: 'feat_friendships' },
+    { id: 'connections' as SoulverseRoute, label: 'Relationship Vault', icon: Heart, badge: 'Vault', featureId: 'feat_relationship_vault' },
     { id: 'messages' as SoulverseRoute, label: 'Messages & Rooms', icon: MessageCircle, badge: '3' },
     { id: 'profile' as SoulverseRoute, label: 'My Identities', icon: User },
-    { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily' },
-    { id: 'identities' as SoulverseRoute, label: 'Identity Universe', icon: Sparkles },
-    { id: 'worlds' as SoulverseRoute, label: 'Explore Worlds', icon: Globe2 },
-    { id: 'timeline' as SoulverseRoute, label: 'Life Timeline', icon: Calendar },
+    { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily', featureId: 'feat_daily_quotes' },
+    { id: 'identities' as SoulverseRoute, label: 'Identity Universe', icon: Sparkles, featureId: 'feat_imaginary_identities' },
+    { id: 'worlds' as SoulverseRoute, label: 'Explore Worlds', icon: Globe2, featureId: 'feat_cinematic_profiles' },
+    { id: 'timeline' as SoulverseRoute, label: 'Life Timeline', icon: Calendar, featureId: 'feat_timeline_view' },
     { id: 'settings' as SoulverseRoute, label: 'Settings', icon: Settings },
     { id: 'admin' as SoulverseRoute, label: 'Admin Ops', icon: ShieldAlert, badge: 'Staff' }
   ];
+
+  const navItems = masterNavItems.filter(item => {
+    if (!item.featureId) return true;
+    return visibleFeatures.includes(item.featureId);
+  });
 
   const sidebarWorlds = worlds.length > 0 ? worlds.slice(0, 4) : [
     { id: 'wld_real', name: 'My Real Life', visibility: 'public', cover_image_url: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=200&q=80' },
@@ -292,6 +316,16 @@ export const SoulverseWebsiteShell: React.FC = () => {
           >
             <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
             <span className="hidden md:inline text-[11px]">The Unspoken</span>
+          </button>
+
+          {/* User Control Center Quick Launcher */}
+          <button
+            onClick={() => setIsControlCenterOpen(true)}
+            className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 border border-white/10 text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5"
+            title="Open My App Control Center"
+          >
+            <Sliders className="w-3.5 h-3.5 text-zinc-300" />
+            <span className="hidden lg:inline text-[11px]">Control Center</span>
           </button>
           {/* Desktop Only: Toggle Mobile Device Frame Preview vs Fluid Canvas */}
           <div className="hidden md:flex items-center bg-white/[0.06] p-0.5 rounded-xl border border-white/10 text-xs">
@@ -697,6 +731,12 @@ export const SoulverseWebsiteShell: React.FC = () => {
       <UnopenedLetterModal
         isOpen={isLetterOpen}
         onClose={() => setIsLetterOpen(false)}
+      />
+
+      {/* The Control Layer: User Control Center Modal */}
+      <UserControlCenterModal
+        isOpen={isControlCenterOpen}
+        onClose={() => setIsControlCenterOpen(false)}
       />
 
       {/* ===================================================================== */}

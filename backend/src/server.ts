@@ -3822,6 +3822,453 @@ app.post('/api/v1/games/external/register', (req, res) => {
   res.json({ success: true, game: registered });
 });
 
+// ============================================================================
+// THE CONTROL LAYER: FEATURE MANAGEMENT & PERSONALIZATION REST APIS
+// ============================================================================
+
+// Deterministic integer hash for percentage rollouts
+function calculateRolloutBucket(userId: string, featureId: string): number {
+  let hash = 0;
+  const combined = `${userId}:${featureId}`;
+  for (let i = 0; i < combined.length; i++) {
+    hash = ((hash << 5) - hash) + combined.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) % 100;
+}
+
+// 1. Feature Registry & Metadata Catalogue
+app.get('/api/features/registry', (_req, res) => {
+  try {
+    const features = db.prepare('SELECT * FROM feature_registry ORDER BY category ASC, name ASC').all() as any[];
+    const dependencies = db.prepare('SELECT * FROM feature_dependencies').all() as any[];
+
+    const formatted = features.map(f => ({
+      ...f,
+      collectedData: JSON.parse(f.collected_data_json || '[]'),
+      dependencies: dependencies.filter(d => d.feature_id === f.id).map(d => ({
+        dependsOn: d.depends_on_feature_id,
+        isOptional: Boolean(d.is_optional),
+        fallbackNote: d.fallback_note
+      }))
+    }));
+
+    res.json({ success: true, features: formatted });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch feature registry', details: error.message });
+  }
+});
+
+// 2. Feature Evaluation Engine (4-Tier Evaluation Pipeline)
+app.get('/api/features/evaluation/:userId', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const features = db.prepare('SELECT * FROM feature_registry').all() as any[];
+    const flags = db.prepare('SELECT * FROM feature_flags').all() as any[];
+    const preferences = db.prepare('SELECT * FROM user_feature_preferences WHERE user_id = ?').all(userId) as any[];
+    const dependencies = db.prepare('SELECT * FROM feature_dependencies').all() as any[];
+    const presetRow = db.prepare('SELECT active_preset FROM user_experience_presets WHERE user_id = ?').get(userId) as any;
+
+    const flagMap = new Map(flags.map(f => [f.feature_id, f]));
+    const prefMap = new Map(preferences.map(p => [p.feature_id, p]));
+
+    const evaluated = features.map(feat => {
+      const flag = flagMap.get(feat.id);
+      const pref = prefMap.get(feat.id);
+      
+      let effectiveState: 'enabled' | 'disabled' | 'paused' | 'restricted' | 'unavailable' = 'enabled';
+      let isVisible = true;
+      let isDiscoverable = true;
+      let reason = 'Active';
+
+      // Tier 1: Platform & Admin Governance
+      if (!flag || !flag.is_globally_enabled) {
+        effectiveState = 'unavailable';
+        reason = 'Disabled globally by platform administrator';
+      } else if (flag.kill_switch_active) {
+        effectiveState = 'unavailable';
+        reason = flag.kill_switch_reason || 'Emergency kill-switch active';
+      } else {
+        // Rollout percentage check
+        const bucket = calculateRolloutBucket(userId, feat.id);
+        if (bucket >= flag.rollout_percentage) {
+          effectiveState = 'unavailable';
+          reason = `Controlled rollout stage (${flag.rollout_percentage}% enabled)`;
+        }
+      }
+
+      // Tier 2 & 3: Dependency Resolution
+      if (effectiveState !== 'unavailable') {
+        const requiredHardDeps = dependencies.filter(d => d.feature_id === feat.id && !d.is_optional);
+        for (const dep of requiredHardDeps) {
+          const parentFlag = flagMap.get(dep.depends_on_feature_id);
+          const parentPref = prefMap.get(dep.depends_on_feature_id);
+          if (!parentFlag || !parentFlag.is_globally_enabled || (parentPref && parentPref.state === 'disabled')) {
+            effectiveState = 'restricted';
+            reason = `Requires prerequisite module: ${dep.depends_on_feature_id}`;
+            break;
+          }
+        }
+      }
+
+      // Tier 4: User Preference & Temporal Pauses
+      if (effectiveState !== 'unavailable' && effectiveState !== 'restricted') {
+        if (pref) {
+          if (pref.paused_until && pref.paused_until > Date.now()) {
+            effectiveState = 'paused';
+            reason = `Temporarily paused by user until ${new Date(pref.paused_until).toLocaleTimeString()}`;
+          } else {
+            effectiveState = pref.state || 'enabled';
+            reason = effectiveState === 'disabled' ? 'Turned off in personal preferences' : 'Active';
+          }
+          isVisible = Boolean(pref.is_visible);
+          isDiscoverable = Boolean(pref.is_discoverable);
+        } else {
+          effectiveState = feat.default_state === 'disabled' ? 'disabled' : 'enabled';
+          isVisible = true;
+          isDiscoverable = true;
+        }
+      }
+
+      return {
+        id: feat.id,
+        name: feat.name,
+        category: feat.category,
+        tagline: feat.tagline,
+        effectiveState,
+        isVisible,
+        isDiscoverable,
+        requiresAi: Boolean(feat.requires_ai),
+        requiresNotifications: Boolean(feat.requires_notifications),
+        isPremium: Boolean(feat.is_premium),
+        privacyLevel: feat.privacy_level,
+        reason,
+        customConfig: pref ? JSON.parse(pref.custom_config_json || '{}') : {}
+      };
+    });
+
+    res.json({
+      success: true,
+      userId,
+      activePreset: presetRow ? presetRow.active_preset : 'complete',
+      features: evaluated
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to evaluate features', details: error.message });
+  }
+});
+
+// 3. Update User Feature Preference
+app.post('/api/features/user-preferences', (req, res) => {
+  try {
+    const {
+      userId = 'usr_me',
+      featureId,
+      state = 'enabled',
+      isVisible = 1,
+      isDiscoverable = 1,
+      customConfig = {},
+      pausedUntil = null
+    } = req.body;
+
+    if (!featureId) {
+      return res.status(400).json({ error: 'featureId is required' });
+    }
+
+    const now = Date.now();
+    db.prepare(`
+      INSERT INTO user_feature_preferences (
+        user_id, feature_id, state, is_visible, is_discoverable, custom_config_json,
+        paused_until, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(user_id, feature_id) DO UPDATE SET
+        state = excluded.state,
+        is_visible = excluded.is_visible,
+        is_discoverable = excluded.is_discoverable,
+        custom_config_json = excluded.custom_config_json,
+        paused_until = excluded.paused_until,
+        updated_at = excluded.updated_at
+    `).run(
+      userId, featureId, state, isVisible ? 1 : 0, isDiscoverable ? 1 : 0,
+      JSON.stringify(customConfig), pausedUntil, now
+    );
+
+    // Telemetry event logging
+    db.prepare(`
+      INSERT INTO feature_usage_events (id, user_id, feature_id, event_type, metadata_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(`evt_${uuidv4().slice(0, 8)}`, userId, featureId, state === 'enabled' ? 'toggle_on' : 'toggle_off', JSON.stringify({ isVisible, isDiscoverable }), now);
+
+    res.json({ success: true, message: `Preference updated for ${featureId}` });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update user preference', details: error.message });
+  }
+});
+
+// 4. Apply Personalization Preset
+app.post('/api/features/apply-preset', (req, res) => {
+  try {
+    const { userId = 'usr_me', preset } = req.body;
+    const validPresets = ['simple_social', 'dating_relationships', 'personal_growth', 'complete', 'custom'];
+
+    if (!preset || !validPresets.includes(preset)) {
+      return res.status(400).json({ error: `Valid preset required: ${validPresets.join(', ')}` });
+    }
+
+    const now = Date.now();
+    const allFeatures = db.prepare('SELECT id FROM feature_registry').all() as { id: string }[];
+
+    // Preset configurations
+    let enabledIds: string[] = [];
+    let visibleIds: string[] = [];
+
+    if (preset === 'simple_social') {
+      enabledIds = ['feat_friendships', 'feat_daily_quotes', 'feat_external_connections', 'feat_the_unspoken', 'feat_spotify_ambient'];
+      visibleIds = ['feat_friendships', 'feat_daily_quotes', 'feat_external_connections'];
+    } else if (preset === 'dating_relationships') {
+      enabledIds = ['feat_dating', 'feat_friendships', 'feat_relationship_vault', 'feat_two_person_questions', 'feat_spotify_ambient', 'feat_personality_exploration', 'feat_the_unspoken', 'feat_daily_quotes'];
+      visibleIds = ['feat_dating', 'feat_friendships', 'feat_relationship_vault', 'feat_two_person_questions', 'feat_spotify_ambient', 'feat_the_unspoken'];
+    } else if (preset === 'personal_growth') {
+      enabledIds = ['feat_the_unspoken', 'feat_personal_journal', 'feat_timeline_view', 'feat_daily_quotes', 'feat_personality_exploration', 'feat_imaginary_identities', 'feat_cinematic_profiles', 'feat_spotify_ambient'];
+      visibleIds = ['feat_the_unspoken', 'feat_personal_journal', 'feat_timeline_view', 'feat_daily_quotes', 'feat_imaginary_identities'];
+    } else if (preset === 'complete') {
+      enabledIds = allFeatures.map(f => f.id);
+      visibleIds = allFeatures.map(f => f.id);
+    }
+
+    const upsertStmt = db.prepare(`
+      INSERT INTO user_feature_preferences (
+        user_id, feature_id, state, is_visible, is_discoverable, custom_config_json,
+        paused_until, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?)
+      ON CONFLICT(user_id, feature_id) DO UPDATE SET
+        state = excluded.state,
+        is_visible = excluded.is_visible,
+        is_discoverable = excluded.is_discoverable,
+        paused_until = NULL,
+        updated_at = excluded.updated_at
+    `);
+
+    for (const feat of allFeatures) {
+      const isEnabled = enabledIds.includes(feat.id);
+      const isVisible = visibleIds.includes(feat.id);
+      upsertStmt.run(
+        userId,
+        feat.id,
+        isEnabled ? 'enabled' : 'disabled',
+        isVisible ? 1 : 0,
+        1, // isDiscoverable
+        '{}',
+        now
+      );
+    }
+
+    db.prepare(`
+      INSERT INTO user_experience_presets (user_id, active_preset, applied_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        active_preset = excluded.active_preset,
+        applied_at = excluded.applied_at
+    `).run(userId, preset, now);
+
+    res.json({ success: true, preset, appliedCount: allFeatures.length });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to apply preset', details: error.message });
+  }
+});
+
+// 5. Admin Switchboard: All Features with Rollout & Flags
+app.get('/api/admin/features', (_req, res) => {
+  try {
+    const features = db.prepare(`
+      SELECT 
+        fr.*,
+        ff.is_globally_enabled,
+        ff.rollout_percentage,
+        ff.allowed_roles_json,
+        ff.allowed_tiers_json,
+        ff.kill_switch_active,
+        ff.kill_switch_reason,
+        ff.updated_by,
+        ff.updated_at as flag_updated_at
+      FROM feature_registry fr
+      LEFT JOIN feature_flags ff ON fr.id = ff.feature_id
+      ORDER BY fr.category ASC, fr.name ASC
+    `).all() as any[];
+
+    const dependencies = db.prepare('SELECT * FROM feature_dependencies').all() as any[];
+
+    const formatted = features.map(f => ({
+      ...f,
+      allowedRoles: JSON.parse(f.allowed_roles_json || '[]'),
+      allowedTiers: JSON.parse(f.allowed_tiers_json || '[]'),
+      isGloballyEnabled: Boolean(f.is_globally_enabled),
+      killSwitchActive: Boolean(f.kill_switch_active),
+      dependencies: dependencies.filter(d => d.feature_id === f.id)
+    }));
+
+    res.json({ success: true, features: formatted });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch admin features', details: error.message });
+  }
+});
+
+// 6. Admin Flag Update (With Strict Audit Logging)
+app.put('/api/admin/features/:featureId', (req, res) => {
+  try {
+    const { featureId } = req.params;
+    const {
+      adminId = 'adm_product',
+      adminName = 'Product Administrator',
+      isGloballyEnabled,
+      rolloutPercentage,
+      allowedRoles,
+      allowedTiers,
+      reason
+    } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ error: 'Reason for configuration alteration is required for audit governance' });
+    }
+
+    const currentFlag = db.prepare('SELECT * FROM feature_flags WHERE feature_id = ?').get(featureId) as any;
+    if (!currentFlag) {
+      return res.status(404).json({ error: 'Feature flag record not found' });
+    }
+
+    const now = Date.now();
+    const newGlobal = isGloballyEnabled !== undefined ? (isGloballyEnabled ? 1 : 0) : currentFlag.is_globally_enabled;
+    const newRollout = rolloutPercentage !== undefined ? Math.max(0, Math.min(100, Number(rolloutPercentage))) : currentFlag.rollout_percentage;
+    const newRoles = allowedRoles ? JSON.stringify(allowedRoles) : currentFlag.allowed_roles_json;
+    const newTiers = allowedTiers ? JSON.stringify(allowedTiers) : currentFlag.allowed_tiers_json;
+
+    db.prepare(`
+      UPDATE feature_flags SET
+        is_globally_enabled = ?,
+        rollout_percentage = ?,
+        allowed_roles_json = ?,
+        allowed_tiers_json = ?,
+        updated_by = ?,
+        updated_at = ?
+      WHERE feature_id = ?
+    `).run(newGlobal, newRollout, newRoles, newTiers, adminName, now, featureId);
+
+    // Record in Audit Trail
+    db.prepare(`
+      INSERT INTO configuration_audit_logs (
+        id, admin_id, admin_name, action, target_type, target_id,
+        before_value_json, after_value_json, reason, ip_address, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      `audit_${uuidv4().slice(0, 8)}`,
+      adminId,
+      adminName,
+      'flag_update',
+      'feature',
+      featureId,
+      JSON.stringify(currentFlag),
+      JSON.stringify({ isGloballyEnabled: newGlobal, rolloutPercentage: newRollout, allowedRoles: newRoles, allowedTiers: newTiers }),
+      reason.trim(),
+      req.ip || '127.0.0.1',
+      now
+    );
+
+    res.json({ success: true, message: `Feature ${featureId} updated`, rolloutPercentage: newRollout });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update feature flag', details: error.message });
+  }
+});
+
+// 7. Admin Emergency Kill-Switch
+app.post('/api/admin/features/:featureId/kill-switch', (req, res) => {
+  try {
+    const { featureId } = req.params;
+    const {
+      adminId = 'adm_security',
+      adminName = 'Platform Safety Lead',
+      active = true,
+      reason
+    } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ error: 'Explicit reason is required for tripping or releasing emergency kill switch' });
+    }
+
+    const currentFlag = db.prepare('SELECT * FROM feature_flags WHERE feature_id = ?').get(featureId) as any;
+    if (!currentFlag) {
+      return res.status(404).json({ error: 'Feature flag record not found' });
+    }
+
+    const now = Date.now();
+    db.prepare(`
+      UPDATE feature_flags SET
+        kill_switch_active = ?,
+        kill_switch_reason = ?,
+        updated_by = ?,
+        updated_at = ?
+      WHERE feature_id = ?
+    `).run(active ? 1 : 0, active ? reason.trim() : null, adminName, now, featureId);
+
+    // Audit log
+    db.prepare(`
+      INSERT INTO configuration_audit_logs (
+        id, admin_id, admin_name, action, target_type, target_id,
+        before_value_json, after_value_json, reason, ip_address, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      `audit_${uuidv4().slice(0, 8)}`,
+      adminId,
+      adminName,
+      active ? 'kill_switch_trip' : 'kill_switch_release',
+      'feature',
+      featureId,
+      JSON.stringify({ killSwitchActive: currentFlag.kill_switch_active }),
+      JSON.stringify({ killSwitchActive: active ? 1 : 0, reason }),
+      reason.trim(),
+      req.ip || '127.0.0.1',
+      now
+    );
+
+    res.json({ success: true, featureId, killSwitchActive: active, reason: reason.trim() });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to trip kill switch', details: error.message });
+  }
+});
+
+// 8. Admin Audit Trail
+app.get('/api/admin/audit-logs', (_req, res) => {
+  try {
+    const logs = db.prepare('SELECT * FROM configuration_audit_logs ORDER BY created_at DESC LIMIT 50').all() as any[];
+    res.json({ success: true, logs });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch audit logs', details: error.message });
+  }
+});
+
+// 9. Admin Adoption Analytics
+app.get('/api/admin/analytics/adoption', (_req, res) => {
+  try {
+    const stats = db.prepare(`
+      SELECT 
+        fr.id,
+        fr.name,
+        fr.category,
+        COUNT(CASE WHEN ufp.state = 'enabled' THEN 1 END) as enabled_users,
+        COUNT(CASE WHEN ufp.state = 'disabled' THEN 1 END) as disabled_users,
+        COUNT(CASE WHEN ufp.state = 'paused' THEN 1 END) as paused_users,
+        COUNT(ufp.user_id) as total_configured
+      FROM feature_registry fr
+      LEFT JOIN user_feature_preferences ufp ON fr.id = ufp.feature_id
+      GROUP BY fr.id
+      ORDER BY enabled_users DESC
+    `).all() as any[];
+
+    res.json({ success: true, stats });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to compute adoption analytics', details: error.message });
+  }
+});
+
 
 
 const PORT = 3001;

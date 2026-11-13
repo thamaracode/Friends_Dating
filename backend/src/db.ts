@@ -884,6 +884,100 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_profile_votes_target ON profile_votes(target_user_id, vote_type);
     CREATE INDEX IF NOT EXISTS idx_profile_traits_target ON profile_trait_votes(target_user_id, trait_slug);
     CREATE INDEX IF NOT EXISTS idx_reviews_target_vis ON user_reviews(target_user_id, visibility);
+
+    -- =========================================================================
+    -- THE CONTROL LAYER: MASTER FEATURE REGISTRY & PERSONALIZATION SCHEMA
+    -- =========================================================================
+    CREATE TABLE IF NOT EXISTS feature_registry (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      tagline TEXT NOT NULL,
+      description TEXT NOT NULL,
+      default_state TEXT NOT NULL DEFAULT 'available',
+      is_user_configurable INTEGER NOT NULL DEFAULT 1,
+      privacy_level TEXT NOT NULL DEFAULT 'selective',
+      collected_data_json TEXT NOT NULL DEFAULT '[]',
+      visibility_audience TEXT NOT NULL DEFAULT 'User and chosen peers',
+      requires_ai INTEGER NOT NULL DEFAULT 0,
+      requires_notifications INTEGER NOT NULL DEFAULT 0,
+      is_premium INTEGER NOT NULL DEFAULT 0,
+      disable_behavior TEXT NOT NULL,
+      data_retention_rule TEXT NOT NULL,
+      min_app_version TEXT NOT NULL DEFAULT '1.0.0',
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS feature_flags (
+      feature_id TEXT PRIMARY KEY,
+      is_globally_enabled INTEGER NOT NULL DEFAULT 1,
+      rollout_percentage INTEGER NOT NULL DEFAULT 100,
+      allowed_roles_json TEXT NOT NULL DEFAULT '["user","vip","admin"]',
+      allowed_tiers_json TEXT NOT NULL DEFAULT '["free","plus","sovereign"]',
+      beta_user_ids_json TEXT NOT NULL DEFAULT '[]',
+      min_version TEXT NOT NULL DEFAULT '1.0.0',
+      kill_switch_active INTEGER NOT NULL DEFAULT 0,
+      kill_switch_reason TEXT,
+      updated_by TEXT NOT NULL DEFAULT 'system',
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (feature_id) REFERENCES feature_registry(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS feature_dependencies (
+      feature_id TEXT NOT NULL,
+      depends_on_feature_id TEXT NOT NULL,
+      is_optional INTEGER NOT NULL DEFAULT 0,
+      fallback_note TEXT,
+      PRIMARY KEY (feature_id, depends_on_feature_id),
+      FOREIGN KEY (feature_id) REFERENCES feature_registry(id) ON DELETE CASCADE,
+      FOREIGN KEY (depends_on_feature_id) REFERENCES feature_registry(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS user_feature_preferences (
+      user_id TEXT NOT NULL,
+      feature_id TEXT NOT NULL,
+      state TEXT NOT NULL DEFAULT 'enabled',
+      is_visible INTEGER NOT NULL DEFAULT 1,
+      is_discoverable INTEGER NOT NULL DEFAULT 1,
+      custom_config_json TEXT NOT NULL DEFAULT '{}',
+      paused_until INTEGER,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, feature_id),
+      FOREIGN KEY (feature_id) REFERENCES feature_registry(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS user_experience_presets (
+      user_id TEXT PRIMARY KEY,
+      active_preset TEXT NOT NULL DEFAULT 'complete',
+      applied_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS configuration_audit_logs (
+      id TEXT PRIMARY KEY,
+      admin_id TEXT NOT NULL,
+      admin_name TEXT NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT NOT NULL,
+      target_id TEXT NOT NULL,
+      before_value_json TEXT,
+      after_value_json TEXT,
+      reason TEXT NOT NULL,
+      ip_address TEXT,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS feature_usage_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      feature_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      metadata_json TEXT DEFAULT '{}',
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_feat_pref_user ON user_feature_preferences(user_id, state);
+    CREATE INDEX IF NOT EXISTS idx_audit_created ON configuration_audit_logs(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_feat_usage_time ON feature_usage_events(feature_id, event_type, created_at);
   `);
 
   seedInitialData();
@@ -894,6 +988,7 @@ export function initDatabase() {
   seedProfileWorlds();
   seedDailyConnectionContent();
   seedSoulverseExpansionData();
+  seedFeatureControlLayer();
 }
 
 function seedInitialData() {
@@ -2286,6 +2381,399 @@ function seedSoulverseExpansionData() {
     1,
     'allow-scripts allow-same-origin allow-popups',
     'usr_me',
+    now
+  );
+}
+
+function seedFeatureControlLayer() {
+  const existingCount = db.prepare('SELECT COUNT(*) as count FROM feature_registry').get() as { count: number };
+  if (existingCount.count > 0) return;
+
+  const now = Date.now();
+
+  const insertFeature = db.prepare(`
+    INSERT OR IGNORE INTO feature_registry (
+      id, name, category, tagline, description, default_state, is_user_configurable,
+      privacy_level, collected_data_json, visibility_audience, requires_ai,
+      requires_notifications, is_premium, disable_behavior, data_retention_rule,
+      min_app_version, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertFlag = db.prepare(`
+    INSERT OR IGNORE INTO feature_flags (
+      feature_id, is_globally_enabled, rollout_percentage, allowed_roles_json,
+      allowed_tiers_json, beta_user_ids_json, min_version, kill_switch_active,
+      kill_switch_reason, updated_by, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertDep = db.prepare(`
+    INSERT OR IGNORE INTO feature_dependencies (
+      feature_id, depends_on_feature_id, is_optional, fallback_note
+    ) VALUES (?, ?, ?, ?)
+  `);
+
+  const insertPref = db.prepare(`
+    INSERT OR IGNORE INTO user_feature_preferences (
+      user_id, feature_id, state, is_visible, is_discoverable, custom_config_json,
+      paused_until, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const features = [
+    {
+      id: 'feat_dating',
+      name: 'Dating & Chemistry',
+      category: 'social',
+      tagline: 'Discover romantic chemistry through deep ontological compatibility and verified identity cards.',
+      description: 'Provides romantic matching, swipe exploration, HCM deep compatibility metrics, and mutual chemistry matches.',
+      default_state: 'available',
+      is_user_configurable: 1,
+      privacy_level: 'selective',
+      collected_data: ['Dating intent', 'Age & distance preferences', 'Romantic values', 'Looking for profile parameters'],
+      visibility_audience: 'Eligible matches according to your filters',
+      requires_ai: 0,
+      requires_notifications: 1,
+      is_premium: 0,
+      disable_behavior: 'Hides romantic card stack and stops surfacing your profile in dating feeds. Your existing chats remain safe.',
+      data_retention_rule: 'Matches and chat history are preserved. Re-enabling restores your exact match state.'
+    },
+    {
+      id: 'feat_friendships',
+      name: 'Friendships & Circles',
+      category: 'social',
+      tagline: 'Connect with kindred spirits based on passions, creative projects, and shared curiosity.',
+      description: 'Platonic discovery, topic-based communities, shared passions (#DeepTalk, #Books, #Design), and friendship requests.',
+      default_state: 'enabled',
+      is_user_configurable: 1,
+      privacy_level: 'public',
+      collected_data: ['Friend list', 'Shared passions', 'Circle memberships'],
+      visibility_audience: 'Public community members and friends',
+      requires_ai: 0,
+      requires_notifications: 1,
+      is_premium: 0,
+      disable_behavior: 'Stops suggesting platonic friend recommendations while maintaining your current contacts.',
+      data_retention_rule: 'Circle memberships and conversation threads are permanently saved.'
+    },
+    {
+      id: 'feat_relationship_vault',
+      name: 'Relationship Vault & Memories',
+      category: 'relationships',
+      tagline: 'Private relationship memory system: important dates, boundary preferences, promises, and Before-You-Talk briefings.',
+      description: 'A personal relationship management space to honor human relationships with respect and care. Strictly client-side protected.',
+      default_state: 'available',
+      is_user_configurable: 1,
+      privacy_level: 'private_encrypted',
+      collected_data: ['Important dates & anniversaries', 'Gift preferences', 'Emotional history notes', 'Interaction boundaries'],
+      visibility_audience: 'Strictly private to you. Zero admin or public access.',
+      requires_ai: 0,
+      requires_notifications: 1,
+      is_premium: 0,
+      disable_behavior: 'Hides the vault and briefings from your menus. Stored records remain fully encrypted and inaccessible to anyone else.',
+      data_retention_rule: 'Zero automatic deletion. Data can only be wiped by an explicit user wipe command.'
+    },
+    {
+      id: 'feat_personal_journal',
+      name: '5,000-Char Markdown Journal',
+      category: 'growth',
+      tagline: 'Express your inner narrative with full GitHub Flavored Markdown, code blocks, quotes, and visual previews.',
+      description: 'Extensive personal journal and bio editor allowing uninhibited personal expression beyond short bullet points.',
+      default_state: 'available',
+      is_user_configurable: 1,
+      privacy_level: 'selective',
+      collected_data: ['Markdown journal entries', 'Bio reflections', 'Personal tags'],
+      visibility_audience: 'Configurable per entry (private or profile public)',
+      requires_ai: 0,
+      requires_notifications: 0,
+      is_premium: 0,
+      disable_behavior: 'Removes journal quick-launchers. Existing written articles remain stored safely.',
+      data_retention_rule: 'All markdown files and drafts remain persisted in your private account storage.'
+    },
+    {
+      id: 'feat_imaginary_identities',
+      name: 'Identity Universe & Personas',
+      category: 'identity',
+      tagline: 'Live multifaceted lives: Real Me, Professional Me, Cinematic Me, and creative fictional personas.',
+      description: 'Create and switch seamlessly between distinct identity contexts with isolated friend lists and privacy boundaries.',
+      default_state: 'available',
+      is_user_configurable: 1,
+      privacy_level: 'selective',
+      collected_data: ['Persona avatars', 'Custom bios per persona', 'Persona visibility permissions'],
+      visibility_audience: 'Determined individually per identity world',
+      requires_ai: 0,
+      requires_notifications: 0,
+      is_premium: 0,
+      disable_behavior: 'Focuses your experience exclusively on your primary profile while archiving sub-personas.',
+      data_retention_rule: 'All created personas and world assets remain safely archived.'
+    },
+    {
+      id: 'feat_cinematic_profiles',
+      name: 'Cinematic Narrative Worlds',
+      category: 'identity',
+      tagline: 'Rich interactive profile worlds featuring background soundtracks, narrative chapters, and art.',
+      description: 'Explore and author living digital environments with chapters, ambient lighting, and visitor guestbooks.',
+      default_state: 'available',
+      is_user_configurable: 1,
+      privacy_level: 'public',
+      collected_data: ['World themes', 'Audio soundtrack choices', 'Chapter stories'],
+      visibility_audience: 'Public or designated friends list',
+      requires_ai: 0,
+      requires_notifications: 0,
+      is_premium: 0,
+      disable_behavior: 'Hides your worlds from public discovery feeds while leaving them accessible for your direct editing.',
+      data_retention_rule: 'All media, custom shaders, and world chapters remain completely preserved.'
+    },
+    {
+      id: 'feat_group_relationships',
+      name: 'Polycules & Chosen Family Circles',
+      category: 'relationships',
+      tagline: 'Modern, non-traditional relationship structures: polycules, close friend pods, and chosen families.',
+      description: 'Multi-member relational hubs with group calendars, shared memories, boundary agreements, and mutual respect tools.',
+      default_state: 'available',
+      is_user_configurable: 1,
+      privacy_level: 'selective',
+      collected_data: ['Group member relationships', 'Shared milestone dates', 'Group boundaries'],
+      visibility_audience: 'Group members only',
+      requires_ai: 0,
+      requires_notifications: 1,
+      is_premium: 0,
+      disable_behavior: 'Deactivates group relationship dashboard widgets without impacting individual connections.',
+      data_retention_rule: 'Shared history and agreements remain intact.'
+    },
+    {
+      id: 'feat_ai_assistant',
+      name: 'Soulverse Cognitive Assistant',
+      category: 'intelligence',
+      tagline: 'Empathetic conversation suggestions, ontological matching insights, and thoughtful date ideas.',
+      description: 'On-device and privacy-first AI assistant to elevate conversation quality and prevent loneliness.',
+      default_state: 'disabled',
+      is_user_configurable: 1,
+      privacy_level: 'strictly_local',
+      collected_data: ['In-session conversation context (ephemeral)', 'Prompt queries'],
+      visibility_audience: 'Strictly local to user session. Never trained on or shared.',
+      requires_ai: 1,
+      requires_notifications: 0,
+      is_premium: 0,
+      disable_behavior: 'Shuts down all AI inference and suggestions across the entire client.',
+      data_retention_rule: 'Instant zero-state purge of ephemeral inference caches.'
+    },
+    {
+      id: 'feat_daily_quotes',
+      name: 'Daily Philosophy & Quotes',
+      category: 'growth',
+      tagline: 'Morning reflections, philosophical reminders, and daily mindful connection thoughts.',
+      description: 'Curated daily inspiration and contemplative pauses to inspire thoughtful human encounters.',
+      default_state: 'enabled',
+      is_user_configurable: 1,
+      privacy_level: 'public',
+      collected_data: ['Saved favorite quotes', 'Reflection responses'],
+      visibility_audience: 'Private reflections are only visible to you',
+      requires_ai: 0,
+      requires_notifications: 1,
+      is_premium: 0,
+      disable_behavior: 'Hides the daily quote pill from the top of your feed.',
+      data_retention_rule: 'Saved favorites remain in your profile bookmarks.'
+    },
+    {
+      id: 'feat_personality_exploration',
+      name: 'Personality & Value Discovery',
+      category: 'growth',
+      tagline: 'Psychological value mapping, attachment styles, and Big Five behavioral chemistry.',
+      description: 'Helps people discover emotional compatibilities through gentle self-assessment without reductive labels.',
+      default_state: 'available',
+      is_user_configurable: 1,
+      privacy_level: 'selective',
+      collected_data: ['Value rankings', 'Communication preferences', 'Attachment reflections'],
+      visibility_audience: 'You can choose which badges appear on your public card',
+      requires_ai: 0,
+      requires_notifications: 0,
+      is_premium: 0,
+      disable_behavior: 'Hides personality badges from your public profile.',
+      data_retention_rule: 'Survey answers are securely stored for whenever you choose to display them.'
+    },
+    {
+      id: 'feat_events_parties',
+      name: 'Events & Watch Parties',
+      category: 'social',
+      tagline: 'Live virtual gatherings, ambient movie watch parties, and intimate in-person workshops.',
+      description: 'Browse local events, RSVP with friends, host virtual listening parties, and build community calendars.',
+      default_state: 'available',
+      is_user_configurable: 1,
+      privacy_level: 'public',
+      collected_data: ['RSVP status', 'Attended events history'],
+      visibility_audience: 'Event hosts and other attendees',
+      requires_ai: 0,
+      requires_notifications: 1,
+      is_premium: 0,
+      disable_behavior: 'Removes events tab from social feeds.',
+      data_retention_rule: 'Past attendance history is retained in your private timeline.'
+    },
+    {
+      id: 'feat_external_connections',
+      name: 'External Social Connections',
+      category: 'social',
+      tagline: 'Link your Spotify, Instagram, GitHub, Discord, and Telegram profiles with one-click verification.',
+      description: 'Establish authenticity across platforms without handing over your login credentials.',
+      default_state: 'available',
+      is_user_configurable: 1,
+      privacy_level: 'selective',
+      collected_data: ['Public profile handles', 'OAuth token scopes (read-only)'],
+      visibility_audience: 'Publicly displayed on your profile based on your toggle choice',
+      requires_ai: 0,
+      requires_notifications: 0,
+      is_premium: 0,
+      disable_behavior: 'Temporarily unlinks social pills from public view without revoking stored tokens.',
+      data_retention_rule: 'Token revocation can be triggered explicitly at any time.'
+    },
+    {
+      id: 'feat_the_unspoken',
+      name: 'The Unspoken: Emotional Sanctuary',
+      category: 'growth',
+      tagline: 'The Inner Room, Midnight Thoughts, Unopened Letters, and Unsent Words.',
+      description: 'A tranquil sanctuary for everything you feel but do not always know how to say. Free of toxic engagement traps.',
+      default_state: 'enabled',
+      is_user_configurable: 1,
+      privacy_level: 'strictly_local',
+      collected_data: ['Unsent reflections', 'Saved sanctuary thoughts', 'Mood preference'],
+      visibility_audience: 'Completely private to the device and account. Never indexed.',
+      requires_ai: 0,
+      requires_notifications: 0,
+      is_premium: 0,
+      disable_behavior: 'Hides sanctuary banners and unopened letters from all navigation bars.',
+      data_retention_rule: 'All unsent words and saved thoughts remain securely saved.'
+    },
+    {
+      id: 'feat_spotify_ambient',
+      name: 'Spotify Music Integration',
+      category: 'media',
+      tagline: 'Mini dock audio player, profile anthems, and shared listening experiences.',
+      description: 'Control your Spotify music directly inside the app with Titanium Glass controls and ambient lighting.',
+      default_state: 'enabled',
+      is_user_configurable: 1,
+      privacy_level: 'selective',
+      collected_data: ['Currently playing track URI', 'Profile anthem choice'],
+      visibility_audience: 'Profile visitors see your anthem; current playback status is optional',
+      requires_ai: 0,
+      requires_notifications: 0,
+      is_premium: 0,
+      disable_behavior: 'Hides the floating audio dock and stops querying playback state.',
+      data_retention_rule: 'Saved playlist presets and anthem configurations remain saved.'
+    },
+    {
+      id: 'feat_two_person_questions',
+      name: 'One Question, Two People',
+      category: 'relationships',
+      tagline: 'Synchronous lock-and-reveal question game to deepen bonds in private messages.',
+      description: 'Two people privately submit an answer to the same prompt; both answers are revealed together once both complete it.',
+      default_state: 'enabled',
+      is_user_configurable: 1,
+      privacy_level: 'selective',
+      collected_data: ['Mutual question answers (ephemeral to the pair)'],
+      visibility_audience: 'Only the two participants in the conversation',
+      requires_ai: 0,
+      requires_notifications: 1,
+      is_premium: 0,
+      disable_behavior: 'Removes the 2-Person Q button from the active chat header.',
+      data_retention_rule: 'Revealed answers remain in your conversation history.'
+    },
+    {
+      id: 'feat_timeline_view',
+      name: 'Year-by-Year Life Timeline',
+      category: 'identity',
+      tagline: 'Visualize your journey: personal milestones, creative breakthroughs, and life chapters.',
+      description: 'Chronological timeline recording the defining moments and eras of your personal growth.',
+      default_state: 'available',
+      is_user_configurable: 1,
+      privacy_level: 'selective',
+      collected_data: ['Milestone years', 'Event titles & descriptions', 'Timeline photos'],
+      visibility_audience: 'Public or friends-only according to your timeline settings',
+      requires_ai: 0,
+      requires_notifications: 0,
+      is_premium: 0,
+      disable_behavior: 'Hides timeline shortcut from navigation menus.',
+      data_retention_rule: 'All past timeline milestones remain preserved indefinitely.'
+    }
+  ];
+
+  for (const feat of features) {
+    insertFeature.run(
+      feat.id,
+      feat.name,
+      feat.category,
+      feat.tagline,
+      feat.description,
+      feat.default_state,
+      feat.is_user_configurable,
+      feat.privacy_level,
+      JSON.stringify(feat.collected_data),
+      feat.visibility_audience,
+      feat.requires_ai,
+      feat.requires_notifications,
+      feat.is_premium,
+      feat.disable_behavior,
+      feat.data_retention_rule,
+      '1.0.0',
+      now
+    );
+
+    insertFlag.run(
+      feat.id,
+      1, // is_globally_enabled
+      100, // rollout_percentage
+      JSON.stringify(['user', 'vip', 'admin']),
+      JSON.stringify(['free', 'plus', 'sovereign']),
+      JSON.stringify([]),
+      '1.0.0',
+      0, // kill_switch_active
+      null,
+      'adm_system',
+      now
+    );
+
+    // Seed default preference for 'usr_me'
+    insertPref.run(
+      'usr_me',
+      feat.id,
+      feat.default_state === 'disabled' ? 'disabled' : 'enabled',
+      1, // is_visible
+      1, // is_discoverable
+      '{}',
+      null,
+      now
+    );
+  }
+
+  // Seed Feature Dependencies
+  insertDep.run('feat_relationship_vault', 'feat_friendships', 0, 'Requires core friendship connection graph');
+  insertDep.run('feat_relationship_vault', 'feat_ai_assistant', 1, 'AI briefings optional; manual vault works independently');
+  insertDep.run('feat_two_person_questions', 'feat_friendships', 0, 'Requires mutual conversation connection');
+  insertDep.run('feat_cinematic_profiles', 'feat_imaginary_identities', 0, 'Requires underlying persona context');
+  insertDep.run('feat_the_unspoken', 'feat_daily_quotes', 1, 'Sanctuary operates independently from daily feed quotes');
+
+  // Seed User Experience Preset for 'usr_me'
+  db.prepare(`
+    INSERT OR REPLACE INTO user_experience_presets (user_id, active_preset, applied_at)
+    VALUES (?, ?, ?)
+  `).run('usr_me', 'complete', now);
+
+  // Seed initial audit log
+  db.prepare(`
+    INSERT OR IGNORE INTO configuration_audit_logs (
+      id, admin_id, admin_name, action, target_type, target_id, before_value_json,
+      after_value_json, reason, ip_address, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    'audit_init_001',
+    'adm_system',
+    'Super Admin (System)',
+    'feature_registry_init',
+    'platform',
+    'global_control_layer',
+    '{}',
+    JSON.stringify({ total_features: features.length, version: '1.0.0' }),
+    'Initial platform configuration baseline seeded according to Universal Feature Specification',
+    '127.0.0.1',
     now
   );
 }

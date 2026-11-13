@@ -37,6 +37,8 @@ import {
   DiscoverySettings 
 } from '../types/tinderFeatures';
 import { GlassModal, GlassButton, GlassPrimaryButton } from './klyven';
+import { FeatureControlService } from '../services/featureControlService';
+import type { AdminFeature, AuditLogEntry, FeatureAdoptionStat } from '../types/featureControl';
 
 export const AdminDashboard: React.FC = () => {
   // Navigation tabs
@@ -61,6 +63,30 @@ export const AdminDashboard: React.FC = () => {
     interestsOverlap: 20,
     proximityFactor: 15
   });
+
+  // The Control Layer (Feature Flags & Rollout Engine State)
+  const [adminFeatures, setAdminFeatures] = useState<AdminFeature[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [adoptionStats, setAdoptionStats] = useState<FeatureAdoptionStat[]>([]);
+  const [systemSubTab, setSystemSubTab] = useState<'flags' | 'audit' | 'analytics'>('flags');
+  const [killModalFeature, setKillModalFeature] = useState<AdminFeature | null>(null);
+  const [killReason, setKillReason] = useState('');
+  const [rolloutModalFeature, setRolloutModalFeature] = useState<AdminFeature | null>(null);
+  const [rolloutPercentageInput, setRolloutPercentageInput] = useState(100);
+  const [rolloutReason, setRolloutReason] = useState('');
+
+  // Fetch live backend feature management data
+  const refreshAdminControlLayer = () => {
+    FeatureControlService.getAdminFeatures().then(setAdminFeatures).catch(console.error);
+    FeatureControlService.getAuditLogs().then(setAuditLogs).catch(console.error);
+    FeatureControlService.getAdoptionStats().then(setAdoptionStats).catch(console.error);
+  };
+
+  React.useEffect(() => {
+    if (activeTab === 'system') {
+      refreshAdminControlLayer();
+    }
+  }, [activeTab]);
 
   // Music Presets Admin State
   const [presets, setPresets] = useState<SpotifyPreset[]>(CURATED_SPOTIFY_PRESETS);
@@ -1053,65 +1079,344 @@ export const AdminDashboard: React.FC = () => {
       )}
 
       {/* ===================================================================== */}
-      {/* SECTION 7: FEATURE FLAGS & CONFIGURATION                              */}
+      {/* SECTION 7: THE CONTROL LAYER - FEATURE FLAGS & ROLLOUT ENGINE          */}
       {/* ===================================================================== */}
       {activeTab === 'system' && (
-        <div className="space-y-4 animate-fadeIn">
+        <div className="space-y-6 animate-fadeIn">
           
-          <div className="p-5 rounded-3xl dark-glass border border-white/10 shadow-lg space-y-4">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-              System Feature Flags & Toggles
-            </h3>
-
-            <div className="space-y-3 text-xs">
-              {[
-                { key: 'spotifyPlayerEnabled', label: 'Spotify Ambient Player & Embedded Audio', desc: 'Allows members to stream Spotify embeds and link profile anthems.' },
-                { key: 'incognitoModeEnabled', label: 'Incognito Browsing Tier', desc: 'Allows Sanctuary VIP members to browse silently without discovery appearances.' },
-                { key: 'crisis1926HotlineEnabled', label: '1926 Free Crisis Support Modal', desc: 'Provides immediate crisis dispatch and emotional support.' },
-                { key: 'globalDiscoveryEnabled', label: 'Global Cross-City Discovery', desc: 'Expands match pools across international regions when nearby users are exhausted.' },
-                { key: 'telegramLuckEmojiGames', label: 'Telegram Luck Emoji Sandboxed Games', desc: 'Enables 🎲 Dice, 🎰 Slots, and 🪙 Coin toss in chats.' },
-                { key: 'automatedCatfishFilter', label: 'Automated Catfish & Phishing Guard', desc: 'Scans intro messages for external scam redirects.' }
-              ].map(flag => {
-                const isEnabled = featureFlags[flag.key as keyof typeof featureFlags];
-                return (
-                  <div key={flag.key} className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
-                    <div>
-                      <h5 className="font-bold text-white">{flag.label}</h5>
-                      <p className="text-[10px] text-zinc-400 mt-0.5">{flag.desc}</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setFeatureFlags(prev => ({ ...prev, [flag.key]: !isEnabled }));
-                        showToast(`Feature flag "${flag.label}" toggled.`);
-                      }}
-                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                        isEnabled ? 'bg-white' : 'bg-black/60 border border-white/20'
-                      }`}
-                    >
-                      <div className={`w-4 h-4 rounded-full transition-transform absolute top-1 ${
-                        isEnabled ? 'left-7 bg-[#090A0E]' : 'left-1 bg-white'
-                      }`} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Database Diagnostics */}
-          <div className="p-5 rounded-3xl dark-glass border border-white/10 shadow-lg flex items-center justify-between">
+          {/* Sub-navigation tabs: Flags & Rollout, Audit Logs, Analytics */}
+          <div className="flex items-center justify-between p-4 rounded-3xl dark-glass border border-white/10 shadow-lg">
             <div>
-              <h4 className="text-xs font-bold text-white">Database Backup & Diagnostics</h4>
-              <p className="text-[11px] text-zinc-400 mt-0.5">Generate a full encrypted JSON snapshot of SQLite records.</p>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider font-serif">
+                The Control Layer: Platform Administration
+              </h3>
+              <p className="text-[11px] text-zinc-400 mt-0.5">
+                Manage global availability, controlled % rollouts, emergency kill-switches, and audit governance.
+              </p>
             </div>
-            <button
-              onClick={() => showToast('Full SQLite snapshot successfully generated & downloaded.')}
-              className="px-4 py-2 rounded-xl gray-glass-btn text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Download DB Snapshot</span>
-            </button>
+
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.04] border border-white/10 text-xs">
+              <button
+                onClick={() => setSystemSubTab('flags')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
+                  systemSubTab === 'flags' ? 'bg-white text-[#090A0E]' : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Feature Flags ({adminFeatures.length})
+              </button>
+              <button
+                onClick={() => setSystemSubTab('audit')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
+                  systemSubTab === 'audit' ? 'bg-white text-[#090A0E]' : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Audit Logs ({auditLogs.length})
+              </button>
+              <button
+                onClick={() => setSystemSubTab('analytics')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
+                  systemSubTab === 'analytics' ? 'bg-white text-[#090A0E]' : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Adoption Telemetry
+              </button>
+            </div>
           </div>
+
+          {/* SUB-TAB 1: FEATURE FLAGS & ROLLOUT ENGINE */}
+          {systemSubTab === 'flags' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3">
+                {adminFeatures.map(feat => {
+                  return (
+                    <div
+                      key={feat.id}
+                      className="p-4 rounded-2xl dark-glass border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/20 transition-all"
+                    >
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${
+                            feat.killSwitchActive ? 'bg-rose-500 shadow-[0_0_8px_#F43F5E]' :
+                            feat.isGloballyEnabled ? 'bg-emerald-400 shadow-[0_0_8px_#10B981]' :
+                            'bg-zinc-600'
+                          }`} />
+                          <span className="font-bold text-sm text-white font-serif">{feat.name}</span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/10 text-zinc-300">
+                            {feat.category}
+                          </span>
+                          {feat.killSwitchActive && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                              KILL SWITCH ACTIVE
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-zinc-400">{feat.tagline}</p>
+                        
+                        {/* Dependencies pills */}
+                        {feat.dependencies && feat.dependencies.length > 0 && (
+                          <div className="flex items-center gap-1.5 pt-1 text-[10px] text-zinc-500">
+                            <span>Requires:</span>
+                            {feat.dependencies.map((d, i) => (
+                              <span key={i} className="px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-zinc-400">
+                                {d.depends_on_feature_id} {d.is_optional ? '(optional)' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Controls: Rollout %, Global Toggle, Kill Switch */}
+                      <div className="flex items-center gap-3 shrink-0">
+                        {/* Rollout % badge */}
+                        <button
+                          onClick={() => {
+                            setRolloutModalFeature(feat);
+                            setRolloutPercentageInput(feat.rolloutPercentage);
+                            setRolloutReason('');
+                          }}
+                          className="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-zinc-300 cursor-pointer flex items-center gap-1"
+                          title="Adjust controlled rollout percentage"
+                        >
+                          <Sliders className="w-3 h-3 text-zinc-400" />
+                          <span>{feat.rolloutPercentage}% Rollout</span>
+                        </button>
+
+                        {/* Emergency Kill Switch Button */}
+                        <button
+                          onClick={() => {
+                            setKillModalFeature(feat);
+                            setKillReason(feat.killSwitchReason || '');
+                          }}
+                          className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                            feat.killSwitchActive 
+                              ? 'bg-rose-600 text-white shadow-[0_0_12px_rgba(225,29,72,0.6)]' 
+                              : 'bg-white/5 hover:bg-rose-500/10 text-zinc-400 hover:text-rose-300 border border-white/10'
+                          }`}
+                          title="Trip or release emergency kill switch"
+                        >
+                          <AlertTriangle className="w-3 h-3" />
+                          <span>{feat.killSwitchActive ? 'Kill-Switch On' : 'Kill-Switch'}</span>
+                        </button>
+
+                        {/* Global Enable Toggle */}
+                        <button
+                          onClick={async () => {
+                            const next = !feat.isGloballyEnabled;
+                            await FeatureControlService.updateAdminFlag(feat.id, {
+                              isGloballyEnabled: next,
+                              reason: `Admin toggle global availability to ${next ? 'enabled' : 'disabled'}`
+                            });
+                            refreshAdminControlLayer();
+                            showToast(`${feat.name} globally ${next ? 'enabled' : 'disabled'}`);
+                          }}
+                          className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                            feat.isGloballyEnabled ? 'bg-white' : 'bg-white/15'
+                          }`}
+                          title={feat.isGloballyEnabled ? 'Globally Enabled' : 'Globally Disabled'}
+                        >
+                          <div className={`w-4 h-4 rounded-full transition-transform ${
+                            feat.isGloballyEnabled ? 'translate-x-6 bg-[#090A0E]' : 'translate-x-1 bg-white'
+                          }`} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* SUB-TAB 2: AUDIT GOVERNANCE LOGS */}
+          {systemSubTab === 'audit' && (
+            <div className="space-y-3">
+              <div className="p-4 rounded-3xl dark-glass border border-white/10 space-y-2">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    Immutable Configuration Audit Trail (Latest 50 Operations)
+                  </span>
+                  <span className="text-[10px] text-zinc-500">Zero unlogged changes permitted</span>
+                </div>
+
+                <div className="space-y-2 max-h-[60vh] overflow-y-auto no-scrollbar">
+                  {auditLogs.map(log => (
+                    <div key={log.id} className="p-3 rounded-2xl bg-white/[0.02] border border-white/10 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white">{log.admin_name}</span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-zinc-300 font-mono">
+                            {log.action}
+                          </span>
+                          <span className="text-[10px] text-zinc-400">Target: {log.target_id}</span>
+                        </div>
+                        <span className="text-[10px] text-zinc-500 font-mono">
+                          {new Date(log.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-zinc-300 text-[11px] font-serif">
+                        <span className="text-zinc-500">Reason:</span> "{log.reason}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SUB-TAB 3: FEATURE ADOPTION TELEMETRY */}
+          {systemSubTab === 'analytics' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {adoptionStats.map(stat => (
+                  <div key={stat.id} className="p-4 rounded-2xl dark-glass border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-white truncate">{stat.name}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/10 text-zinc-300">
+                        {stat.category}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-1">
+                      <span className="text-emerald-400 font-bold">{stat.enabled_users} Active</span>
+                      <span className="text-zinc-500">{stat.disabled_users} Disabled</span>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                      <div 
+                        className="h-full bg-emerald-400 rounded-full"
+                        style={{ width: `${Math.min(100, (stat.enabled_users / (stat.total_configured || 1)) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Kill Switch Modal */}
+          {killModalFeature && (
+            <GlassModal
+              isOpen={Boolean(killModalFeature)}
+              onClose={() => setKillModalFeature(null)}
+              title={`${killModalFeature.killSwitchActive ? 'Release' : 'Trip'} Emergency Kill-Switch`}
+              subtitle={killModalFeature.name}
+              maxWidth="md"
+            >
+              <div className="space-y-4 text-xs">
+                <p className="text-zinc-300 leading-relaxed">
+                  {killModalFeature.killSwitchActive
+                    ? 'Releasing the kill-switch will restore the module to its normal rollout and user preference rules.'
+                    : 'Tripping the emergency kill-switch immediately shuts off the module platform-wide for all users with zero client redeployments.'}
+                </p>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-white block">
+                    Mandatory Audit Governance Reason:
+                  </label>
+                  <textarea
+                    value={killReason}
+                    onChange={(e) => setKillReason(e.target.value)}
+                    placeholder="Provide explicit operational or security reason for this change..."
+                    rows={3}
+                    className="w-full bg-white/5 border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <GlassButton variant="subtle" onClick={() => setKillModalFeature(null)}>
+                    Cancel
+                  </GlassButton>
+                  <GlassButton
+                    variant={killModalFeature.killSwitchActive ? 'primary' : 'danger'}
+                    onClick={async () => {
+                      if (!killReason.trim()) {
+                        alert('A governance reason is strictly required.');
+                        return;
+                      }
+                      const next = !killModalFeature.killSwitchActive;
+                      await FeatureControlService.tripKillSwitch(
+                        killModalFeature.id,
+                        next,
+                        killReason.trim()
+                      );
+                      setKillModalFeature(null);
+                      refreshAdminControlLayer();
+                      showToast(`Kill-switch ${next ? 'tripped' : 'released'} for ${killModalFeature.name}`);
+                    }}
+                  >
+                    Confirm {killModalFeature.killSwitchActive ? 'Release' : 'Trip'}
+                  </GlassButton>
+                </div>
+              </div>
+            </GlassModal>
+          )}
+
+          {/* Rollout % Adjuster Modal */}
+          {rolloutModalFeature && (
+            <GlassModal
+              isOpen={Boolean(rolloutModalFeature)}
+              onClose={() => setRolloutModalFeature(null)}
+              title="Adjust Controlled Rollout Percentage"
+              subtitle={rolloutModalFeature.name}
+              maxWidth="md"
+            >
+              <div className="space-y-4 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white">Target Population:</span>
+                  <span className="font-mono text-base font-bold text-emerald-400">
+                    {rolloutPercentageInput}%
+                  </span>
+                </div>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={rolloutPercentageInput}
+                  onChange={(e) => setRolloutPercentageInput(Number(e.target.value))}
+                  className="w-full accent-white cursor-pointer"
+                />
+
+                <div className="space-y-1">
+                  <label className="font-bold text-white block">
+                    Reason for Rollout Adjustment:
+                  </label>
+                  <input
+                    type="text"
+                    value={rolloutReason}
+                    onChange={(e) => setRolloutReason(e.target.value)}
+                    placeholder="e.g. Expanding Phase 3 rollout to 50% cohort"
+                    className="w-full bg-white/5 border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <GlassButton variant="subtle" onClick={() => setRolloutModalFeature(null)}>
+                    Cancel
+                  </GlassButton>
+                  <GlassButton
+                    variant="primary"
+                    onClick={async () => {
+                      if (!rolloutReason.trim()) {
+                        alert('A governance reason is required.');
+                        return;
+                      }
+                      await FeatureControlService.updateAdminFlag(rolloutModalFeature.id, {
+                        rolloutPercentage: rolloutPercentageInput,
+                        reason: rolloutReason.trim()
+                      });
+                      setRolloutModalFeature(null);
+                      refreshAdminControlLayer();
+                      showToast(`Rollout set to ${rolloutPercentageInput}% for ${rolloutModalFeature.name}`);
+                    }}
+                  >
+                    Save Rollout
+                  </GlassButton>
+                </div>
+              </div>
+            </GlassModal>
+          )}
 
         </div>
       )}
