@@ -2,8 +2,10 @@ export type SoulverseRoute =
   | 'home'
   | 'daily'
   | 'discover'
+  | 'connect'
   | 'connections'
   | 'messages'
+  | 'inbox'
   | 'profile'
   | 'identities'
   | 'worlds'
@@ -14,6 +16,8 @@ export type SoulverseRoute =
   | 'more'
   | 'journal'
   | 'admin';
+
+export type MobilePrimaryTab = 'discover' | 'connect' | 'create' | 'inbox' | 'profile';
 
 export type ExperienceTab = 
   | 'home'

@@ -1,0 +1,587 @@
+import React, { useState } from 'react';
+import { 
+  User, 
+  Sparkles, 
+  ShieldCheck, 
+  ShieldAlert, 
+  Clock, 
+  Edit3, 
+  Settings, 
+  Globe2, 
+  ChevronRight, 
+  Share2, 
+  Music, 
+  ExternalLink, 
+  Sliders, 
+  Check, 
+  Eye, 
+  Lock, 
+  Tv, 
+  Plus, 
+  Info,
+  Smartphone,
+  CheckCircle2,
+  XCircle
+} from 'lucide-react';
+import { CURRENT_USER } from '../../mockData';
+import { useSpotifyMusic } from '../../context/SpotifyMusicContext';
+import type { UserProfile } from '../../types';
+
+interface SoulverseMobileProfileExperienceProps {
+  onNavigateToSettings: () => void;
+  onNavigateToTimeline: () => void;
+  onNavigateToAdmin: () => void;
+  onOpenCharacterBuilder: () => void;
+  onEditProfileModal: () => void;
+}
+
+export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileExperienceProps> = ({
+  onNavigateToSettings,
+  onNavigateToTimeline,
+  onNavigateToAdmin,
+  onOpenCharacterBuilder,
+  onEditProfileModal
+}) => {
+  const profile = CURRENT_USER;
+  const { track: _spotifyTrack, isPlaying: _isSpotifyPlaying, togglePlay: _togglePlay, setIsLinkModalOpen } = useSpotifyMusic();
+
+  // Active Identity Space: 'real' | 'cinematic' | 'fantasy' | 'aspirational'
+  const [activePersona, setActivePersona] = useState<'real' | 'cinematic' | 'fantasy' | 'aspirational'>('real');
+
+  // Life Timeline Scrubber selection
+  const [selectedTimelineYear, setSelectedTimelineYear] = useState<string>('2026');
+
+  // Granular External Social Integrations State (Prompt Section 5)
+  const [socialIntegrations, setSocialIntegrations] = useState([
+    {
+      id: 'google',
+      name: 'Google',
+      description: 'Account authentication & single sign-on',
+      status: 'connected',
+      handle: 'kavindu.dev@gmail.com',
+      canRevoke: false,
+      isPrimary: true,
+      enabled: true
+    },
+    {
+      id: 'spotify',
+      name: 'Spotify',
+      description: 'Music preferences, anthem & ambient playback',
+      status: 'connected',
+      handle: 'Connected (Anthem Active)',
+      canRevoke: true,
+      isPrimary: false,
+      enabled: true
+    },
+    {
+      id: 'instagram',
+      name: 'Instagram',
+      description: 'Social photo profile linking & gallery preview',
+      status: 'connected',
+      handle: '@kavindu.visuals',
+      canRevoke: true,
+      isPrimary: false,
+      enabled: true
+    },
+    {
+      id: 'linkedin',
+      name: 'LinkedIn',
+      description: 'Professional identity & career verification',
+      status: 'connected',
+      handle: 'kavindu-senanayake',
+      canRevoke: true,
+      isPrimary: false,
+      enabled: true
+    },
+    {
+      id: 'telegram',
+      name: 'Telegram',
+      description: 'External communication & luck mini-games',
+      status: 'connected',
+      handle: '@kavindu_telegram',
+      canRevoke: true,
+      isPrimary: false,
+      enabled: true
+    },
+    {
+      id: 'whatsapp',
+      name: 'WhatsApp',
+      description: 'Encrypted direct contact and sharing',
+      status: 'disconnected',
+      handle: 'Not linked',
+      canRevoke: true,
+      isPrimary: false,
+      enabled: false
+    },
+    {
+      id: 'facebook',
+      name: 'Facebook',
+      description: 'Social account linking & mutual friends',
+      status: 'disconnected',
+      handle: 'Not linked',
+      canRevoke: true,
+      isPrimary: false,
+      enabled: false
+    }
+  ]);
+
+  const toggleIntegration = (id: string) => {
+    setSocialIntegrations(prev => prev.map(item => {
+      if (item.id === id) {
+        const nextEnabled = !item.enabled;
+        return {
+          ...item,
+          enabled: nextEnabled,
+          status: nextEnabled ? 'connected' : 'disconnected'
+        };
+      }
+      return item;
+    }));
+  };
+
+  // Persona Content Definitions
+  const personaDetails = {
+    real: {
+      name: profile.name,
+      title: 'Full-Stack Developer & Indie Creator',
+      typeLabel: 'Verified Real Identity',
+      isVerifiedReal: true,
+      avatar: profile.avatar,
+      cover: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?auto=format&fit=crop&w=1200&q=80',
+      tagline: 'Building ethical software that fosters genuine psychological safety.',
+      bio: 'BSc (Hons) in Computer Science at UCSC. Passionate about system architecture, indie games, and late night discussions.',
+      attributes: [
+        { label: 'Circadian', value: 'Night Owl' },
+        { label: 'Love Style', value: 'Quality Time' },
+        { label: 'Conflict', value: 'Direct & Gentle' },
+        { label: 'Education', value: 'University of Colombo' }
+      ]
+    },
+    cinematic: {
+      name: 'Kavindu (Noir Edition)',
+      title: 'The Rain-Soaked Archival Detective',
+      typeLabel: 'Cinematic Fictional Persona',
+      isVerifiedReal: false,
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
+      cover: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80',
+      tagline: 'Watching neon reflections wash over cobblestone alleys at 2 AM.',
+      bio: 'A quiet observer inspired by Blade Runner, Batman in the rain, and Wong Kar-wai color palettes. Preserving lost memories through analog film.',
+      attributes: [
+        { label: 'Atmosphere', value: 'Film Noir & Rain' },
+        { label: 'Anthem', value: 'Vangelis - Tears in Rain' },
+        { label: 'Archetype', value: 'Reluctant Hero' },
+        { label: 'Camera', value: '1974 Olympus OM-1' }
+      ]
+    },
+    fantasy: {
+      name: 'Archivist of the Silent Citadel',
+      title: 'Keeper of Ancient Astrolabes & Lost Stars',
+      typeLabel: 'Fantasy Realm Identity',
+      isVerifiedReal: false,
+      avatar: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=400&q=80',
+      cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+      tagline: 'Deciphering constellations that have disappeared from modern skies.',
+      bio: 'In a mountainous library carved from obsidian quartz, I curate the thoughts people forgot to say aloud before dawn.',
+      attributes: [
+        { label: 'Realm', value: 'Citadel of Silent Quartz' },
+        { label: 'Element', value: 'Misty Ether' },
+        { label: 'Companion', value: 'Mechanical Raven' },
+        { label: 'Guild', value: 'Chronicle Weavers' }
+      ]
+    },
+    aspirational: {
+      name: 'Kavindu 2030',
+      title: 'Decentralized Sanctuary Architect & Author',
+      typeLabel: 'Future Self · Aspirational Era',
+      isVerifiedReal: false,
+      avatar: profile.avatar,
+      cover: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+      tagline: 'Living off-grid in the Knuckles mountain forest while running global ethical protocols.',
+      bio: 'A future where technology serves nervous systems rather than dopamine addiction. 100% solar powered, lush vegetable gardens, and an analog recording studio.',
+      attributes: [
+        { label: 'Target Year', value: '2030 - 2035' },
+        { label: 'Lifestyle', value: 'Off-Grid Cabin & Solar' },
+        { label: 'Legacy', value: 'Humane Tech Manifesto' },
+        { label: 'Mindset', value: 'Deep Calm & Generosity' }
+      ]
+    }
+  };
+
+  const currentPersona = personaDetails[activePersona];
+
+  // Life Timeline Milestones for Scrubber
+  const timelineMilestones: Record<string, { title: string; era: string; description: string; tag: string }> = {
+    '350 BCE': {
+      title: 'Apprentice at the Library of Alexandria',
+      era: 'Historical Timeline (BCE)',
+      description: 'Copying geometry scrolls and astronomical papyri under oil lamps by the Mediterranean sea.',
+      tag: 'Ancient History'
+    },
+    '2014': {
+      title: 'Trinity College Astronomical Society',
+      era: 'Youth & Astronomy',
+      description: 'First telescope observations of Saturn’s rings from the hill country verandah.',
+      tag: 'High School'
+    },
+    '2021': {
+      title: 'Physical Science & Advanced Mathematics',
+      era: 'Academic Foundation',
+      description: 'Completed GCE Advanced Levels with a focus on physics, calculus, and computational logic.',
+      tag: 'Education'
+    },
+    '2023': {
+      title: 'First Independent Software Architecture',
+      era: 'Software Engineering',
+      description: 'Began building ethical social architectures designed to eliminate compulsive behavioral loops.',
+      tag: 'Creation'
+    },
+    '2026': {
+      title: 'Soulverse: The Multi-Identity Sanctuary',
+      era: 'Present Day (2026)',
+      description: 'Developing the living universe platform allowing humans to express both their real and imaginary lives.',
+      tag: 'Active Era'
+    },
+    '2035': {
+      title: 'The Sovereign Forest Co-op',
+      era: 'Imagined Future Era',
+      description: 'A sanctuary retreat in Knuckles mountains hosting indie creators, philosophers, and stargazers.',
+      tag: 'Future Dream'
+    }
+  };
+
+  return (
+    <div className="w-full space-y-5 pb-28 max-w-xl mx-auto animate-fadeIn">
+      
+      {/* 1. TOP HEADER ACTIONS */}
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <h1 className="text-lg font-black text-white font-serif tracking-tight flex items-center gap-2">
+            <User className="w-5 h-5 text-zinc-300" />
+            <span>Identity Sanctuary</span>
+          </h1>
+          <p className="text-[11px] text-zinc-400">Multiple lives, real identity, timeline and external integrations</p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onNavigateToSettings}
+            className="p-2 rounded-2xl bg-white/[0.06] hover:bg-white/15 text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onNavigateToAdmin}
+            className="p-2 rounded-2xl bg-white/[0.06] hover:bg-white/15 text-emerald-400 border border-emerald-500/20 transition-colors cursor-pointer"
+            title="Admin Console"
+          >
+            <ShieldAlert className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* 2. PERSONA SWITCHER PILLS (Real Me, Cinematic Me, Fantasy Life, Aspirational) */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between px-1 text-[11px] font-bold">
+          <span className="text-zinc-400 uppercase tracking-wider">Switch Persona & Universe</span>
+          <button 
+            onClick={onOpenCharacterBuilder}
+            className="text-zinc-300 hover:text-white flex items-center gap-1 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Persona</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-1">
+          {[
+            { id: 'real' as const, label: '👤 Real Me', sub: 'Verified' },
+            { id: 'cinematic' as const, label: '🎬 Cinematic Me', sub: 'Noir' },
+            { id: 'fantasy' as const, label: '🏰 Fantasy Life', sub: 'Realm' },
+            { id: 'aspirational' as const, label: '🚀 2030 Self', sub: 'Future' }
+          ].map(p => (
+            <button
+              key={p.id}
+              onClick={() => setActivePersona(p.id)}
+              className={`px-3 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                activePersona === p.id
+                  ? 'bg-white text-[#090A0E] shadow-lg scale-[1.02]'
+                  : 'bg-white/[0.04] text-zinc-400 hover:text-white border border-white/10'
+              }`}
+            >
+              <span>{p.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. HERO IDENTITY CARD */}
+      <div className="rounded-3xl dark-glass border border-white/15 overflow-hidden shadow-2xl relative">
+        {/* Cover Image */}
+        <div className="relative h-36 sm:h-44 w-full overflow-hidden bg-black/60">
+          <img
+            src={currentPersona.cover}
+            alt="Cover"
+            className="w-full h-full object-cover transition-all duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#090A0E] via-black/30 to-black/30 pointer-events-none" />
+
+          {/* Persona Verification Disclaimer Tag */}
+          <div className="absolute top-3 left-3">
+            {currentPersona.isVerifiedReal ? (
+              <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/80 backdrop-blur-md text-white border border-emerald-400/40 flex items-center gap-1.5 shadow-md">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Verified Real-Life Human</span>
+              </span>
+            ) : (
+              <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-purple-500/80 backdrop-blur-md text-white border border-purple-400/40 flex items-center gap-1.5 shadow-md">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Fictional / Creative Universe</span>
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={onEditProfileModal}
+            className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md hover:bg-black/80 text-white text-xs font-bold border border-white/20 flex items-center gap-1.5 cursor-pointer transition-colors"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>Edit</span>
+          </button>
+        </div>
+
+        {/* Profile Avatar & Info Section */}
+        <div className="px-4 sm:px-6 pb-6 pt-0 relative">
+          <div className="flex justify-between items-end -mt-12 mb-3">
+            <div className="relative">
+              <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full overflow-hidden border-3 border-[#090A0E] shadow-2xl bg-black ring-2 ring-white/20">
+                <img
+                  src={currentPersona.avatar}
+                  alt={currentPersona.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#090A0E] shadow-[0_0_8px_#10B981]" />
+            </div>
+
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText('https://soulverse.im/@kavindu');
+                alert('Profile link copied!');
+              }}
+              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/15 flex items-center gap-1.5 cursor-pointer transition-all"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Share Profile</span>
+            </button>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-black text-white font-serif tracking-tight">
+                {currentPersona.name}
+              </h2>
+              {currentPersona.isVerifiedReal && (
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              )}
+            </div>
+
+            <p className="text-xs font-medium text-zinc-300">
+              {currentPersona.title}
+            </p>
+
+            <p className="text-xs text-zinc-400 italic pt-1">
+              "{currentPersona.tagline}"
+            </p>
+          </div>
+
+          <p className="text-xs text-zinc-300 leading-relaxed mt-3 pt-3 border-t border-white/[0.08]">
+            {currentPersona.bio}
+          </p>
+
+          {/* Persona Specific Attributes Grid */}
+          <div className="grid grid-cols-2 gap-2 mt-3.5">
+            {currentPersona.attributes.map(attr => (
+              <div key={attr.label} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs">
+                <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block">
+                  {attr.label}
+                </span>
+                <span className="text-zinc-200 font-semibold mt-0.5 block truncate">
+                  {attr.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. LIFE TIMELINE EXPLORER (Historical BCE/BC, Modern, Imagined) */}
+      <div className="rounded-3xl dark-glass border border-white/15 p-5 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-zinc-300" />
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+              Life Timeline & Eras
+            </h3>
+          </div>
+          <button
+            onClick={onNavigateToTimeline}
+            className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+          >
+            Full Timeline ›
+          </button>
+        </div>
+
+        <p className="text-xs text-zinc-400">
+          Explore historical milestones, present entries, or imagined future timelines.
+        </p>
+
+        {/* Timeline Year Scrubber Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          {Object.keys(timelineMilestones).map(year => (
+            <button
+              key={year}
+              onClick={() => setSelectedTimelineYear(year)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                selectedTimelineYear === year
+                  ? 'bg-white text-[#090A0E] shadow-md'
+                  : 'bg-white/[0.04] text-zinc-400 hover:text-white border border-white/10'
+              }`}
+            >
+              {year}
+            </button>
+          ))}
+        </div>
+
+        {/* Milestone Detail Card */}
+        {timelineMilestones[selectedTimelineYear] && (
+          <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2">
+            <div className="flex items-center justify-between text-[10px] font-bold">
+              <span className="text-zinc-400 uppercase tracking-wider">
+                {timelineMilestones[selectedTimelineYear].era}
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-white/10 text-white">
+                {timelineMilestones[selectedTimelineYear].tag}
+              </span>
+            </div>
+            <h4 className="text-sm font-bold text-white tracking-tight">
+              {timelineMilestones[selectedTimelineYear].title}
+            </h4>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              {timelineMilestones[selectedTimelineYear].description}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* 5. EXTERNAL SOCIAL INTEGRATIONS (Prompt Section 5: Granular & Revocable) */}
+      <div className="rounded-3xl dark-glass border border-white/15 p-5 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Globe2 className="w-4 h-4 text-zinc-300" />
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+              Connected Platforms & Integrations
+            </h3>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+            Granular Controls
+          </span>
+        </div>
+
+        <p className="text-xs text-zinc-400 leading-relaxed">
+          Link external services to verify your identity, showcase music taste, or share social handles. Permissions are granular and revocable at any time.
+        </p>
+
+        {/* Integration Rows */}
+        <div className="space-y-2.5">
+          {socialIntegrations.map(integ => (
+            <div
+              key={integ.id}
+              className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] transition-colors flex items-center justify-between gap-3 text-xs"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-white tracking-tight">{integ.name}</span>
+                  {integ.enabled ? (
+                    <span className="text-[9px] font-bold px-2 py-0.2 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                      <span>Connected</span>
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-bold px-2 py-0.2 rounded-full bg-white/5 text-zinc-500 border border-white/10">
+                      Optional
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
+                  {integ.description}
+                </p>
+                <code className="text-[10px] text-zinc-500 font-mono block mt-1">
+                  {integ.handle}
+                </code>
+              </div>
+
+              {/* Action Toggle / Connect Button */}
+              <div className="shrink-0">
+                {integ.isPrimary ? (
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase px-2 py-1 bg-white/5 rounded-lg">
+                    Primary SSO
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (integ.id === 'spotify') {
+                        setIsLinkModalOpen(true);
+                      } else {
+                        toggleIntegration(integ.id);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                      integ.enabled
+                        ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/15'
+                    }`}
+                  >
+                    {integ.enabled ? 'Revoke' : 'Link'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 6. PLATFORM SETTINGS & OPS ACCESS */}
+      <div className="space-y-2 pt-1">
+        <button
+          onClick={onNavigateToSettings}
+          className="w-full p-4 rounded-2xl dark-glass border border-white/10 hover:border-white/20 flex items-center justify-between text-xs cursor-pointer transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <Sliders className="w-4 h-4 text-zinc-300" />
+            <div className="text-left">
+              <span className="font-bold text-white block">Discovery Preferences & Visibility</span>
+              <span className="text-[11px] text-zinc-400">Distance radius, age bracket, incognito mode</span>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-zinc-500" />
+        </button>
+
+        <button
+          onClick={onNavigateToAdmin}
+          className="w-full p-4 rounded-2xl dark-glass border border-emerald-500/20 bg-emerald-950/10 hover:bg-emerald-950/20 flex items-center justify-between text-xs cursor-pointer transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="w-4 h-4 text-emerald-400" />
+            <div className="text-left">
+              <span className="font-bold text-white block">Platform Admin Operations Portal</span>
+              <span className="text-[11px] text-zinc-400">User management, liveness audits, matching weights</span>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-emerald-400" />
+        </button>
+      </div>
+
+    </div>
+  );
+};
