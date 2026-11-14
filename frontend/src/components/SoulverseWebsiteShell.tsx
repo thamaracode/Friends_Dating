@@ -75,7 +75,6 @@ import { EditProfileInfoModal } from './EditProfileInfoModal';
 import { CrisisSupportModal } from './CrisisSupportModal';
 import { AdminDashboard } from './AdminDashboard';
 import { CinematicAmbientBackground } from './CinematicAmbientBackground';
-import { SpotifyPlayerWidget } from './SpotifyPlayerWidget';
 import { LinkSpotifyModal } from './LinkSpotifyModal';
 import { useSpotifyMusic } from '../context/SpotifyMusicContext';
 import { TheUnspokenSanctuary } from './emotional/TheUnspokenSanctuary';
@@ -934,10 +933,8 @@ export const SoulverseWebsiteShell: React.FC = () => {
       />
 
       {/* ===================================================================== */}
-      {/* 5. SPOTIFY MUSIC PLAYER (Mini Dock, Expanded Embed, Link Modal)       */}
+      {/* 5. SPOTIFY MODALS & INTEGRATIONS                                      */}
       {/* ===================================================================== */}
-      <SpotifyPlayerWidget variant="mini-dock" />
-      <SpotifyPlayerWidget variant="expanded" />
       <LinkSpotifyModal />
     </div>
   );

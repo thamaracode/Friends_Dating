@@ -252,7 +252,7 @@ export const SpotifyMusicProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [currentTime, setCurrentTime] = useState(0);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
-  const [isMiniDockVisible, setIsMiniDockVisible] = useState(true);
+  const [isMiniDockVisible, setIsMiniDockVisible] = useState(false);
   const [activePresetIndex, setActivePresetIndex] = useState(0);
 
   // Web Audio Synth for instant relaxation chord playback
