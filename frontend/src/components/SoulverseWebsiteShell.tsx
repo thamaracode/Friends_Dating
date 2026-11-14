@@ -85,6 +85,8 @@ import { FeatureControlService } from '../services/featureControlService';
 import { QuoteDiscoveryView } from './quotes/QuoteDiscoveryView';
 import { CouplePlayHubView } from './games/CouplePlayHubView';
 import { CreateConfessionModal } from './confessions/CreateConfessionModal';
+import { HeartLogoVariant, SoulverseBrandLogo } from './brand/SoulverseHeartLogos';
+import { HeartLogoShowcaseModal } from './brand/HeartLogoShowcaseModal';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -123,6 +125,17 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const [isLetterOpen, setIsLetterOpen] = useState(false);
   const [isConfessionModalOpen, setIsConfessionModalOpen] = useState(false);
   const [isControlCenterOpen, setIsControlCenterOpen] = useState(false);
+  const [brandLogoVariant, setBrandLogoVariant] = useState<HeartLogoVariant>(() => {
+    return (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'infinity';
+  });
+  const [isHeartLogoModalOpen, setIsHeartLogoModalOpen] = useState(false);
+
+  const handleSelectLogoVariant = (variant: HeartLogoVariant) => {
+    setBrandLogoVariant(variant);
+    localStorage.setItem('soulverse_brand_logo', variant);
+    setShellToast(`💖 Updated brand heart logo to "${variant}"!`);
+    setTimeout(() => setShellToast(null), 3500);
+  };
   const [targetWorldId, setTargetWorldId] = useState<string | null>(null);
 
   // The Control Layer dynamic feature visibility
@@ -314,11 +327,15 @@ export const SoulverseWebsiteShell: React.FC = () => {
           </button>
 
           <div 
-            onClick={() => navigateTo('discover')}
+            onClick={() => setIsHeartLogoModalOpen(true)}
             className="flex items-center gap-3 cursor-pointer group select-none py-1"
+            title="Click to view & customize Soulverse Heart Logos"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-white/10 to-white/20 border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:border-amber-400/50 transition-colors">
-              <Compass className="w-5 h-5 text-zinc-200 group-hover:text-amber-300 transition-colors" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-white/10 to-white/20 border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:border-amber-400/50 transition-colors relative">
+              <SoulverseBrandLogo variant={brandLogoVariant} size={24} showGlow={true} />
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-400/20 border border-amber-400 text-[9px] font-bold text-amber-300 flex items-center justify-center shadow-sm">
+                ✧
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-heading font-extrabold tracking-tight text-white text-lg sm:text-xl">Soulverse</span>
@@ -524,7 +541,14 @@ export const SoulverseWebsiteShell: React.FC = () => {
           <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md lg:hidden flex">
             <div className="w-80 max-w-[85vw] bg-[#10121A] border-r border-white/10 h-full p-6 space-y-6 overflow-y-auto no-scrollbar animate-fadeIn">
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                <div className="flex items-center gap-2">
+                <div 
+                  onClick={() => { setIsMobileMenuOpen(false); setIsHeartLogoModalOpen(true); }}
+                  className="flex items-center gap-2.5 cursor-pointer"
+                  title="Customize Heart Brand Logo"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center">
+                    <SoulverseBrandLogo variant={brandLogoVariant} size={20} showGlow={true} />
+                  </div>
                   <span className="font-heading font-extrabold text-lg text-white">Soulverse</span>
                   <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B]" />
                 </div>
@@ -874,6 +898,14 @@ export const SoulverseWebsiteShell: React.FC = () => {
           setShellToast(`✨ Published ${c.visibility.toUpperCase()} confession: "${c.title}"`);
           setTimeout(() => setShellToast(null), 4000);
         }}
+      />
+
+      {/* Heart Brand Logo Design Showcase Modal */}
+      <HeartLogoShowcaseModal
+        isOpen={isHeartLogoModalOpen}
+        onClose={() => setIsHeartLogoModalOpen(false)}
+        currentVariant={brandLogoVariant}
+        onSelectVariant={handleSelectLogoVariant}
       />
 
       {/* ===================================================================== */}

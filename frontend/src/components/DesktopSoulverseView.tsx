@@ -38,6 +38,7 @@ import {
 import { CURRENT_USER } from '../mockData';
 import { profileWorldsClient } from '../services/profileWorldsApiClient';
 import { SpotifyPlayerWidget } from './SpotifyPlayerWidget';
+import { SoulverseBrandLogo, HeartLogoVariant } from './brand/SoulverseHeartLogos';
 import type { MainNavTab, ExperienceTab } from '../types';
 import type { ProfileWorld } from '../types/profileWorlds';
 
@@ -48,6 +49,8 @@ interface DesktopSoulverseViewProps {
   onOpenWorld: (worldId: string) => void;
   onOpenReadme: () => void;
   isEmbeddedInShell?: boolean;
+  brandLogoVariant?: HeartLogoVariant;
+  onOpenLogoModal?: () => void;
 }
 
 export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
@@ -56,7 +59,9 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
   onNavigateSubsystem,
   onOpenWorld,
   onOpenReadme,
-  isEmbeddedInShell = true
+  isEmbeddedInShell = true,
+  brandLogoVariant = (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'infinity',
+  onOpenLogoModal
 }) => {
   const [profile] = useState(CURRENT_USER);
   const [worlds, setWorlds] = useState<ProfileWorld[]>([]);
@@ -523,14 +528,15 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
       {/* 1. TOP HEADER BAR */}
       <header className="h-16 border-b border-white/[0.08] px-6 flex items-center justify-between sticky top-0 z-40 dark-glass">
         <div 
-          onClick={() => onSelectTab('profile')}
+          onClick={() => onOpenLogoModal ? onOpenLogoModal() : onSelectTab('profile')}
           className="flex items-center gap-2.5 cursor-pointer group w-64 shrink-0"
+          title="Customize Heart Brand Logo"
         >
-          <div className="w-7 h-7 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center text-white shadow-[0_0_12px_rgba(255,255,255,0.1)] group-hover:scale-105 transition-transform">
-            <Heart className="w-3.5 h-3.5 fill-white text-white" />
+          <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-[0_0_12px_rgba(255,255,255,0.1)] group-hover:border-amber-400/50 group-hover:scale-105 transition-all">
+            <SoulverseBrandLogo variant={brandLogoVariant} size={20} showGlow={true} />
           </div>
-          <span className="font-black text-sm tracking-widest text-white font-serif">
-            Soulverse <span className="text-zinc-400">✧</span>
+          <span className="font-extrabold text-sm tracking-widest text-white font-sans">
+            Soulverse <span className="text-amber-400">✧</span>
           </span>
         </div>
 
