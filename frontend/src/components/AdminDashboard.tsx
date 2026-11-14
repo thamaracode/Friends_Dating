@@ -37,7 +37,8 @@ import {
   CheckSquare,
   FileJson,
   DollarSign,
-  History
+  History,
+  Cpu
 } from 'lucide-react';
 import { MOCK_PROFILES } from '../mockData';
 import { useSpotifyMusic, CURATED_SPOTIFY_PRESETS, SpotifyPreset } from '../context/SpotifyMusicContext';
@@ -51,6 +52,7 @@ import {
 import { GlassModal, GlassButton, GlassPrimaryButton } from './klyven';
 import { FeatureControlService } from '../services/featureControlService';
 import type { AdminFeature, AuditLogEntry, FeatureAdoptionStat } from '../types/featureControl';
+import { byoaiService } from '../services/byoaiService';
 
 export const AdminDashboard: React.FC = () => {
   // Navigation tabs
@@ -81,8 +83,14 @@ export const AdminDashboard: React.FC = () => {
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [adoptionStats, setAdoptionStats] = useState<FeatureAdoptionStat[]>([]);
   const [systemSubTab, setSystemSubTab] = useState<
-    'flags' | 'dependencies' | 'config' | 'rbac' | 'subscriptions' | 'versions' | 'audit' | 'analytics' | 'ops'
+    'flags' | 'dependencies' | 'config' | 'rbac' | 'subscriptions' | 'versions' | 'audit' | 'analytics' | 'ops' | 'ai'
   >('flags');
+  const [aiInfra, setAiInfra] = useState<{
+    providers: any[];
+    telemetry: any;
+    models: any[];
+  } | null>(null);
+  const [isLoadingAiInfra, setIsLoadingAiInfra] = useState(false);
   const [killModalFeature, setKillModalFeature] = useState<AdminFeature | null>(null);
   const [killReason, setKillReason] = useState('');
   const [rolloutModalFeature, setRolloutModalFeature] = useState<AdminFeature | null>(null);
@@ -129,11 +137,26 @@ export const AdminDashboard: React.FC = () => {
     FeatureControlService.getConfigurationVersions().then(setConfigVersions).catch(console.error);
   };
 
+  const loadAiInfrastructure = async () => {
+    setIsLoadingAiInfra(true);
+    try {
+      const data = await byoaiService.getAdminInfrastructure();
+      setAiInfra(data);
+    } catch (e) {
+      console.error('Failed to load AI infrastructure', e);
+    } finally {
+      setIsLoadingAiInfra(false);
+    }
+  };
+
   React.useEffect(() => {
     if (activeTab === 'system') {
       refreshAdminControlLayer();
+      if (systemSubTab === 'ai') {
+        loadAiInfrastructure();
+      }
     }
-  }, [activeTab]);
+  }, [activeTab, systemSubTab]);
 
   // Music Presets Admin State
   const [presets, setPresets] = useState<SpotifyPreset[]>(CURATED_SPOTIFY_PRESETS);
@@ -1155,6 +1178,7 @@ export const AdminDashboard: React.FC = () => {
                 { id: 'versions', label: `Snapshots (${configVersions.length})`, icon: History },
                 { id: 'audit', label: `Audit (${auditLogs.length})`, icon: ShieldCheck },
                 { id: 'analytics', label: 'Adoption', icon: Activity },
+                { id: 'ai', label: 'AI Infra', icon: Cpu },
                 { id: 'ops', label: 'SQLite Ops', icon: Database }
               ].map(sub => {
                 const Icon = sub.icon || Sliders;
@@ -1865,6 +1889,169 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* SUB-TAB 10: AI INFRASTRUCTURE & GOVERNANCE */}
+          {systemSubTab === 'ai' && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-5 rounded-3xl dark-glass border border-white/10">
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider font-serif flex items-center gap-2">
+                    <Cpu className="w-4 h-4 text-indigo-400" />
+                    <span>AI Infrastructure & Multi-Provider Telemetry</span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Global provider governance, platform rate limits, and aggregated telemetry (Zero access to user keys or conversation transcripts).
+                  </p>
+                </div>
+                <button
+                  disabled={isLoadingAiInfra}
+                  onClick={loadAiInfrastructure}
+                  className="px-3.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${isLoadingAiInfra ? 'animate-spin' : ''}`} />
+                  Refresh Telemetry
+                </button>
+              </div>
+
+              {/* Aggregated Telemetry KPI Cards */}
+              {aiInfra?.telemetry && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <div className="p-3.5 rounded-2xl dark-glass border border-white/10 space-y-1">
+                    <span className="text-[10px] text-zinc-400 uppercase font-mono">Platform Requests</span>
+                    <p className="text-lg font-bold font-mono text-white">
+                      {aiInfra.telemetry.totalRequests.toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl dark-glass border border-white/10 space-y-1">
+                    <span className="text-[10px] text-zinc-400 uppercase font-mono">Tokens Processed</span>
+                    <p className="text-lg font-bold font-mono text-indigo-400">
+                      {aiInfra.telemetry.totalTokens.toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl dark-glass border border-white/10 space-y-1">
+                    <span className="text-[10px] text-zinc-400 uppercase font-mono">Est. Platform Cost</span>
+                    <p className="text-lg font-bold font-mono text-emerald-400">
+                      ${Number(aiInfra.telemetry.totalPlatformCostUsd || 0).toFixed(4)}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl dark-glass border border-white/10 space-y-1">
+                    <span className="text-[10px] text-zinc-400 uppercase font-mono">Average Latency</span>
+                    <p className="text-lg font-bold font-mono text-amber-400">
+                      {aiInfra.telemetry.avgLatencyMs} ms
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl dark-glass border border-white/10 space-y-1">
+                    <span className="text-[10px] text-zinc-400 uppercase font-mono">Active BYOAI Users</span>
+                    <p className="text-lg font-bold font-mono text-purple-400">
+                      {aiInfra.telemetry.activeUsersCount}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl dark-glass border border-white/10 space-y-1">
+                    <span className="text-[10px] text-zinc-400 uppercase font-mono">Failure Rate</span>
+                    <p className={`text-lg font-bold font-mono ${aiInfra.telemetry.failureRatePct > 5 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                      {aiInfra.telemetry.failureRatePct}%
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Provider Availability Table */}
+              <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-4">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider font-serif">
+                  Global Provider Availability & Governance Kill-Switches
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {aiInfra?.providers?.map((p: any) => (
+                    <div
+                      key={p.providerId}
+                      className="p-4 rounded-2xl dark-glass border border-white/10 flex items-center justify-between gap-3 hover:border-white/20 transition-all"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${p.isGloballyEnabled ? 'bg-emerald-400 shadow-[0_0_8px_#10B981]' : 'bg-rose-500'}`} />
+                          <span className="text-xs font-bold text-white font-serif">{p.name}</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/10 text-zinc-400">
+                            {p.providerId}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-zinc-400">
+                          RPM Limit: <strong className="text-zinc-200 font-mono">{p.rateLimitRpm}</strong> | BYOK Allowed: <strong className="text-zinc-200">{p.byokAllowed ? 'Yes' : 'No'}</strong>
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={async () => {
+                          try {
+                            await byoaiService.updateAdminProvider(p.providerId, { isGloballyEnabled: !p.isGloballyEnabled });
+                            loadAiInfrastructure();
+                            showToast(`Provider ${p.name} ${!p.isGloballyEnabled ? 'enabled' : 'disabled'}`);
+                          } catch (err: any) {
+                            showToast(err.message || 'Update failed');
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          p.isGloballyEnabled
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30'
+                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30'
+                        }`}
+                      >
+                        {p.isGloballyEnabled ? 'Kill Provider' : 'Enable'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Supported AI Model Catalog */}
+              <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-4">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider font-serif">
+                  Platform AI Model Catalog ({aiInfra?.models?.length || 0} Models)
+                </h4>
+
+                <div className="border border-white/10 rounded-2xl overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-white/[0.04] text-zinc-400 font-mono text-[10px] uppercase border-b border-white/10">
+                      <tr>
+                        <th className="p-3">Model</th>
+                        <th className="p-3">Provider</th>
+                        <th className="p-3">Context Window</th>
+                        <th className="p-3">Input / 1k</th>
+                        <th className="p-3">Output / 1k</th>
+                        <th className="p-3">Capabilities</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.06] text-zinc-300 font-mono text-[11px]">
+                      {aiInfra?.models?.map((m: any) => (
+                        <tr key={m.id} className="hover:bg-white/[0.02]">
+                          <td className="p-3 text-white font-sans font-semibold">
+                            {m.name}
+                            <span className="block text-[10px] text-zinc-500 font-mono">{m.id}</span>
+                          </td>
+                          <td className="p-3 uppercase text-indigo-400 font-bold">{m.provider}</td>
+                          <td className="p-3">{m.capabilities?.contextWindow?.toLocaleString()} tokens</td>
+                          <td className="p-3 text-emerald-400">${m.costPer1kInputUsd}</td>
+                          <td className="p-3 text-emerald-400">${m.costPer1kOutputUsd}</td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-1">
+                              {m.capabilities?.streaming && <span className="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 text-[9px]">Stream</span>}
+                              {m.capabilities?.vision && <span className="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 text-[9px]">Vision</span>}
+                              {m.capabilities?.jsonMode && <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[9px]">JSON</span>}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

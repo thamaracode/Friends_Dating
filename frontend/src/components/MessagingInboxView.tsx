@@ -47,7 +47,8 @@ import {
   VolumeX,
   UserX,
   Info,
-  Heart
+  Heart,
+  Cpu
 } from 'lucide-react';
 import { MOCK_PROFILES, CURRENT_USER } from '../mockData';
 import { VoiceWaveformPlayer } from './VoiceWaveformPlayer';
@@ -56,6 +57,8 @@ import { chatClient } from '../services/chatApiClient';
 import { BeforeYouTalkSheet } from './vault/BeforeYouTalkSheet';
 import { RelationshipVaultService } from '../services/relationshipVaultService';
 import { TwoPersonQuestionModal } from './emotional/TwoPersonQuestionModal';
+import { UnifiedAiAssistantDrawer } from './ai/UnifiedAiAssistantDrawer';
+import { UserAiControlCenter } from './control/UserAiControlCenter';
 import type { UserProfile } from '../types';
 import type { 
   ChatMessage, 
@@ -87,6 +90,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isBriefingOpen, setIsBriefingOpen] = useState(false);
   const [isTwoPersonOpen, setIsTwoPersonOpen] = useState(false);
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
+  const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
 
   // Desktop vs Mobile responsive state
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
@@ -856,6 +861,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             >
               <Heart className="w-3 h-3 text-purple-300" />
               <span className="hidden sm:inline">2-Person Q</span>
+            </button>
+            {/* Unified AI Assistant Pill */}
+            <button
+              onClick={() => setIsAiAssistantOpen(true)}
+              className="px-2.5 py-1 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-sm"
+              title="Soulverse AI Assistant & Intelligence"
+            >
+              <Cpu className="w-3 h-3 text-indigo-400" />
+              <span className="hidden sm:inline">AI Helper</span>
             </button>
             {/* Fullscreen / Edge-to-Edge Web Toggle */}
             <button
@@ -1687,6 +1701,41 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         partnerName={currentConv?.title}
         partnerAvatar={currentConv?.avatar}
       />
+
+      {/* Unified AI Assistant Drawer */}
+      <UnifiedAiAssistantDrawer
+        isOpen={isAiAssistantOpen}
+        onClose={() => setIsAiAssistantOpen(false)}
+        conversationHistory={currentMessages.map(m => ({
+          sender: m.isOutgoing ? 'You' : (currentConv?.title || 'Partner'),
+          text: m.text
+        }))}
+        partnerProfile={{
+          name: currentConv?.title || 'Match',
+          avatar: currentConv?.avatar,
+          interests: ['Music', 'Travel', 'Art'],
+          bio: 'Passionate conversationalist exploring the Soulverse.'
+        }}
+        currentDraftText={inputMessage}
+        onInsertMessage={(text) => {
+          setInputMessage(text);
+          setIsAiAssistantOpen(false);
+        }}
+        onReplaceDraft={(text) => {
+          setInputMessage(text);
+          setIsAiAssistantOpen(false);
+        }}
+        onOpenAiSettings={() => setIsAiSettingsOpen(true)}
+      />
+
+      {/* User AI Control Center Modal */}
+      {isAiSettingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-4xl h-[85vh] bg-[#090A0E] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <UserAiControlCenter onClose={() => setIsAiSettingsOpen(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

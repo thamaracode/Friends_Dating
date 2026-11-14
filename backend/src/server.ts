@@ -7,6 +7,26 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 import { db, initDatabase } from './db.js';
 import { recognizeSocialUrl, PLATFORM_REGISTRY } from './social-platforms/registry.js';
+import {
+  encryptApiKey,
+  decryptApiKey,
+  maskApiKey,
+  validateCustomEndpoint
+} from './ai/vault';
+import { AIProviderRegistry, AIModelRegistry } from './ai/registry';
+import {
+  AIContextPermissionService,
+  AIUsageTracker,
+  AIRequestRouter
+} from './ai/router';
+import {
+  AIProviderId,
+  AITaskKey,
+  AIRequestPayload,
+  AIContextPermissions,
+  AISpendingLimits,
+  AIMessage
+} from './ai/types';
 
 initDatabase();
 
@@ -4767,6 +4787,1009 @@ app.post('/api/admin/system/vacuum', requireAdminPermission('system', 'write'), 
     res.json({ success: true, message: 'SQLite database vacuumed and defragmented' });
   } catch (error: any) {
     res.status(500).json({ error: 'Database vacuum failed', details: error.message });
+  }
+});
+
+// ============================================================================
+// 19. USER CUSTOM AI HELPER & CHAT INTELLIGENCE (ChatGPT & Gemini BYOK)
+// ============================================================================
+app.post('/api/ai/custom-helper', async (req, res) => {
+  try {
+    const {
+      provider = 'gemini',
+      apiKey,
+      model,
+      action = 'analyze_chat',
+      conversationHistory = [],
+      draftText = '',
+      partnerProfile = { name: 'Match' },
+      persona = 'empath'
+    } = req.body;
+
+    const personaDescriptions: Record<string, string> = {
+      wingman: 'You are a charming, witty wingman dating coach who highlights playful banter, humor, and casual confidence.',
+      empath: 'You are a warm, emotionally attuned relationship counselor who listens for emotional nuances, vulnerability, and genuine connection.',
+      deep_soul: 'You are an introspective intellectual analyst exploring shared passions, philosophical curiosity, and psychological compatibility.',
+      minimalist: 'You are a concise, direct conversational assistant providing punchy, effortless responses without fluff.'
+    };
+
+    const activePersonaGuide = personaDescriptions[persona] || personaDescriptions.empath;
+
+    // --- Action 1: Test Connection ---
+    if (action === 'test_connection') {
+      if (!apiKey || !apiKey.trim()) {
+        return res.status(400).json({ error: 'API key is required to test live connection' });
+      }
+
+      if (provider === 'openai') {
+        const testRes = await fetch('https://api.openai.com/v1/models', {
+          headers: { Authorization: `Bearer ${apiKey.trim()}` }
+        });
+        if (!testRes.ok) {
+          const errData: any = await testRes.json().catch(() => ({}));
+          return res.status(400).json({
+            success: false,
+            error: errData?.error?.message || `OpenAI connection failed with HTTP ${testRes.status}`
+          });
+        }
+        return res.json({ success: true, message: 'OpenAI ChatGPT API key verified and connected successfully!' });
+      } else {
+        // Gemini
+        const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.trim()}`);
+        if (!testRes.ok) {
+          const errData: any = await testRes.json().catch(() => ({}));
+          return res.status(400).json({
+            success: false,
+            error: errData?.error?.message || `Google Gemini connection failed with HTTP ${testRes.status}`
+          });
+        }
+        return res.json({ success: true, message: 'Google Gemini API key verified and connected successfully!' });
+      }
+    }
+
+    // Prepare Prompts
+    let systemPrompt = `You are Soulverse AI Helper. ${activePersonaGuide}\nYou are analyzing a social conversation for the user. Always respond in valid JSON format only.`;
+    let userPrompt = '';
+
+    if (action === 'analyze_chat') {
+      const historyStr = conversationHistory.map((m: any) => `${m.sender || 'Participant'}: "${m.text || ''}"`).join('\n');
+      userPrompt = `Analyze the conversation with ${partnerProfile.name || 'this person'}.\nConversation History:\n${historyStr || '(No messages yet)'}\n\nReturn a JSON object with this exact structure:
+{
+  "chemistryScore": <number between 40 and 98>,
+  "vibe": "<2-4 word vibe description, e.g. Warm Curiosity & Banter>",
+  "sentiment": "<1 sentence emotional summary>",
+  "momentum": "<one of: surging | steady | needs_spark | unbalanced>",
+  "subtext": "<what the other person seems genuinely excited about or subtly hinting at>",
+  "greenFlags": ["<signal 1>", "<signal 2>"],
+  "recommendedReplies": [
+    { "type": "playful", "text": "<witty reply text>", "explanation": "<brief reason>" },
+    { "type": "deep", "text": "<thoughtful reflective reply text>", "explanation": "<brief reason>" },
+    { "type": "casual", "text": "<low-pressure natural reply text>", "explanation": "<brief reason>" }
+  ],
+  "suggestedTopics": ["<topic 1>", "<topic 2>", "<topic 3>"]
+}`;
+    } else if (action === 'polish_draft') {
+      userPrompt = `The user is drafting a message to ${partnerProfile.name || 'their match'}.\nCurrent draft text: "${draftText}"\nProvide tone feedback and 2 polished variations.\nReturn a JSON object with this exact structure:
+{
+  "original": "${draftText.replace(/"/g, '\\"')}",
+  "toneAssessment": "<critique of tone, e.g. friendly, slightly eager, confident>",
+  "suggestions": [
+    { "style": "Smooth & Engaging", "text": "<improved version 1>" },
+    { "style": "Playful & Casual", "text": "<improved version 2>" }
+  ]
+}`;
+    } else if (action === 'generate_icebreakers') {
+      userPrompt = `Generate 3 bespoke openers for ${partnerProfile.name || 'this match'}.\nPartner details: Bio: "${partnerProfile.bio || ''}", Interests: "${(partnerProfile.interests || []).join(', ')}".\nReturn a JSON object with this exact structure:
+{
+  "openers": [
+    { "style": "Playful Curiosity", "text": "<crafted opener 1>" },
+    { "style": "Passions Connection", "text": "<crafted opener 2>" },
+    { "style": "Direct & Warm", "text": "<crafted opener 3>" }
+  ]
+}`;
+    }
+
+    // --- Live API Execution if key is provided ---
+    if (apiKey && apiKey.trim()) {
+      try {
+        if (provider === 'openai') {
+          const apiModel = model || 'gpt-4o-mini';
+          const openAiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey.trim()}`
+            },
+            body: JSON.stringify({
+              model: apiModel,
+              response_format: { type: 'json_object' },
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+              ],
+              temperature: 0.7
+            })
+          });
+
+          if (openAiRes.ok) {
+            const data: any = await openAiRes.json();
+            const rawContent = data.choices?.[0]?.message?.content;
+            if (rawContent) {
+              const parsed = JSON.parse(rawContent);
+              return res.json({ success: true, provider: 'openai', model: apiModel, result: parsed });
+            }
+          }
+        } else {
+          // Gemini
+          const apiModel = model || 'gemini-1.5-flash';
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${apiKey.trim()}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{ text: `${systemPrompt}\n\n${userPrompt}\nOutput ONLY JSON.` }]
+                }],
+                generationConfig: {
+                  responseMimeType: 'application/json'
+                }
+              })
+            }
+          );
+
+          if (geminiRes.ok) {
+            const data: any = await geminiRes.json();
+            const rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawContent) {
+              const parsed = JSON.parse(rawContent);
+              return res.json({ success: true, provider: 'gemini', model: apiModel, result: parsed });
+            }
+          }
+        }
+      } catch (liveErr) {
+        console.warn('Live custom AI API call encountered error, falling back to simulated intelligence:', liveErr);
+      }
+    }
+
+    // --- Intelligent Ontological Fallback (when no key or offline) ---
+    const pName = partnerProfile.name || 'your match';
+    const msgCount = conversationHistory.length;
+    const baseScore = Math.min(95, 68 + (msgCount * 3));
+
+    if (action === 'analyze_chat') {
+      const fallbackResult = {
+        chemistryScore: baseScore,
+        vibe: msgCount > 3 ? 'Reciprocal Curiosity & Deep Resonance' : 'Fresh Spark & Warm Initiation',
+        sentiment: `${pName} is actively engaged and responds with consistent warmth.`,
+        momentum: msgCount > 6 ? 'surging' : 'steady',
+        subtext: `${pName} seems particularly drawn to shared creative pursuits and appreciates when you ask open-ended questions about their world.`,
+        greenFlags: [
+          'Balanced response length and consistent curiosity',
+          'Shared appreciation for thoughtful conversation over small talk',
+          'Quick conversational pacing without long lapses'
+        ],
+        recommendedReplies: [
+          {
+            type: 'playful',
+            text: `Careful, if we keep agreeing on everything like this, we might actually run out of things to debate. What's your most controversial music opinion?`,
+            explanation: 'Sparks lighthearted banter and playful challenge'
+          },
+          {
+            type: 'deep',
+            text: `I was actually thinking about what you mentioned earlier. It takes a lot of self-awareness to see things that way—have you always felt like that?`,
+            explanation: 'Validates their perspective and invites genuine emotional depth'
+          },
+          {
+            type: 'casual',
+            text: `That honestly made me smile. How has the rest of your week been treating you so far?`,
+            explanation: 'Low pressure check-in that keeps the momentum warm and natural'
+          }
+        ],
+        suggestedTopics: ['Favorite late night albums', 'Dream travel escapes', 'First impressions vs reality']
+      };
+      return res.json({ success: true, provider: 'simulated_helper', result: fallbackResult });
+    } else if (action === 'polish_draft') {
+      const fallbackPolish = {
+        original: draftText,
+        toneAssessment: 'Warm, sincere, and approachable. A slight trim makes it punchier.',
+        suggestions: [
+          {
+            style: 'Smooth & Engaging',
+            text: draftText.endsWith('?') ? draftText : `${draftText}. What do you think?`
+          },
+          {
+            style: 'Playful & Casual',
+            text: `Okay but hear me out—${draftText.toLowerCase()}`
+          }
+        ]
+      };
+      return res.json({ success: true, provider: 'simulated_helper', result: fallbackPolish });
+    } else {
+      const fallbackIcebreakers = {
+        openers: [
+          {
+            style: 'Passions Connection',
+            text: `I noticed you love ${(partnerProfile.interests?.[0] || 'music')}. I have to ask: what's the one song or place that never fails to reset your mind?`
+          },
+          {
+            style: 'Playful Curiosity',
+            text: `Two truths and a lie, or would you rather skip straight to your most absurd weekend story?`
+          },
+          {
+            style: 'Direct & Warm',
+            text: `Your profile gave off an genuinely calm energy. What’s something you’re looking forward to this month?`
+          }
+        ]
+      };
+      return res.json({ success: true, provider: 'simulated_helper', result: fallbackIcebreakers });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: 'AI custom helper failed to process request', details: error.message });
+  }
+});
+
+// ============================================================================
+// 20. CENTRALIZED BYOAI & PERSONAL AI PROVIDER ARCHITECTURE
+// ============================================================================
+
+// --- 20.1 Supported Providers Catalog & Status ---
+app.get('/api/ai/providers', (_req, res) => {
+  try {
+    const supported = AIProviderRegistry.getSupportedProviderList();
+    const adminProviders = db.prepare('SELECT * FROM admin_ai_providers').all() as any[];
+    const adminMap = new Map(adminProviders.map(p => [p.provider_id, p]));
+
+    const catalog = supported.map(p => {
+      const adminSetting = adminMap.get(p.id);
+      return {
+        id: p.id,
+        name: p.name,
+        defaultEndpoint: p.defaultEndpoint,
+        isGloballyEnabled: adminSetting ? Boolean(adminSetting.is_globally_enabled) : true,
+        byokAllowed: adminSetting ? Boolean(adminSetting.byok_allowed) : true,
+        rateLimitRpm: adminSetting ? adminSetting.rate_limit_rpm : 60
+      };
+    });
+
+    res.json({ success: true, providers: catalog });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to retrieve AI providers catalog', details: error.message });
+  }
+});
+
+// --- 20.2 AI Model Registry ---
+app.get('/api/ai/models', (_req, res) => {
+  try {
+    const models = AIModelRegistry.getAllModels();
+    res.json({ success: true, models });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to retrieve AI models registry', details: error.message });
+  }
+});
+
+// --- 20.3 User Connections: List Connections ---
+app.get('/api/ai/connections', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const rows = db.prepare(`
+      SELECT id, user_id, provider, name, key_mask, custom_endpoint, default_model, is_enabled, created_at, updated_at, last_tested_at, last_status
+      FROM user_ai_connections
+      WHERE user_id = ?
+      ORDER BY created_at ASC
+    `).all(userId) as any[];
+
+    const connections = rows.map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      provider: r.provider,
+      name: r.name,
+      keyMask: r.key_mask,
+      customEndpoint: r.custom_endpoint,
+      defaultModel: r.default_model,
+      isEnabled: Boolean(r.is_enabled),
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      lastTestedAt: r.last_tested_at,
+      lastStatus: r.last_status || 'untested'
+    }));
+
+    res.json({ success: true, connections });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch AI connections', details: error.message });
+  }
+});
+
+// --- 20.4 User Connections: Add Connection (Envelope Encrypted) ---
+app.post('/api/ai/connections', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { provider, name, apiKey, customEndpoint, defaultModel } = req.body;
+
+    if (!provider || !name || !defaultModel) {
+      return res.status(400).json({ error: 'provider, name, and defaultModel are required' });
+    }
+
+    const adapter = AIProviderRegistry.get(provider as AIProviderId);
+    if (!adapter) {
+      return res.status(400).json({ error: `Unsupported provider: ${provider}` });
+    }
+
+    // SSRF protection for custom endpoints
+    if (customEndpoint) {
+      const endpointValidation = validateCustomEndpoint(customEndpoint, provider === 'ollama');
+      if (!endpointValidation.valid) {
+        return res.status(400).json({ error: endpointValidation.error || 'Custom endpoint SSRF validation failed' });
+      }
+    }
+
+    // For ollama or local models, apiKey can be empty or 'ollama-local'
+    const keyToStore = (apiKey && apiKey.trim()) ? apiKey.trim() : (provider === 'ollama' ? 'ollama-local' : '');
+    if (!keyToStore && provider !== 'ollama') {
+      return res.status(400).json({ error: 'API key is required for this provider' });
+    }
+
+    const encrypted = encryptApiKey(keyToStore);
+    const keyMask = maskApiKey(keyToStore);
+    const id = `conn_${uuidv4().slice(0, 10)}`;
+    const now = Date.now();
+
+    db.prepare(`
+      INSERT INTO user_ai_connections (
+        id, user_id, provider, name, encrypted_api_key, key_iv, key_auth_tag, key_mask,
+        custom_endpoint, default_model, is_enabled, created_at, updated_at, last_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, 'untested')
+    `).run(
+      id,
+      userId,
+      provider,
+      name.trim(),
+      encrypted.ciphertext,
+      encrypted.iv,
+      encrypted.authTag,
+      keyMask,
+      customEndpoint ? customEndpoint.trim() : null,
+      defaultModel.trim(),
+      now,
+      now
+    );
+
+    res.json({
+      success: true,
+      connection: {
+        id,
+        userId,
+        provider,
+        name: name.trim(),
+        keyMask,
+        customEndpoint: customEndpoint ? customEndpoint.trim() : undefined,
+        defaultModel: defaultModel.trim(),
+        isEnabled: true,
+        createdAt: now,
+        updatedAt: now,
+        lastStatus: 'untested'
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to create AI connection', details: error.message });
+  }
+});
+
+// --- 20.5 User Connections: Update Connection ---
+app.put('/api/ai/connections/:id', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { id } = req.params;
+    const { name, apiKey, customEndpoint, defaultModel, isEnabled } = req.body;
+
+    const existing = db.prepare('SELECT * FROM user_ai_connections WHERE id = ? AND user_id = ?').get(id, userId) as any;
+    if (!existing) {
+      return res.status(404).json({ error: 'Connection not found or unauthorized' });
+    }
+
+    const now = Date.now();
+    let updatedEncrypted = existing.encrypted_api_key;
+    let updatedIv = existing.key_iv;
+    let updatedAuthTag = existing.key_auth_tag;
+    let updatedKeyMask = existing.key_mask;
+
+    if (apiKey && apiKey.trim()) {
+      const enc = encryptApiKey(apiKey.trim());
+      updatedEncrypted = enc.ciphertext;
+      updatedIv = enc.iv;
+      updatedAuthTag = enc.authTag;
+      updatedKeyMask = maskApiKey(apiKey.trim());
+    }
+
+    let updatedEndpoint = existing.custom_endpoint;
+    if (customEndpoint !== undefined) {
+      if (customEndpoint && customEndpoint.trim()) {
+        const val = validateCustomEndpoint(customEndpoint.trim(), existing.provider === 'ollama');
+        if (!val.valid) {
+          return res.status(400).json({ error: val.error || 'Custom endpoint SSRF validation failed' });
+        }
+        updatedEndpoint = customEndpoint.trim();
+      } else {
+        updatedEndpoint = null;
+      }
+    }
+
+    const updatedName = name ? name.trim() : existing.name;
+    const updatedModel = defaultModel ? defaultModel.trim() : existing.default_model;
+    const updatedEnabled = isEnabled !== undefined ? (isEnabled ? 1 : 0) : existing.is_enabled;
+
+    db.prepare(`
+      UPDATE user_ai_connections SET
+        name = ?,
+        encrypted_api_key = ?,
+        key_iv = ?,
+        key_auth_tag = ?,
+        key_mask = ?,
+        custom_endpoint = ?,
+        default_model = ?,
+        is_enabled = ?,
+        updated_at = ?
+      WHERE id = ? AND user_id = ?
+    `).run(
+      updatedName,
+      updatedEncrypted,
+      updatedIv,
+      updatedAuthTag,
+      updatedKeyMask,
+      updatedEndpoint,
+      updatedModel,
+      updatedEnabled,
+      now,
+      id,
+      userId
+    );
+
+    res.json({
+      success: true,
+      connection: {
+        id,
+        userId,
+        provider: existing.provider,
+        name: updatedName,
+        keyMask: updatedKeyMask,
+        customEndpoint: updatedEndpoint,
+        defaultModel: updatedModel,
+        isEnabled: Boolean(updatedEnabled),
+        createdAt: existing.created_at,
+        updatedAt: now,
+        lastTestedAt: existing.last_tested_at,
+        lastStatus: existing.last_status
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update AI connection', details: error.message });
+  }
+});
+
+// --- 20.6 User Connections: Revoke & Delete ---
+app.delete('/api/ai/connections/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { id } = req.params;
+
+    const existing = db.prepare('SELECT id FROM user_ai_connections WHERE id = ? AND user_id = ?').get(id, userId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Connection not found' });
+    }
+
+    db.prepare('DELETE FROM user_ai_connections WHERE id = ? AND user_id = ?').run(id, userId);
+    // Clean up task routes referencing this connection
+    db.prepare('DELETE FROM user_ai_task_routing WHERE user_id = ? AND (connection_id = ? OR fallback_connection_id = ?)').run(userId, id, id);
+
+    res.json({ success: true, message: 'AI Connection revoked and securely destroyed' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to delete connection', details: error.message });
+  }
+});
+
+// --- 20.7 User Connections: Test Live Connection ---
+app.post('/api/ai/connections/:id/test', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { id } = req.params;
+
+    const conn = db.prepare('SELECT * FROM user_ai_connections WHERE id = ? AND user_id = ?').get(id, userId) as any;
+    if (!conn) {
+      return res.status(404).json({ error: 'Connection not found' });
+    }
+
+    const adapter = AIProviderRegistry.get(conn.provider);
+    if (!adapter) {
+      return res.status(400).json({ error: `Provider adapter '${conn.provider}' not available` });
+    }
+
+    const plainKey = decryptApiKey(conn.encrypted_api_key, conn.key_iv, conn.key_auth_tag);
+    const result = await adapter.validateConnection(plainKey, conn.custom_endpoint);
+
+    const now = Date.now();
+    const newStatus = result.success ? 'online' : (result.error?.includes('Rate limit') ? 'rate_limited' : 'offline');
+
+    db.prepare('UPDATE user_ai_connections SET last_tested_at = ?, last_status = ? WHERE id = ?').run(now, newStatus, id);
+
+    res.json({
+      success: result.success,
+      status: newStatus,
+      latencyMs: result.latencyMs,
+      error: result.error
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Connection test encountered an error', details: error.message });
+  }
+});
+
+// --- 20.8 User Connections: Discover Models ---
+app.get('/api/ai/connections/:id/models', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { id } = req.params;
+
+    const conn = db.prepare('SELECT * FROM user_ai_connections WHERE id = ? AND user_id = ?').get(id, userId) as any;
+    if (!conn) {
+      return res.status(404).json({ error: 'Connection not found' });
+    }
+
+    const adapter = AIProviderRegistry.get(conn.provider);
+    if (!adapter) {
+      return res.status(400).json({ error: `Provider adapter '${conn.provider}' not found` });
+    }
+
+    const plainKey = decryptApiKey(conn.encrypted_api_key, conn.key_iv, conn.key_auth_tag);
+    const discovered = await adapter.discoverModels(plainKey, conn.custom_endpoint);
+
+    res.json({ success: true, models: discovered });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to discover models', details: error.message });
+  }
+});
+
+// --- 20.9 Task-Specific AI Routing ---
+app.get('/api/ai/routing', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const routes = db.prepare('SELECT * FROM user_ai_task_routing WHERE user_id = ?').all(userId) as any[];
+
+    const formatted = routes.map(r => ({
+      taskKey: r.task_key,
+      connectionId: r.connection_id,
+      modelId: r.model_id,
+      allowFallback: Boolean(r.allow_fallback),
+      fallbackConnectionId: r.fallback_connection_id,
+      fallbackModelId: r.fallback_model_id,
+      updatedAt: r.updated_at
+    }));
+
+    res.json({ success: true, routes: formatted });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch task routing', details: error.message });
+  }
+});
+
+app.post('/api/ai/routing', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { routes } = req.body;
+
+    if (!Array.isArray(routes)) {
+      return res.status(400).json({ error: 'routes array is required' });
+    }
+
+    const now = Date.now();
+    const upsertStmt = db.prepare(`
+      INSERT INTO user_ai_task_routing (
+        user_id, task_key, connection_id, model_id, allow_fallback,
+        fallback_connection_id, fallback_model_id, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(user_id, task_key) DO UPDATE SET
+        connection_id = excluded.connection_id,
+        model_id = excluded.model_id,
+        allow_fallback = excluded.allow_fallback,
+        fallback_connection_id = excluded.fallback_connection_id,
+        fallback_model_id = excluded.fallback_model_id,
+        updated_at = excluded.updated_at
+    `);
+
+    db.transaction(() => {
+      for (const r of routes) {
+        if (!r.taskKey || !r.connectionId || !r.modelId) continue;
+        upsertStmt.run(
+          userId,
+          r.taskKey,
+          r.connectionId,
+          r.modelId,
+          r.allowFallback ? 1 : 0,
+          r.fallbackConnectionId || null,
+          r.fallbackModelId || null,
+          now
+        );
+      }
+    })();
+
+    res.json({ success: true, count: routes.length });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update task routing', details: error.message });
+  }
+});
+
+// --- 20.10 Context Permissions ---
+app.get('/api/ai/permissions', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const permissions = AIContextPermissionService.getPermissions(userId);
+    res.json({ success: true, permissions });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch AI context permissions', details: error.message });
+  }
+});
+
+app.put('/api/ai/permissions', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const updated = AIContextPermissionService.updatePermissions(userId, req.body);
+    res.json({ success: true, permissions: updated });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update AI permissions', details: error.message });
+  }
+});
+
+// --- 20.11 Usage & Spending Limits ---
+app.get('/api/ai/usage', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const limits = AIUsageTracker.getSpendingLimits(userId);
+
+    const now = Date.now();
+    const oneDayAgo = now - (24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+
+    const dailyRow = db.prepare('SELECT SUM(estimated_cost_usd) as cost, COUNT(*) as count, SUM(total_tokens) as tokens FROM ai_usage_records WHERE user_id = ? AND created_at >= ?').get(userId, oneDayAgo) as any;
+    const monthlyRow = db.prepare('SELECT SUM(estimated_cost_usd) as cost, COUNT(*) as count, SUM(total_tokens) as tokens FROM ai_usage_records WHERE user_id = ? AND created_at >= ?').get(userId, thirtyDaysAgo) as any;
+    const allTimeRow = db.prepare('SELECT SUM(estimated_cost_usd) as cost, COUNT(*) as count, SUM(total_tokens) as tokens FROM ai_usage_records WHERE user_id = ?').get(userId) as any;
+
+    const records = db.prepare(`
+      SELECT id, provider, model, task_key, input_tokens, output_tokens, total_tokens, estimated_cost_usd, status, latency_ms, created_at, error_message
+      FROM ai_usage_records
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 30
+    `).all(userId) as any[];
+
+    res.json({
+      success: true,
+      limits,
+      summary: {
+        dailyCost: dailyRow.cost || 0,
+        monthlyCost: monthlyRow.cost || 0,
+        allTimeCost: allTimeRow.cost || 0,
+        totalTokens: allTimeRow.tokens || 0,
+        totalRequests: allTimeRow.count || 0,
+        dailyRequests: dailyRow.count || 0,
+        monthlyRequests: monthlyRow.count || 0
+      },
+      records: records.map(r => ({
+        id: r.id,
+        provider: r.provider,
+        model: r.model,
+        taskKey: r.task_key,
+        inputTokens: r.input_tokens,
+        outputTokens: r.output_tokens,
+        totalTokens: r.total_tokens,
+        estimatedCostUsd: r.estimated_cost_usd,
+        status: r.status,
+        latencyMs: r.latency_ms,
+        createdAt: r.created_at,
+        errorMessage: r.error_message
+      }))
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch AI usage telemetry', details: error.message });
+  }
+});
+
+app.put('/api/ai/spending-limits', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const updated = AIUsageTracker.updateSpendingLimits(userId, req.body);
+    res.json({ success: true, limits: updated });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update spending limits', details: error.message });
+  }
+});
+
+// --- 20.12 Centralized Dispatch ---
+app.post('/api/ai/dispatch', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const result = await AIRequestRouter.dispatch(userId, req.body);
+    res.json({ success: true, result });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'AI dispatch failed' });
+  }
+});
+
+// --- 20.13 SSE Streaming Endpoint ---
+app.post('/api/ai/stream', async (req, res) => {
+  const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+  const { taskKey = 'general_assistant', connectionId, modelId, messages, systemPrompt, maxTokens, temperature, contextData } = req.body;
+
+  // 1. Budget clearance check
+  const clearance = AIUsageTracker.checkBudgetClearance(userId);
+  if (!clearance.allowed) {
+    return res.status(403).json({ error: clearance.reason || 'AI request budget clearance denied' });
+  }
+
+  // Set SSE response headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  try {
+    // 2. Resolve connection
+    const resolved = AIRequestRouter.resolveConnection(userId, taskKey as AITaskKey, connectionId, modelId);
+    const conn = resolved.connection;
+    const model = resolved.modelId;
+
+    // 3. Permissions context filter
+    const { sanitizedText } = AIContextPermissionService.sanitizeContext(userId, contextData);
+    const fullMessages: AIMessage[] = [...(messages || [])];
+    if (sanitizedText) {
+      fullMessages.unshift({ role: 'system', content: `Permitted Context:\n${sanitizedText}` });
+    }
+    if (systemPrompt) {
+      fullMessages.unshift({ role: 'system', content: systemPrompt });
+    }
+
+    const plainKey = decryptApiKey(conn.encrypted_api_key, conn.key_iv, conn.key_auth_tag);
+    const adapter = AIProviderRegistry.get(conn.provider);
+    if (!adapter) {
+      res.write(`data: ${JSON.stringify({ error: `Adapter for ${conn.provider} not found` })}\n\n`);
+      return res.end();
+    }
+
+    const response = await adapter.generateStream(
+      plainKey,
+      model,
+      fullMessages,
+      (chunk) => {
+        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+      },
+      {
+        temperature,
+        maxTokens,
+        customEndpoint: conn.custom_endpoint
+      }
+    );
+
+    // Record usage
+    AIUsageTracker.recordUsage(
+      userId,
+      conn.id,
+      conn.provider,
+      model,
+      taskKey,
+      response.inputTokens,
+      response.outputTokens,
+      response.estimatedCostUsd,
+      'success',
+      response.latencyMs
+    );
+
+    res.write('data: [DONE]\n\n');
+    res.end();
+  } catch (error: any) {
+    res.write(`data: ${JSON.stringify({ error: error.message || 'Streaming failed' })}\n\n`);
+    res.end();
+  }
+});
+
+// --- 20.14 Multi-Turn Assistant Conversations ---
+app.get('/api/ai/conversations', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const conversations = db.prepare(`
+      SELECT id, user_id, task_context, context_entity_id, title, custom_instructions, created_at, updated_at
+      FROM ai_assistant_conversations
+      WHERE user_id = ?
+      ORDER BY updated_at DESC
+    `).all(userId) as any[];
+
+    res.json({ success: true, conversations });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch conversations', details: error.message });
+  }
+});
+
+app.post('/api/ai/conversations', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { title = 'New Conversation', taskContext = 'general_assistant', contextEntityId = null, customInstructions = '' } = req.body;
+    const id = `conv_${uuidv4().slice(0, 10)}`;
+    const now = Date.now();
+
+    db.prepare(`
+      INSERT INTO ai_assistant_conversations (
+        id, user_id, task_context, context_entity_id, title, custom_instructions, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, userId, taskContext, contextEntityId, title, customInstructions, now, now);
+
+    res.json({ success: true, conversation: { id, userId, title, taskContext, contextEntityId, customInstructions, createdAt: now, updatedAt: now } });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to create conversation', details: error.message });
+  }
+});
+
+app.get('/api/ai/conversations/:id/messages', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { id } = req.params;
+
+    const conv = db.prepare('SELECT id FROM ai_assistant_conversations WHERE id = ? AND user_id = ?').get(id, userId);
+    if (!conv) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const messages = db.prepare(`
+      SELECT id, conversation_id, role, content, provider, model, tokens_used, created_at
+      FROM ai_assistant_messages
+      WHERE conversation_id = ?
+      ORDER BY created_at ASC
+    `).all(id) as any[];
+
+    res.json({ success: true, messages });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch messages', details: error.message });
+  }
+});
+
+app.post('/api/ai/conversations/:id/messages', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { id } = req.params;
+    const { role, content, provider, model, tokensUsed = 0 } = req.body;
+
+    const conv = db.prepare('SELECT id FROM ai_assistant_conversations WHERE id = ? AND user_id = ?').get(id, userId);
+    if (!conv) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const msgId = `msg_${uuidv4().slice(0, 10)}`;
+    const now = Date.now();
+
+    db.prepare(`
+      INSERT INTO ai_assistant_messages (id, conversation_id, role, content, provider, model, tokens_used, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(msgId, id, role, content, provider || null, model || null, tokensUsed, now);
+
+    db.prepare('UPDATE ai_assistant_conversations SET updated_at = ? WHERE id = ?').run(now, id);
+
+    res.json({ success: true, message: { id: msgId, conversationId: id, role, content, provider, model, tokensUsed, createdAt: now } });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to append message', details: error.message });
+  }
+});
+
+app.delete('/api/ai/conversations/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { id } = req.params;
+
+    db.prepare('DELETE FROM ai_assistant_messages WHERE conversation_id = ?').run(id);
+    db.prepare('DELETE FROM ai_assistant_conversations WHERE id = ? AND user_id = ?').run(id, userId);
+
+    res.json({ success: true, message: 'Conversation deleted' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to delete conversation', details: error.message });
+  }
+});
+
+// --- 20.15 Admin AI Infrastructure Console ---
+app.get('/api/admin/ai/infrastructure', requireAdminPermission('system', 'read'), (_req, res) => {
+  try {
+    const providers = db.prepare('SELECT * FROM admin_ai_providers ORDER BY provider_id ASC').all() as any[];
+
+    // Aggregate platform telemetry (Zero user keys, zero conversation texts)
+    const telemetry = db.prepare(`
+      SELECT 
+        COUNT(*) as total_requests,
+        SUM(input_tokens) as total_input_tokens,
+        SUM(output_tokens) as total_output_tokens,
+        SUM(total_tokens) as total_tokens,
+        SUM(estimated_cost_usd) as total_platform_cost_usd,
+        AVG(latency_ms) as avg_latency_ms,
+        COUNT(DISTINCT user_id) as active_users_count,
+        SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as failure_count
+      FROM ai_usage_records
+    `).get() as any;
+
+    const totalReqs = telemetry.total_requests || 0;
+    const failures = telemetry.failure_count || 0;
+    const failureRatePct = totalReqs > 0 ? Number(((failures / totalReqs) * 100).toFixed(2)) : 0;
+
+    const activeConnectionsCount = (db.prepare('SELECT COUNT(*) as count FROM user_ai_connections WHERE is_enabled = 1').get() as any)?.count || 0;
+
+    res.json({
+      success: true,
+      providers: providers.map(p => ({
+        providerId: p.provider_id,
+        name: p.name,
+        isGloballyEnabled: Boolean(p.is_globally_enabled),
+        byokAllowed: Boolean(p.byok_allowed),
+        rateLimitRpm: p.rate_limit_rpm,
+        allowedModels: JSON.parse(p.allowed_models_json || '[]'),
+        updatedAt: p.updated_at
+      })),
+      telemetry: {
+        totalRequests: totalReqs,
+        totalTokens: telemetry.total_tokens || 0,
+        totalInputTokens: telemetry.total_input_tokens || 0,
+        totalOutputTokens: telemetry.total_output_tokens || 0,
+        totalPlatformCostUsd: telemetry.total_platform_cost_usd || 0,
+        avgLatencyMs: Math.round(telemetry.avg_latency_ms || 0),
+        activeUsersCount: telemetry.active_users_count || 0,
+        failureRatePct,
+        activeConnectionsCount
+      },
+      models: AIModelRegistry.getAllModels()
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch admin AI infrastructure', details: error.message });
+  }
+});
+
+app.put('/api/admin/ai/providers/:providerId', requireAdminPermission('system', 'write'), (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { isGloballyEnabled, byokAllowed, rateLimitRpm, allowedModels } = req.body;
+
+    const existing = db.prepare('SELECT * FROM admin_ai_providers WHERE provider_id = ?').get(providerId) as any;
+    if (!existing) {
+      return res.status(404).json({ error: 'Admin AI provider setting not found' });
+    }
+
+    const now = Date.now();
+    const updatedGlobal = isGloballyEnabled !== undefined ? (isGloballyEnabled ? 1 : 0) : existing.is_globally_enabled;
+    const updatedByok = byokAllowed !== undefined ? (byokAllowed ? 1 : 0) : existing.byok_allowed;
+    const updatedRpm = rateLimitRpm !== undefined ? Number(rateLimitRpm) : existing.rate_limit_rpm;
+    const updatedModels = allowedModels !== undefined ? JSON.stringify(allowedModels) : existing.allowed_models_json;
+
+    db.prepare(`
+      UPDATE admin_ai_providers SET
+        is_globally_enabled = ?,
+        byok_allowed = ?,
+        rate_limit_rpm = ?,
+        allowed_models_json = ?,
+        updated_at = ?
+      WHERE provider_id = ?
+    `).run(updatedGlobal, updatedByok, updatedRpm, updatedModels, now, providerId);
+
+    // Audit log
+    db.prepare(`
+      INSERT INTO configuration_audit_logs (
+        id, admin_id, admin_name, action, target_type, target_id,
+        before_value_json, after_value_json, reason, ip_address, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      `audit_${uuidv4().slice(0, 8)}`,
+      req.adminId || 'usr_me',
+      'System Admin',
+      'ai_provider_configure',
+      'ai_provider',
+      providerId,
+      JSON.stringify(existing),
+      JSON.stringify({ isGloballyEnabled: updatedGlobal, byokAllowed: updatedByok, rateLimitRpm: updatedRpm, allowedModels }),
+      `Updated AI provider policy for ${providerId}`,
+      req.ip || '127.0.0.1',
+      now
+    );
+
+    res.json({ success: true, providerId });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update admin AI provider', details: error.message });
   }
 });
 

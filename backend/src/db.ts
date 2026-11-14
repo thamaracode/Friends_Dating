@@ -2884,4 +2884,133 @@ function seedFeatureControlLayer() {
       now
     );
   }
+
+  // ==========================================================================
+  // CENTRALIZED BYOAI & PERSONAL AI PROVIDER TABLES
+  // ==========================================================================
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_ai_connections (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      name TEXT NOT NULL,
+      encrypted_api_key TEXT NOT NULL,
+      key_iv TEXT NOT NULL,
+      key_auth_tag TEXT NOT NULL,
+      key_mask TEXT NOT NULL,
+      custom_endpoint TEXT,
+      default_model TEXT NOT NULL,
+      is_enabled INTEGER DEFAULT 1,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      last_tested_at INTEGER,
+      last_status TEXT DEFAULT 'untested'
+    );
+
+    CREATE TABLE IF NOT EXISTS user_ai_task_routing (
+      user_id TEXT NOT NULL,
+      task_key TEXT NOT NULL,
+      connection_id TEXT NOT NULL,
+      model_id TEXT NOT NULL,
+      allow_fallback INTEGER DEFAULT 0,
+      fallback_connection_id TEXT,
+      fallback_model_id TEXT,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, task_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS user_ai_permissions (
+      user_id TEXT PRIMARY KEY,
+      allow_profile_data INTEGER DEFAULT 1,
+      allow_identity_personas INTEGER DEFAULT 1,
+      allow_chat_history INTEGER DEFAULT 1,
+      max_chat_history_messages INTEGER DEFAULT 10,
+      allow_relationship_vault INTEGER DEFAULT 0,
+      allow_journals INTEGER DEFAULT 0,
+      allow_preferences INTEGER DEFAULT 1,
+      allow_external_sharing INTEGER DEFAULT 1,
+      persistent_memory INTEGER DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_ai_spending_limits (
+      user_id TEXT PRIMARY KEY,
+      daily_budget_usd REAL DEFAULT 5.0,
+      monthly_budget_usd REAL DEFAULT 50.0,
+      warning_threshold_pct REAL DEFAULT 80.0,
+      auto_suspend_on_limit INTEGER DEFAULT 1,
+      is_suspended INTEGER DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_usage_records (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      connection_id TEXT,
+      provider TEXT NOT NULL,
+      model TEXT NOT NULL,
+      task_key TEXT NOT NULL,
+      input_tokens INTEGER DEFAULT 0,
+      output_tokens INTEGER DEFAULT 0,
+      total_tokens INTEGER DEFAULT 0,
+      estimated_cost_usd REAL DEFAULT 0.0,
+      status TEXT NOT NULL,
+      error_message TEXT,
+      latency_ms INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_ai_providers (
+      provider_id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      is_globally_enabled INTEGER DEFAULT 1,
+      byok_allowed INTEGER DEFAULT 1,
+      rate_limit_rpm INTEGER DEFAULT 60,
+      allowed_models_json TEXT,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_assistant_conversations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      task_context TEXT NOT NULL,
+      context_entity_id TEXT,
+      title TEXT NOT NULL,
+      custom_instructions TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_assistant_messages (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      provider TEXT,
+      model TEXT,
+      tokens_used INTEGER,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (conversation_id) REFERENCES ai_assistant_conversations(id) ON DELETE CASCADE
+    );
+  `);
+
+  // Seed default admin AI providers
+  const insertAdminProvider = db.prepare(`
+    INSERT OR IGNORE INTO admin_ai_providers (provider_id, name, is_globally_enabled, byok_allowed, rate_limit_rpm, allowed_models_json, updated_at)
+    VALUES (?, ?, 1, 1, 60, '[]', ?)
+  `);
+
+  const defaultProviders = [
+    { id: 'openai', name: 'OpenAI (ChatGPT)' },
+    { id: 'gemini', name: 'Google Gemini' },
+    { id: 'anthropic', name: 'Anthropic Claude' },
+    { id: 'mistral', name: 'Mistral AI' },
+    { id: 'openrouter', name: 'OpenRouter' },
+    { id: 'ollama', name: 'Ollama Local' },
+    { id: 'custom_openai', name: 'Custom OpenAI-Compatible' }
+  ];
+
+  for (const p of defaultProviders) {
+    insertAdminProvider.run(p.id, p.name, now);
+  }
 }

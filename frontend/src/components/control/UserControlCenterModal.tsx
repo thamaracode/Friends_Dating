@@ -39,6 +39,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { GlassModal, GlassButton, GlassPrimaryButton } from '../klyven';
+import { UserAiControlCenter } from './UserAiControlCenter';
 import { 
   FeatureControlService, 
   EXPERIENCE_PRESETS 
@@ -1161,36 +1162,8 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
               {/* SECTION 9: AI & INTELLIGENCE */}
               {activeSection === 'ai' && (
                 <div className="space-y-4 animate-fadeIn">
-                  <div>
-                    <h3 className="text-lg font-serif font-bold text-white tracking-tight">
-                      AI & Conversational Intelligence
-                    </h3>
-                    <p className="text-xs text-zinc-400 leading-relaxed mt-0.5">
-                      Configure proactive icebreakers, personality matching, and confidence booster challenges.
-                    </p>
-                  </div>
-
-                  <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-sm font-bold text-white block">Conversational AI Co-Pilot</span>
-                        <span className="text-xs text-zinc-400">Suggest icebreakers and subtle conversational bridges in direct messages</span>
-                      </div>
-                      <button
-                        onClick={() => handleToggleFeature('feat_ai_assistant')}
-                        className="px-3 py-1.5 rounded-xl bg-white text-[#090A0E] text-xs font-bold cursor-pointer"
-                      >
-                        Active
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-3 border-t border-white/[0.08]">
-                      <div>
-                        <span className="text-sm font-bold text-white block">HCM Ontological Scorer</span>
-                        <span className="text-xs text-zinc-400">Compute compatibility scores based on values and communication styles</span>
-                      </div>
-                      <span className="text-xs font-bold text-emerald-400">Calibrated</span>
-                    </div>
+                  <div className="h-[700px] rounded-3xl overflow-hidden border border-white/10 bg-[#090A0E]">
+                    <UserAiControlCenter />
                   </div>
                 </div>
               )}
