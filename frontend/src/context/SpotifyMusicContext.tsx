@@ -29,15 +29,15 @@ export interface SpotifyPreset {
 
 export const CURATED_SPOTIFY_PRESETS: SpotifyPreset[] = [
   {
-    id: '4cOdK2wGLETKBW3PvgPWqT',
-    type: 'track',
-    title: 'Nightcore Dreams ✧',
-    artist: 'Chill Lo-Fi Ambient',
-    category: 'Ambient Sanctuary',
-    coverUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&auto=format&fit=crop&q=80',
-    spotifyUrl: 'https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT',
-    embedUrl: 'https://open.spotify.com/embed/track/4cOdK2wGLETKBW3PvgPWqT?utm_source=generator&theme=0',
-    description: 'Slow-tempo ethereal waves designed for quiet late-night contemplation.'
+    id: '37i9dQZF1DXcBWIGoYBM5M',
+    type: 'playlist',
+    title: 'Today\'s Chill Lo-Fi Study',
+    artist: 'Spotify Editorial',
+    category: 'Lo-Fi Sanctuary',
+    coverUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300&auto=format&fit=crop&q=80',
+    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M',
+    embedUrl: 'https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M?utm_source=generator&theme=0',
+    description: 'Warm vinyl crackle, gentle Rhodes chords, and soothing hip hop rhythms.'
   },
   {
     id: '37i9dQZF1DXcBWIGoYBM5M',

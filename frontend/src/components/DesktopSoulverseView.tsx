@@ -37,7 +37,6 @@ import {
 } from 'lucide-react';
 import { CURRENT_USER } from '../mockData';
 import { profileWorldsClient } from '../services/profileWorldsApiClient';
-import { SpotifyPlayerWidget } from './SpotifyPlayerWidget';
 import { SoulverseBrandLogo, HeartLogoVariant } from './brand/SoulverseHeartLogos';
 import type { MainNavTab, ExperienceTab } from '../types';
 import type { ProfileWorld } from '../types/profileWorlds';
@@ -474,9 +473,6 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
             </span>
           </div>
         </div>
-
-        {/* 4. Currently Playing Card (Integrated Spotify Music Player) */}
-        <SpotifyPlayerWidget variant="card" />
 
         {/* 5. Quick Access 2x2 Grid */}
         <div className="p-4 rounded-3xl dark-glass border border-white/[0.08] space-y-2 shadow-lg">

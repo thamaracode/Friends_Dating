@@ -5,7 +5,9 @@ import type {
   PrivateViewerNote,
   ProfileSocialFeedback,
   RegisteredExternalGame,
-  RelationshipMetrics
+  RelationshipMetrics,
+  IdentityCustomSection,
+  IdentityTimelineEvent
 } from '../types/identityUniverse';
 
 import { API_BASE_V1 as API_BASE } from './apiConfig';
@@ -53,6 +55,78 @@ class IdentityUniverseApiClient {
 
   async deleteIdentity(identityId: string, userId: string = 'usr_me'): Promise<boolean> {
     const res = await fetch(`${API_BASE}/identities/${identityId}?userId=${userId}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    return data.success;
+  }
+
+  // 1.1 Custom Sections
+  async getCustomSections(identityId: string, viewerId: string = 'usr_me'): Promise<IdentityCustomSection[]> {
+    const res = await fetch(`${API_BASE}/identities/${identityId}/sections?viewerId=${viewerId}`);
+    const data = await res.json();
+    return data.sections || [];
+  }
+
+  async createCustomSection(identityId: string, payload: Partial<IdentityCustomSection>, userId: string = 'usr_me'): Promise<IdentityCustomSection> {
+    const res = await fetch(`${API_BASE}/identities/${identityId}/sections`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, userId })
+    });
+    const data = await res.json();
+    return data.section;
+  }
+
+  async updateCustomSection(identityId: string, sectionId: string, payload: Partial<IdentityCustomSection>, userId: string = 'usr_me'): Promise<IdentityCustomSection> {
+    const res = await fetch(`${API_BASE}/identities/${identityId}/sections/${sectionId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, userId })
+    });
+    const data = await res.json();
+    return data.section;
+  }
+
+  async deleteCustomSection(identityId: string, sectionId: string, userId: string = 'usr_me'): Promise<boolean> {
+    const res = await fetch(`${API_BASE}/identities/${identityId}/sections/${sectionId}?userId=${userId}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    return data.success;
+  }
+
+  // 1.2 Identity Timeline Events (-1500 BCE, 0, CE, Future)
+  async getTimelineEvents(identityId: string, viewerId: string = 'usr_me', nature?: string): Promise<IdentityTimelineEvent[]> {
+    let url = `${API_BASE}/identities/${identityId}/timeline?viewerId=${viewerId}`;
+    if (nature) url += `&nature=${encodeURIComponent(nature)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.events || [];
+  }
+
+  async createTimelineEvent(identityId: string, payload: Partial<IdentityTimelineEvent>, userId: string = 'usr_me'): Promise<IdentityTimelineEvent> {
+    const res = await fetch(`${API_BASE}/identities/${identityId}/timeline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, userId })
+    });
+    const data = await res.json();
+    return data.event;
+  }
+
+  async updateTimelineEvent(identityId: string, eventId: string, payload: Partial<IdentityTimelineEvent>, userId: string = 'usr_me'): Promise<IdentityTimelineEvent> {
+    const res = await fetch(`${API_BASE}/identities/${identityId}/timeline/${eventId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, userId })
+    });
+    const data = await res.json();
+    return data.event;
+  }
+
+  async deleteTimelineEvent(identityId: string, eventId: string, userId: string = 'usr_me'): Promise<boolean> {
+    const res = await fetch(`${API_BASE}/identities/${identityId}/timeline/${eventId}?userId=${userId}`, {
       method: 'DELETE'
     });
     const data = await res.json();

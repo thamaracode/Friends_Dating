@@ -667,33 +667,76 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_daily_feedback_member_content ON daily_content_feedback(member_id, content_id, action);
 
     -- ========================================================================
-    -- IDENTITY UNIVERSE: MULTIPLE IDENTITIES & PERSONAS
+    -- IDENTITY UNIVERSE: MULTIPLE IDENTITIES & PERSONAS (12 DIMENSIONS + CUSTOM)
     -- ========================================================================
     CREATE TABLE IF NOT EXISTS user_identities (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
       name TEXT NOT NULL,
+      identity_type TEXT NOT NULL DEFAULT 'personal',
       display_title TEXT,
-      classification TEXT NOT NULL CHECK(classification IN (
-        'real_identity', 'fictional_character', 'inspired_character', 
-        'alternate_self', 'aspirational_self', 'historical_persona', 
-        'cinematic_persona', 'fantasy_identity', 'anonymous_identity', 'custom'
-      )),
+      classification TEXT DEFAULT 'custom',
       avatar_url TEXT,
       cover_image_url TEXT,
       description TEXT,
       biography TEXT,
-      personality_traits TEXT, -- JSON array of strings
-      interests TEXT,          -- JSON array of strings
-      skills TEXT,             -- JSON array of strings
-      universe_id TEXT,        -- optional association with fictional universe
+      characteristics TEXT DEFAULT '[]',
+      tags TEXT DEFAULT '[]',
+      interests TEXT DEFAULT '[]',
+      skills TEXT DEFAULT '[]',
+      experiences TEXT DEFAULT '[]',
+      achievements TEXT DEFAULT '[]',
+      memories TEXT DEFAULT '[]',
+      media_attachments TEXT DEFAULT '[]',
+      custom_sections TEXT DEFAULT '[]',
+      visual_theme TEXT DEFAULT '{}',
+      personality_traits TEXT DEFAULT '[]',
+      universe_id TEXT,
       layout TEXT DEFAULT 'standard',
-      theme_config TEXT,       -- JSON styling config
+      theme_config TEXT,
       is_primary INTEGER DEFAULT 0,
-      visibility TEXT NOT NULL CHECK(visibility IN ('public', 'matches', 'friends', 'selected', 'private')) DEFAULT 'public',
-      status TEXT NOT NULL CHECK(status IN ('draft', 'published', 'archived')) DEFAULT 'published',
+      visibility TEXT NOT NULL DEFAULT 'public',
+      status TEXT NOT NULL DEFAULT 'published',
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS identity_custom_sections (
+      id TEXT PRIMARY KEY,
+      identity_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      section_key TEXT NOT NULL,
+      title TEXT NOT NULL,
+      section_type TEXT NOT NULL DEFAULT 'markdown',
+      content TEXT NOT NULL,
+      visibility TEXT NOT NULL DEFAULT 'public',
+      sort_order INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (identity_id) REFERENCES user_identities(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS identity_timeline_events (
+      id TEXT PRIMARY KEY,
+      identity_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      date_nature TEXT NOT NULL DEFAULT 'personal',
+      year_value TEXT NOT NULL,
+      numeric_year INTEGER NOT NULL DEFAULT 2026,
+      era_label TEXT DEFAULT 'CE',
+      display_date TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      detailed_narrative TEXT,
+      image_url TEXT,
+      tags TEXT DEFAULT '[]',
+      visibility TEXT NOT NULL DEFAULT 'public',
+      sort_order INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (identity_id) REFERENCES user_identities(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
@@ -3535,5 +3578,100 @@ function seedFeatureControlLayer() {
     }
 
     db.prepare('INSERT OR IGNORE INTO friends_event_rsvps (event_id, user_id, status, created_at) VALUES (?, ?, ?, ?)').run('evt_1', 'usr_me', 'attending', curTime);
+  }
+
+  // Multidimensional Identity Schema Migration
+  try {
+    const tableInfo = db.prepare("PRAGMA table_info(user_identities)").all() as any[];
+    const existingCols = tableInfo.map(c => c.name);
+    const newCols: Record<string, string> = {
+      identity_type: "TEXT DEFAULT 'personal'",
+      characteristics: "TEXT DEFAULT '[]'",
+      tags: "TEXT DEFAULT '[]'",
+      experiences: "TEXT DEFAULT '[]'",
+      achievements: "TEXT DEFAULT '[]'",
+      memories: "TEXT DEFAULT '[]'",
+      media_attachments: "TEXT DEFAULT '[]'",
+      custom_sections: "TEXT DEFAULT '[]'",
+      visual_theme: "TEXT DEFAULT '{}'"
+    };
+
+    for (const [col, colType] of Object.entries(newCols)) {
+      if (!existingCols.includes(col)) {
+        try {
+          db.exec(`ALTER TABLE user_identities ADD COLUMN ${col} ${colType}`);
+        } catch {
+          // Ignore if exists
+        }
+      }
+    }
+
+    const tableDef = db.prepare("SELECT sql FROM sqlite_master WHERE name='user_identities'").get() as any;
+    if (tableDef && tableDef.sql && tableDef.sql.includes("CHECK(classification IN")) {
+      db.pragma('foreign_keys = OFF');
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS user_identities_v2 (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          identity_type TEXT NOT NULL DEFAULT 'personal',
+          display_title TEXT,
+          classification TEXT DEFAULT 'custom',
+          avatar_url TEXT,
+          cover_image_url TEXT,
+          description TEXT,
+          biography TEXT,
+          characteristics TEXT DEFAULT '[]',
+          tags TEXT DEFAULT '[]',
+          interests TEXT DEFAULT '[]',
+          skills TEXT DEFAULT '[]',
+          experiences TEXT DEFAULT '[]',
+          achievements TEXT DEFAULT '[]',
+          memories TEXT DEFAULT '[]',
+          media_attachments TEXT DEFAULT '[]',
+          custom_sections TEXT DEFAULT '[]',
+          visual_theme TEXT DEFAULT '{}',
+          personality_traits TEXT DEFAULT '[]',
+          universe_id TEXT,
+          layout TEXT DEFAULT 'standard',
+          theme_config TEXT,
+          is_primary INTEGER DEFAULT 0,
+          visibility TEXT NOT NULL DEFAULT 'public',
+          status TEXT NOT NULL DEFAULT 'published',
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        INSERT INTO user_identities_v2 (
+          id, user_id, name, identity_type, display_title, classification, avatar_url, cover_image_url,
+          description, biography, personality_traits, interests, skills, universe_id, layout,
+          theme_config, is_primary, visibility, status, created_at, updated_at
+        )
+        SELECT 
+          id, user_id, name, 
+          CASE 
+            WHEN classification = 'real_identity' THEN 'real'
+            WHEN classification = 'fictional_character' THEN 'imaginary'
+            WHEN classification = 'inspired_character' THEN 'creative'
+            WHEN classification = 'alternate_self' THEN 'alternative_life'
+            WHEN classification = 'aspirational_self' THEN 'aspirational'
+            WHEN classification = 'historical_persona' THEN 'historical'
+            WHEN classification = 'cinematic_persona' THEN 'cinematic'
+            WHEN classification = 'anonymous_identity' THEN 'inner'
+            ELSE 'personal'
+          END,
+          display_title, classification, avatar_url, cover_image_url,
+          description, biography, personality_traits, interests, skills, universe_id, layout,
+          theme_config, is_primary, visibility, status, created_at, updated_at
+        FROM user_identities;
+
+        DROP TABLE user_identities;
+        ALTER TABLE user_identities_v2 RENAME TO user_identities;
+      `);
+      db.pragma('foreign_keys = ON');
+    }
+  } catch (err) {
+    console.warn('Identity schema migration notice:', err);
   }
 }

@@ -3169,28 +3169,132 @@ app.post('/api/v1/daily-content/admin/create', (req, res) => {
 // SOULVERSE PRODUCT EXPANSION: IDENTITY UNIVERSE & MULTIPLE PERSONAS
 // ============================================================================
 
+// ============================================================================
+// MULTIDIMENSIONAL HUMAN IDENTITY & PROFILE SYSTEM (12 DIMENSIONS + CUSTOM)
+// ============================================================================
+
+export type IdentityTypeKey =
+  | 'real'
+  | 'personal'
+  | 'social'
+  | 'professional'
+  | 'inner'
+  | 'imaginary'
+  | 'cinematic'
+  | 'aspirational'
+  | 'historical'
+  | 'alternative_life'
+  | 'creative'
+  | 'relational'
+  | 'custom';
+
+function mapClassificationToType(classification?: string): IdentityTypeKey {
+  switch (classification) {
+    case 'real_identity': return 'real';
+    case 'fictional_character': return 'imaginary';
+    case 'inspired_character': return 'creative';
+    case 'alternate_self': return 'alternative_life';
+    case 'aspirational_self': return 'aspirational';
+    case 'historical_persona': return 'historical';
+    case 'cinematic_persona': return 'cinematic';
+    case 'anonymous_identity': return 'inner';
+    default: return 'personal';
+  }
+}
+
+function mapTypeToClassification(type?: string): string {
+  switch (type) {
+    case 'real': return 'real_identity';
+    case 'imaginary': return 'fictional_character';
+    case 'creative': return 'inspired_character';
+    case 'alternative_life': return 'alternate_self';
+    case 'aspirational': return 'aspirational_self';
+    case 'historical': return 'historical_persona';
+    case 'cinematic': return 'cinematic_persona';
+    case 'inner': return 'anonymous_identity';
+    default: return 'custom';
+  }
+}
+
+function parseTimelineDateInput(
+  yearInput: string | number,
+  _dateNature: string = 'personal',
+  customEra?: string,
+  explicitDisplayDate?: string
+): { numericYear: number; eraLabel: string; displayDate: string } {
+  const str = String(yearInput).trim();
+  let numericYear = 2026;
+  let eraLabel = customEra || 'CE';
+  let displayDate = explicitDisplayDate || str;
+
+  if (str.startsWith('-')) {
+    const val = parseInt(str.slice(1), 10) || 0;
+    numericYear = -val;
+    eraLabel = 'BCE';
+    if (!explicitDisplayDate) displayDate = `${val} BCE`;
+  } else if (/bce|bc/i.test(str)) {
+    const val = parseInt(str.replace(/[^0-9]/g, ''), 10) || 0;
+    numericYear = -val;
+    eraLabel = 'BCE';
+    if (!explicitDisplayDate) displayDate = `${val} BCE`;
+  } else if (str === '0') {
+    numericYear = 0;
+    eraLabel = 'CE';
+    if (!explicitDisplayDate) displayDate = 'Year 0 (Astronomical)';
+  } else {
+    const parsed = parseInt(str, 10);
+    if (!isNaN(parsed)) {
+      numericYear = parsed;
+      eraLabel = customEra || (parsed < 0 ? 'BCE' : 'CE');
+      if (!explicitDisplayDate) {
+        displayDate = parsed < 0 ? `${Math.abs(parsed)} BCE` : (parsed > 2100 ? `Year ${parsed} CE (Future)` : `${parsed} CE`);
+      }
+    }
+  }
+
+  return { numericYear, eraLabel, displayDate };
+}
+
+function formatIdentityRecord(id: any) {
+  return {
+    ...id,
+    identity_type: id.identity_type || mapClassificationToType(id.classification),
+    characteristics: id.characteristics ? JSON.parse(id.characteristics) : [],
+    tags: id.tags ? JSON.parse(id.tags) : [],
+    personality_traits: id.personality_traits ? JSON.parse(id.personality_traits) : [],
+    interests: id.interests ? JSON.parse(id.interests) : [],
+    skills: id.skills ? JSON.parse(id.skills) : [],
+    experiences: id.experiences ? JSON.parse(id.experiences) : [],
+    achievements: id.achievements ? JSON.parse(id.achievements) : [],
+    memories: id.memories ? JSON.parse(id.memories) : [],
+    media_attachments: id.media_attachments ? JSON.parse(id.media_attachments) : [],
+    custom_sections: id.custom_sections ? JSON.parse(id.custom_sections) : [],
+    visual_theme: id.visual_theme ? JSON.parse(id.visual_theme) : (id.theme_config ? JSON.parse(id.theme_config) : null),
+    theme_config: id.theme_config ? JSON.parse(id.theme_config) : null
+  };
+}
+
 // 1. List User Identities with Strict Server-Side Visibility Enforcement
-app.get('/api/v1/identities/user/:userId', (req, res) => {
-  const { userId } = req.params;
-  const viewerId = (req.query.viewerId as string) || 'usr_me';
+const handleListIdentities = (req: any, res: any) => {
+  const userId = req.params.userId || (req.query.userId as string) || 'usr_me';
+  const viewerId = (req.headers['x-user-id'] as string) || (req.query.viewerId as string) || 'usr_me';
   const isOwner = viewerId === userId;
 
   let query = 'SELECT * FROM user_identities WHERE user_id = ?';
   const params: any[] = [userId];
 
   if (!isOwner) {
-    // Check relationship between viewer and target
     const rels = db.prepare('SELECT relationship_type FROM user_relationships WHERE user_id = ? AND target_user_id = ?').all(viewerId, userId) as Array<{ relationship_type: string }>;
     const relTypes = rels.map(r => r.relationship_type);
     const isFriend = relTypes.includes('friend');
     const isMatch = relTypes.includes('match');
 
     if (isFriend && isMatch) {
-      query += " AND status = 'published' AND visibility IN ('public', 'matches', 'friends')";
+      query += " AND status = 'published' AND visibility IN ('public', 'friends_only', 'connections_only', 'friends', 'matches')";
     } else if (isFriend) {
-      query += " AND status = 'published' AND visibility IN ('public', 'friends')";
+      query += " AND status = 'published' AND visibility IN ('public', 'friends_only', 'friends')";
     } else if (isMatch) {
-      query += " AND status = 'published' AND visibility IN ('public', 'matches')";
+      query += " AND status = 'published' AND visibility IN ('public', 'connections_only', 'matches')";
     } else {
       query += " AND status = 'published' AND visibility = 'public'";
     }
@@ -3199,22 +3303,16 @@ app.get('/api/v1/identities/user/:userId', (req, res) => {
   query += ' ORDER BY is_primary DESC, created_at ASC';
   const identities = db.prepare(query).all(...params) as any[];
 
-  // Parse JSON traits, interests, skills
-  const formatted = identities.map(id => ({
-    ...id,
-    personality_traits: id.personality_traits ? JSON.parse(id.personality_traits) : [],
-    interests: id.interests ? JSON.parse(id.interests) : [],
-    skills: id.skills ? JSON.parse(id.skills) : [],
-    theme_config: id.theme_config ? JSON.parse(id.theme_config) : null
-  }));
+  res.json({ success: true, identities: identities.map(formatIdentityRecord), isOwner });
+};
 
-  res.json({ success: true, identities: formatted, isOwner });
-});
+app.get('/api/v1/identities/user/:userId', handleListIdentities);
+app.get('/api/v1/identities', handleListIdentities);
 
 // 2. Get Single Identity with Server-Side Visibility Checks
 app.get('/api/v1/identities/:identityId', (req, res) => {
   const { identityId } = req.params;
-  const viewerId = (req.query.viewerId as string) || 'usr_me';
+  const viewerId = (req.headers['x-user-id'] as string) || (req.query.viewerId as string) || 'usr_me';
 
   const identity = db.prepare('SELECT * FROM user_identities WHERE id = ?').get(identityId) as any;
   if (!identity) {
@@ -3222,18 +3320,48 @@ app.get('/api/v1/identities/:identityId', (req, res) => {
   }
 
   const isOwner = identity.user_id === viewerId;
-  if (!isOwner && identity.visibility === 'private') {
-    return res.status(403).json({ error: 'Access denied to private identity' });
+  if (!isOwner) {
+    if (identity.visibility === 'private') {
+      return res.status(403).json({ error: 'Access denied to private identity' });
+    }
+    const rels = db.prepare('SELECT relationship_type FROM user_relationships WHERE user_id = ? AND target_user_id = ?').all(viewerId, identity.user_id) as Array<{ relationship_type: string }>;
+    const relTypes = rels.map(r => r.relationship_type);
+    const isFriend = relTypes.includes('friend');
+    const isMatch = relTypes.includes('match');
+
+    if (identity.visibility === 'friends_only' && !isFriend) {
+      return res.status(403).json({ error: 'Access denied: friends only' });
+    }
+    if (identity.visibility === 'connections_only' && !isMatch) {
+      return res.status(403).json({ error: 'Access denied: connections only' });
+    }
   }
 
+  // Fetch linked custom sections with visibility filtering
+  let sectionsQuery = 'SELECT * FROM identity_custom_sections WHERE identity_id = ?';
+  const secParams: any[] = [identityId];
+  if (!isOwner) {
+    sectionsQuery += " AND visibility = 'public'";
+  }
+  sectionsQuery += ' ORDER BY sort_order ASC, created_at ASC';
+  const customSections = db.prepare(sectionsQuery).all(...secParams);
+
+  // Fetch linked timeline events with visibility filtering
+  let timelineQuery = 'SELECT * FROM identity_timeline_events WHERE identity_id = ?';
+  const timeParams: any[] = [identityId];
+  if (!isOwner) {
+    timelineQuery += " AND visibility = 'public'";
+  }
+  timelineQuery += ' ORDER BY numeric_year ASC, sort_order ASC, created_at ASC';
+  const timelineEvents = db.prepare(timelineQuery).all(...timeParams);
+
+  const formatted = formatIdentityRecord(identity);
   res.json({
     success: true,
     identity: {
-      ...identity,
-      personality_traits: identity.personality_traits ? JSON.parse(identity.personality_traits) : [],
-      interests: identity.interests ? JSON.parse(identity.interests) : [],
-      skills: identity.skills ? JSON.parse(identity.skills) : [],
-      theme_config: identity.theme_config ? JSON.parse(identity.theme_config) : null
+      ...formatted,
+      custom_sections: customSections.length > 0 ? customSections : formatted.custom_sections,
+      timeline_events: timelineEvents
     },
     isOwner
   });
@@ -3244,15 +3372,24 @@ app.post('/api/v1/identities', (req, res) => {
   const {
     userId = 'usr_me',
     name,
+    identityType,
     displayTitle = '',
-    classification = 'custom',
+    classification,
     avatarUrl = null,
     coverImageUrl = null,
     description = '',
     biography = '',
+    characteristics = [],
+    tags = [],
     personalityTraits = [],
     interests = [],
     skills = [],
+    experiences = [],
+    achievements = [],
+    memories = [],
+    mediaAttachments = [],
+    customSections = [],
+    visualTheme = null,
     universeId = null,
     layout = 'standard',
     themeConfig = null,
@@ -3261,10 +3398,12 @@ app.post('/api/v1/identities', (req, res) => {
     status = 'published'
   } = req.body;
 
-  if (!name) {
+  if (!name || !name.trim()) {
     return res.status(400).json({ error: 'Identity name is required' });
   }
 
+  const effectiveType = identityType || mapClassificationToType(classification);
+  const effectiveClassification = classification || mapTypeToClassification(effectiveType);
   const id = `id_${uuidv4().slice(0, 8)}`;
   const now = Date.now();
 
@@ -3272,30 +3411,30 @@ app.post('/api/v1/identities', (req, res) => {
     db.prepare('UPDATE user_identities SET is_primary = 0 WHERE user_id = ?').run(userId);
   }
 
+  const effVisualTheme = visualTheme || themeConfig || {};
+
   db.prepare(`
     INSERT INTO user_identities (
-      id, user_id, name, display_title, classification, avatar_url, cover_image_url,
-      description, biography, personality_traits, interests, skills, universe_id,
-      layout, theme_config, is_primary, visibility, status, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, user_id, name, identity_type, display_title, classification, avatar_url, cover_image_url,
+      description, biography, characteristics, tags, personality_traits, interests, skills,
+      experiences, achievements, memories, media_attachments, custom_sections, visual_theme,
+      universe_id, layout, theme_config, is_primary, visibility, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    id, userId, name.trim(), displayTitle.trim(), classification, avatarUrl, coverImageUrl,
-    description.trim(), biography.trim(), JSON.stringify(personalityTraits),
-    JSON.stringify(interests), JSON.stringify(skills), universeId, layout,
-    themeConfig ? JSON.stringify(themeConfig) : null, isPrimary ? 1 : 0,
+    id, userId, name.trim(), effectiveType, displayTitle.trim(), effectiveClassification,
+    avatarUrl, coverImageUrl, description.trim(), biography.trim(),
+    JSON.stringify(characteristics), JSON.stringify(tags), JSON.stringify(personalityTraits),
+    JSON.stringify(interests), JSON.stringify(skills), JSON.stringify(experiences),
+    JSON.stringify(achievements), JSON.stringify(memories), JSON.stringify(mediaAttachments),
+    JSON.stringify(customSections), JSON.stringify(effVisualTheme),
+    universeId, layout, JSON.stringify(effVisualTheme), isPrimary ? 1 : 0,
     visibility, status, now, now
   );
 
   const created = db.prepare('SELECT * FROM user_identities WHERE id = ?').get(id) as any;
   res.json({
     success: true,
-    identity: {
-      ...created,
-      personality_traits: personalityTraits,
-      interests,
-      skills,
-      theme_config: themeConfig
-    }
+    identity: formatIdentityRecord(created)
   });
 });
 
@@ -3310,15 +3449,24 @@ app.put('/api/v1/identities/:identityId', (req, res) => {
 
   const {
     name = existing.name,
+    identityType = existing.identity_type,
     displayTitle = existing.display_title,
     classification = existing.classification,
     avatarUrl = existing.avatar_url,
     coverImageUrl = existing.cover_image_url,
     description = existing.description,
     biography = existing.biography,
+    characteristics = existing.characteristics ? JSON.parse(existing.characteristics) : [],
+    tags = existing.tags ? JSON.parse(existing.tags) : [],
     personalityTraits = existing.personality_traits ? JSON.parse(existing.personality_traits) : [],
     interests = existing.interests ? JSON.parse(existing.interests) : [],
     skills = existing.skills ? JSON.parse(existing.skills) : [],
+    experiences = existing.experiences ? JSON.parse(existing.experiences) : [],
+    achievements = existing.achievements ? JSON.parse(existing.achievements) : [],
+    memories = existing.memories ? JSON.parse(existing.memories) : [],
+    mediaAttachments = existing.media_attachments ? JSON.parse(existing.media_attachments) : [],
+    customSections = existing.custom_sections ? JSON.parse(existing.custom_sections) : [],
+    visualTheme = existing.visual_theme ? JSON.parse(existing.visual_theme) : null,
     universeId = existing.universe_id,
     layout = existing.layout,
     themeConfig = existing.theme_config ? JSON.parse(existing.theme_config) : null,
@@ -3333,22 +3481,30 @@ app.put('/api/v1/identities/:identityId', (req, res) => {
     db.prepare('UPDATE user_identities SET is_primary = 0 WHERE user_id = ?').run(userId);
   }
 
+  const effectiveType = identityType || existing.identity_type || mapClassificationToType(classification);
+  const effectiveClassification = classification || existing.classification || mapTypeToClassification(effectiveType);
+  const effVisualTheme = visualTheme || themeConfig || (existing.visual_theme ? JSON.parse(existing.visual_theme) : {});
+
   db.prepare(`
     UPDATE user_identities SET
-      name = ?, display_title = ?, classification = ?, avatar_url = ?, cover_image_url = ?,
-      description = ?, biography = ?, personality_traits = ?, interests = ?, skills = ?,
-      universe_id = ?, layout = ?, theme_config = ?, is_primary = ?, visibility = ?,
+      name = ?, identity_type = ?, display_title = ?, classification = ?, avatar_url = ?, cover_image_url = ?,
+      description = ?, biography = ?, characteristics = ?, tags = ?, personality_traits = ?, interests = ?,
+      skills = ?, experiences = ?, achievements = ?, memories = ?, media_attachments = ?, custom_sections = ?,
+      visual_theme = ?, universe_id = ?, layout = ?, theme_config = ?, is_primary = ?, visibility = ?,
       status = ?, updated_at = ?
     WHERE id = ?
   `).run(
-    name.trim(), displayTitle.trim(), classification, avatarUrl, coverImageUrl,
-    description.trim(), biography.trim(), JSON.stringify(personalityTraits),
-    JSON.stringify(interests), JSON.stringify(skills), universeId, layout,
-    themeConfig ? JSON.stringify(themeConfig) : null, isPrimary ? 1 : 0,
+    name.trim(), effectiveType, displayTitle.trim(), effectiveClassification, avatarUrl, coverImageUrl,
+    description.trim(), biography.trim(), JSON.stringify(characteristics), JSON.stringify(tags),
+    JSON.stringify(personalityTraits), JSON.stringify(interests), JSON.stringify(skills),
+    JSON.stringify(experiences), JSON.stringify(achievements), JSON.stringify(memories),
+    JSON.stringify(mediaAttachments), JSON.stringify(customSections), JSON.stringify(effVisualTheme),
+    universeId, layout, JSON.stringify(effVisualTheme), isPrimary ? 1 : 0,
     visibility, status, now, identityId
   );
 
-  res.json({ success: true, message: 'Identity updated' });
+  const updated = db.prepare('SELECT * FROM user_identities WHERE id = ?').get(identityId) as any;
+  res.json({ success: true, message: 'Identity updated', identity: formatIdentityRecord(updated) });
 });
 
 // 5. Duplicate Identity
@@ -3365,19 +3521,41 @@ app.post('/api/v1/identities/:identityId/duplicate', (req, res) => {
 
   db.prepare(`
     INSERT INTO user_identities (
-      id, user_id, name, display_title, classification, avatar_url, cover_image_url,
-      description, biography, personality_traits, interests, skills, universe_id,
-      layout, theme_config, is_primary, visibility, status, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 'draft', ?, ?)
+      id, user_id, name, identity_type, display_title, classification, avatar_url, cover_image_url,
+      description, biography, characteristics, tags, personality_traits, interests, skills,
+      experiences, achievements, memories, media_attachments, custom_sections, visual_theme,
+      universe_id, layout, theme_config, is_primary, visibility, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 'draft', ?, ?)
   `).run(
-    newId, userId, `${orig.name} (Copy)`, orig.display_title, orig.classification,
+    newId, userId, `${orig.name} (Copy)`, orig.identity_type || 'personal', orig.display_title, orig.classification,
     orig.avatar_url, orig.cover_image_url, orig.description, orig.biography,
-    orig.personality_traits, orig.interests, orig.skills, orig.universe_id,
-    orig.layout, orig.theme_config, orig.visibility, now, now
+    orig.characteristics || '[]', orig.tags || '[]', orig.personality_traits || '[]',
+    orig.interests || '[]', orig.skills || '[]', orig.experiences || '[]',
+    orig.achievements || '[]', orig.memories || '[]', orig.media_attachments || '[]',
+    orig.custom_sections || '[]', orig.visual_theme || '{}',
+    orig.universe_id, orig.layout, orig.theme_config, orig.visibility, now, now
   );
 
+  // Duplicate custom sections
+  const sections = db.prepare('SELECT * FROM identity_custom_sections WHERE identity_id = ?').all(identityId) as any[];
+  for (const s of sections) {
+    db.prepare(`
+      INSERT INTO identity_custom_sections (id, identity_id, user_id, section_key, title, section_type, content, visibility, sort_order, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(`ics_${uuidv4().slice(0, 8)}`, newId, userId, s.section_key, s.title, s.section_type, s.content, s.visibility, s.sort_order, now, now);
+  }
+
+  // Duplicate timeline events
+  const events = db.prepare('SELECT * FROM identity_timeline_events WHERE identity_id = ?').all(identityId) as any[];
+  for (const e of events) {
+    db.prepare(`
+      INSERT INTO identity_timeline_events (id, identity_id, user_id, date_nature, year_value, numeric_year, era_label, display_date, title, description, detailed_narrative, image_url, tags, visibility, sort_order, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(`ite_${uuidv4().slice(0, 8)}`, newId, userId, e.date_nature, e.year_value, e.numeric_year, e.era_label, e.display_date, e.title, e.description, e.detailed_narrative, e.image_url, e.tags, e.visibility, e.sort_order, now, now);
+  }
+
   const duplicated = db.prepare('SELECT * FROM user_identities WHERE id = ?').get(newId);
-  res.json({ success: true, identity: duplicated });
+  res.json({ success: true, identity: formatIdentityRecord(duplicated) });
 });
 
 // 6. Delete Identity
@@ -3389,8 +3567,238 @@ app.delete('/api/v1/identities/:identityId', (req, res) => {
   if (!orig) return res.status(404).json({ error: 'Identity not found' });
   if (orig.user_id !== userId) return res.status(403).json({ error: 'Ownership required' });
 
+  db.prepare('DELETE FROM identity_custom_sections WHERE identity_id = ?').run(identityId);
+  db.prepare('DELETE FROM identity_timeline_events WHERE identity_id = ?').run(identityId);
   db.prepare('DELETE FROM user_identities WHERE id = ?').run(identityId);
   res.json({ success: true, message: 'Identity deleted' });
+});
+
+// 7. Identity Custom Sections CRUD
+app.get('/api/v1/identities/:identityId/sections', (req, res) => {
+  const { identityId } = req.params;
+  const viewerId = (req.headers['x-user-id'] as string) || (req.query.viewerId as string) || 'usr_me';
+
+  const identity = db.prepare('SELECT user_id, visibility FROM user_identities WHERE id = ?').get(identityId) as any;
+  if (!identity) return res.status(404).json({ error: 'Identity not found' });
+
+  const isOwner = identity.user_id === viewerId;
+  let query = 'SELECT * FROM identity_custom_sections WHERE identity_id = ?';
+  const params: any[] = [identityId];
+
+  if (!isOwner) {
+    query += " AND visibility = 'public'";
+  }
+  query += ' ORDER BY sort_order ASC, created_at ASC';
+  const sections = db.prepare(query).all(...params);
+  res.json({ success: true, sections });
+});
+
+app.post('/api/v1/identities/:identityId/sections', (req, res) => {
+  const { identityId } = req.params;
+  const userId = req.body.userId || 'usr_me';
+  const { sectionKey, title, sectionType = 'markdown', content = '', visibility = 'public', sortOrder = 0 } = req.body;
+
+  const identity = db.prepare('SELECT user_id FROM user_identities WHERE id = ?').get(identityId) as any;
+  if (!identity) return res.status(404).json({ error: 'Identity not found' });
+  if (identity.user_id !== userId) return res.status(403).json({ error: 'Ownership required' });
+
+  if (!title || !title.trim()) {
+    return res.status(400).json({ error: 'Section title is required' });
+  }
+
+  const id = `ics_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO identity_custom_sections (
+      id, identity_id, user_id, section_key, title, section_type, content, visibility, sort_order, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, identityId, userId, sectionKey || id, title.trim(), sectionType, content, visibility, sortOrder, now, now);
+
+  const created = db.prepare('SELECT * FROM identity_custom_sections WHERE id = ?').get(id);
+  res.json({ success: true, section: created });
+});
+
+app.put('/api/v1/identities/:identityId/sections/:sectionId', (req, res) => {
+  const { identityId, sectionId } = req.params;
+  const userId = req.body.userId || 'usr_me';
+
+  const existing = db.prepare('SELECT * FROM identity_custom_sections WHERE id = ? AND identity_id = ?').get(sectionId, identityId) as any;
+  if (!existing) return res.status(404).json({ error: 'Section not found' });
+  if (existing.user_id !== userId) return res.status(403).json({ error: 'Ownership required' });
+
+  const {
+    title = existing.title,
+    sectionType = existing.section_type,
+    content = existing.content,
+    visibility = existing.visibility,
+    sortOrder = existing.sort_order
+  } = req.body;
+
+  db.prepare(`
+    UPDATE identity_custom_sections SET
+      title = ?, section_type = ?, content = ?, visibility = ?, sort_order = ?, updated_at = ?
+    WHERE id = ?
+  `).run(title.trim(), sectionType, content, visibility, sortOrder, Date.now(), sectionId);
+
+  const updated = db.prepare('SELECT * FROM identity_custom_sections WHERE id = ?').get(sectionId);
+  res.json({ success: true, section: updated });
+});
+
+app.delete('/api/v1/identities/:identityId/sections/:sectionId', (req, res) => {
+  const { identityId, sectionId } = req.params;
+  const userId = (req.query.userId as string) || req.body.userId || 'usr_me';
+
+  const existing = db.prepare('SELECT * FROM identity_custom_sections WHERE id = ? AND identity_id = ?').get(sectionId, identityId) as any;
+  if (!existing) return res.status(404).json({ error: 'Section not found' });
+  if (existing.user_id !== userId) return res.status(403).json({ error: 'Ownership required' });
+
+  db.prepare('DELETE FROM identity_custom_sections WHERE id = ?').run(sectionId);
+  res.json({ success: true, message: 'Section deleted' });
+});
+
+// 8. Identity Timeline Events CRUD (Arbitrary negative years, 0, future, and 4 date natures)
+app.get('/api/v1/identities/:identityId/timeline', (req, res) => {
+  const { identityId } = req.params;
+  const viewerId = (req.headers['x-user-id'] as string) || (req.query.viewerId as string) || 'usr_me';
+  const nature = req.query.nature as string;
+
+  const identity = db.prepare('SELECT user_id FROM user_identities WHERE id = ?').get(identityId) as any;
+  if (!identity) return res.status(404).json({ error: 'Identity not found' });
+
+  const isOwner = identity.user_id === viewerId;
+  let query = 'SELECT * FROM identity_timeline_events WHERE identity_id = ?';
+  const params: any[] = [identityId];
+
+  if (!isOwner) {
+    query += " AND visibility = 'public'";
+  }
+  if (nature) {
+    query += ' AND date_nature = ?';
+    params.push(nature);
+  }
+  query += ' ORDER BY numeric_year ASC, sort_order ASC, created_at ASC';
+  const events = db.prepare(query).all(...params) as any[];
+
+  res.json({
+    success: true,
+    events: events.map(e => ({
+      ...e,
+      tags: e.tags ? JSON.parse(e.tags) : []
+    }))
+  });
+});
+
+app.post('/api/v1/identities/:identityId/timeline', (req, res) => {
+  const { identityId } = req.params;
+  const userId = req.body.userId || 'usr_me';
+  const {
+    dateNature = 'personal', // 'historical', 'fictional', 'hypothetical', 'personal'
+    yearValue,               // e.g. "-1500", "0", "1998", "2026", "2150"
+    customEra,
+    displayDate: explicitDisplayDate,
+    title,
+    description = '',
+    detailedNarrative = '',
+    imageUrl = null,
+    tags = [],
+    visibility = 'public',
+    sortOrder = 0
+  } = req.body;
+
+  const identity = db.prepare('SELECT user_id FROM user_identities WHERE id = ?').get(identityId) as any;
+  if (!identity) return res.status(404).json({ error: 'Identity not found' });
+  if (identity.user_id !== userId) return res.status(403).json({ error: 'Ownership required' });
+
+  if (!title || !title.trim()) {
+    return res.status(400).json({ error: 'Event title is required' });
+  }
+  if (yearValue === undefined || yearValue === null || String(yearValue).trim() === '') {
+    return res.status(400).json({ error: 'yearValue is required (e.g. -1500, 0, 1998, 2026)' });
+  }
+
+  const { numericYear, eraLabel, displayDate } = parseTimelineDateInput(yearValue, dateNature, customEra, explicitDisplayDate);
+  const id = `ite_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO identity_timeline_events (
+      id, identity_id, user_id, date_nature, year_value, numeric_year, era_label,
+      display_date, title, description, detailed_narrative, image_url, tags,
+      visibility, sort_order, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id, identityId, userId, dateNature, String(yearValue).trim(), numericYear, eraLabel,
+    displayDate, title.trim(), description.trim(), detailedNarrative.trim(), imageUrl,
+    JSON.stringify(tags), visibility, sortOrder, now, now
+  );
+
+  const created = db.prepare('SELECT * FROM identity_timeline_events WHERE id = ?').get(id) as any;
+  res.json({
+    success: true,
+    event: {
+      ...created,
+      tags: created.tags ? JSON.parse(created.tags) : []
+    }
+  });
+});
+
+app.put('/api/v1/identities/:identityId/timeline/:eventId', (req, res) => {
+  const { identityId, eventId } = req.params;
+  const userId = req.body.userId || 'usr_me';
+
+  const existing = db.prepare('SELECT * FROM identity_timeline_events WHERE id = ? AND identity_id = ?').get(eventId, identityId) as any;
+  if (!existing) return res.status(404).json({ error: 'Timeline event not found' });
+  if (existing.user_id !== userId) return res.status(403).json({ error: 'Ownership required' });
+
+  const {
+    dateNature = existing.date_nature,
+    yearValue = existing.year_value,
+    customEra = existing.era_label,
+    displayDate: explicitDisplayDate = existing.display_date,
+    title = existing.title,
+    description = existing.description,
+    detailedNarrative = existing.detailed_narrative,
+    imageUrl = existing.image_url,
+    tags = existing.tags ? JSON.parse(existing.tags) : [],
+    visibility = existing.visibility,
+    sortOrder = existing.sort_order
+  } = req.body;
+
+  const { numericYear, eraLabel, displayDate } = parseTimelineDateInput(yearValue, dateNature, customEra, explicitDisplayDate);
+
+  db.prepare(`
+    UPDATE identity_timeline_events SET
+      date_nature = ?, year_value = ?, numeric_year = ?, era_label = ?,
+      display_date = ?, title = ?, description = ?, detailed_narrative = ?,
+      image_url = ?, tags = ?, visibility = ?, sort_order = ?, updated_at = ?
+    WHERE id = ?
+  `).run(
+    dateNature, String(yearValue).trim(), numericYear, eraLabel,
+    displayDate, title.trim(), description.trim(), detailedNarrative.trim(),
+    imageUrl, JSON.stringify(tags), visibility, sortOrder, Date.now(), eventId
+  );
+
+  const updated = db.prepare('SELECT * FROM identity_timeline_events WHERE id = ?').get(eventId) as any;
+  res.json({
+    success: true,
+    event: {
+      ...updated,
+      tags: updated.tags ? JSON.parse(updated.tags) : []
+    }
+  });
+});
+
+app.delete('/api/v1/identities/:identityId/timeline/:eventId', (req, res) => {
+  const { identityId, eventId } = req.params;
+  const userId = (req.query.userId as string) || req.body.userId || 'usr_me';
+
+  const existing = db.prepare('SELECT * FROM identity_timeline_events WHERE id = ? AND identity_id = ?').get(eventId, identityId) as any;
+  if (!existing) return res.status(404).json({ error: 'Timeline event not found' });
+  if (existing.user_id !== userId) return res.status(403).json({ error: 'Ownership required' });
+
+  db.prepare('DELETE FROM identity_timeline_events WHERE id = ?').run(eventId);
+  res.json({ success: true, message: 'Timeline event deleted' });
 });
 
 // ============================================================================
