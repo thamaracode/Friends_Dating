@@ -33,6 +33,8 @@ import { QuoteProviderRegistry } from './quotes/registry';
 import { QUOTE_CATEGORIES, QuoteCategoryKey } from './quotes/types';
 import { SoulPromptsService } from './soul-prompts/service';
 import { psychologyService } from './psychology/service';
+import { SocialDiscoveryService } from './discovery/service';
+import { MATCHING_TERMINOLOGY_REGISTRY, CONNECTION_TYPES_METADATA } from './discovery/types';
 import {
   createRateLimiter,
   isUserSuspended,
@@ -7801,6 +7803,227 @@ app.post('/api/v1/soul-prompts/responses/:responseId/icebreaker', (req, res) => 
     res.json({ success: true, ...icebreaker });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to create prompt icebreaker' });
+  }
+});
+
+// ============================================================================
+// MASTER PROMPT 04: SOCIAL DISCOVERY, FRIENDSHIP AND DATING ENGINE API
+// ============================================================================
+
+// 1. Get Matching Terminology & Conceptual Distinctions
+app.get('/api/v1/discovery/terminology', (_req, res) => {
+  res.json({
+    success: true,
+    concepts: MATCHING_TERMINOLOGY_REGISTRY,
+    connectionTypes: CONNECTION_TYPES_METADATA
+  });
+});
+
+// 2. Configurable Discovery Feed with Explainable Resonance Breakdown
+app.get('/api/v1/discovery/feed', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const {
+      connectionType,
+      minAge,
+      maxAge,
+      city,
+      interests,
+      values,
+      sortBy,
+      page,
+      limit
+    } = req.query;
+
+    const filters = {
+      connectionType: connectionType as any,
+      minAge: minAge ? parseInt(minAge as string, 10) : undefined,
+      maxAge: maxAge ? parseInt(maxAge as string, 10) : undefined,
+      city: city as string,
+      interests: interests ? (interests as string).split(',').map(s => s.trim()) : undefined,
+      values: values ? (values as string).split(',').map(s => s.trim()) : undefined,
+      sortBy: sortBy as any,
+      page: page ? parseInt(page as string, 10) : 1,
+      limit: limit ? parseInt(limit as string, 10) : 12
+    };
+
+    const feed = SocialDiscoveryService.getDiscoveryFeed(userId, filters);
+    res.json({ success: true, ...feed });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch discovery feed' });
+  }
+});
+
+// 3. Get Single Discovery Profile
+app.get('/api/v1/discovery/profile/:targetUserId', (req, res) => {
+  try {
+    const { targetUserId } = req.params;
+    const profile = SocialDiscoveryService.getProfile(targetUserId);
+    if (!profile) {
+      return res.status(404).json({ error: 'Discovery profile not found' });
+    }
+    res.json({ success: true, profile });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch profile' });
+  }
+});
+
+// 4. Update / Upsert Discovery Profile
+app.put('/api/v1/discovery/profile', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.id || 'usr_me';
+    const updated = SocialDiscoveryService.upsertProfile({
+      ...req.body,
+      id: userId
+    });
+    res.json({ success: true, profile: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to update profile' });
+  }
+});
+
+// 5. Deep-Dive Explainable Resonance Report
+app.get('/api/v1/discovery/explain/:targetUserId', (req, res) => {
+  try {
+    const { targetUserId } = req.params;
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+
+    if (userId === targetUserId) {
+      return res.status(400).json({ error: 'Cannot calculate resonance with yourself' });
+    }
+
+    const report = SocialDiscoveryService.explainResonance(userId, targetUserId);
+    if (!report) {
+      return res.status(404).json({ error: 'Profile not found to compute resonance' });
+    }
+
+    res.json({ success: true, report });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to generate resonance report' });
+  }
+});
+
+// 6. Record User Interaction (like, pass, save, follow)
+app.post('/api/v1/discovery/interact', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { targetUserId, type, connectionType } = req.body;
+
+    if (!targetUserId || !type) {
+      return res.status(400).json({ error: 'targetUserId and type are required' });
+    }
+
+    const result = SocialDiscoveryService.recordInteraction(
+      userId,
+      targetUserId,
+      type,
+      connectionType || 'friendship'
+    );
+
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to record interaction' });
+  }
+});
+
+// 7. Send Explicit Connection Request
+app.post('/api/v1/discovery/connect', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { recipientId, connectionType, note } = req.body;
+
+    if (!recipientId || !connectionType) {
+      return res.status(400).json({ error: 'recipientId and connectionType are required' });
+    }
+
+    const result = SocialDiscoveryService.sendConnectionRequest(
+      userId,
+      recipientId,
+      connectionType,
+      note
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error || 'Failed to send request' });
+    }
+
+    res.json({ success: true, request: result.request });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to send connection request' });
+  }
+});
+
+// 8. Respond to Connection Request (Accept / Decline)
+app.post('/api/v1/discovery/requests/:requestId/respond', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { requestId } = req.params;
+    const { action } = req.body;
+
+    if (action !== 'accept' && action !== 'decline') {
+      return res.status(400).json({ error: "Action must be 'accept' or 'decline'" });
+    }
+
+    const result = SocialDiscoveryService.respondToConnectionRequest(userId, requestId, action);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error || 'Failed to respond to request' });
+    }
+
+    res.json({ success: true, connection: result.connection });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to respond to connection request' });
+  }
+});
+
+// 9. Get Connections for User
+app.get('/api/v1/discovery/connections', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { type } = req.query;
+
+    const connections = SocialDiscoveryService.getConnections(userId, type as any);
+    res.json({ success: true, connections });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch connections' });
+  }
+});
+
+// 10. Unmatch / Dissolve Connection
+app.post('/api/v1/discovery/unmatch', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { targetUserId } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ error: 'targetUserId is required' });
+    }
+
+    const success = SocialDiscoveryService.unmatch(userId, targetUserId);
+    res.json({ success });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to unmatch' });
+  }
+});
+
+// 11. Get Saved Profiles
+app.get('/api/v1/discovery/saved', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const saved = SocialDiscoveryService.getSavedProfiles(userId);
+    res.json({ success: true, items: saved });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch saved profiles' });
+  }
+});
+
+// 12. Reset Passes
+app.post('/api/v1/discovery/passes/reset', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const clearedCount = SocialDiscoveryService.resetPasses(userId);
+    res.json({ success: true, clearedCount });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to reset passes' });
   }
 });
 

@@ -24,6 +24,7 @@ import {
 import { MOCK_PROFILES, CURRENT_USER } from '../../mockData';
 import type { UserProfile } from '../../types';
 import { ContextualEmotionalBanner } from '../emotional/ContextualEmotionalBanner';
+import { SocialDiscoveryEngineView } from '../discovery/SocialDiscoveryEngineView';
 
 interface SoulverseMobileDiscoverExperienceProps {
   onOpenProfile: (profile: UserProfile) => void;
@@ -38,8 +39,8 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
   onOpenDailyHub,
   onOpenUnspoken
 }) => {
-  // Discovery View Mode: 'feed' (vertical scrolling) vs 'swipe' (card stack)
-  const [viewMode, setViewMode] = useState<'feed' | 'swipe'>('feed');
+  // Discovery View Mode: 'engine' (comprehensive multi-intention resonance) vs 'feed' vs 'swipe'
+  const [viewMode, setViewMode] = useState<'engine' | 'feed' | 'swipe'>('engine');
   
   // Category filter
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -133,30 +134,42 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
           <p className="type-supporting mt-1">Ontological chemistry, shared values, and deep multi-world identity</p>
         </div>
 
-        {/* View Mode Switcher: Swipe Stack vs Vertical Feed */}
+        {/* View Mode Switcher: Resonance Engine vs Vertical Feed vs Swipe Stack */}
         <div className="flex items-center bg-white/[0.04] p-1 rounded-full border border-white/10 shrink-0 self-start sm:self-auto h-11 backdrop-blur-md">
           <button
+            onClick={() => setViewMode('engine')}
+            className={`h-9 px-3.5 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              viewMode === 'engine'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+            title="Complete Social Discovery & Resonance Engine"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>Resonance Engine</span>
+          </button>
+          <button
             onClick={() => setViewMode('feed')}
-            className={`h-9 px-4 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            className={`h-9 px-3.5 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               viewMode === 'feed'
                 ? 'bg-white text-[#090A0E] shadow-sm'
                 : 'text-zinc-400 hover:text-white'
             }`}
             title="Vertical Explore Feed"
           >
-            <List className="w-4 h-4" />
+            <List className="w-3.5 h-3.5" />
             <span>Feed</span>
           </button>
           <button
             onClick={() => setViewMode('swipe')}
-            className={`h-9 px-4 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            className={`h-9 px-3.5 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               viewMode === 'swipe'
                 ? 'bg-white text-[#090A0E] shadow-sm'
                 : 'text-zinc-400 hover:text-white'
             }`}
             title="Stack Swiping Mode"
           >
-            <Layers className="w-4 h-4" />
+            <Layers className="w-3.5 h-3.5" />
             <span>Swipe</span>
           </button>
         </div>
@@ -428,6 +441,15 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
             </div>
           </div>
         </div>
+      )}
+
+      {/* 4.5. MODE A: MASTER SOCIAL DISCOVERY & RESONANCE ENGINE (Master Prompt 04) */}
+      {viewMode === 'engine' && (
+        <SocialDiscoveryEngineView
+          currentUserId={CURRENT_USER.id}
+          onInitiateChat={onInitiateChat}
+          onOpenProfileDetail={onOpenProfile}
+        />
       )}
 
       {/* 5. MODE B: VERTICAL EXPLORE FEED */}

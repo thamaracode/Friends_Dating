@@ -1221,6 +1221,7 @@ export function initDatabase() {
   seedCouplePlayHubGames();
   seedConfessions();
   seedPsychologyFramework();
+  seedSocialDiscoveryEngine();
 }
 
 function seedInitialData() {
@@ -3855,5 +3856,14 @@ function seedPsychologyFramework() {
     }
   } catch (err) {
     console.warn('Could not seed psychology framework:', err);
+  }
+}
+
+function seedSocialDiscoveryEngine() {
+  try {
+    const { SocialDiscoveryService } = require('./discovery/service');
+    SocialDiscoveryService.seedDiscoveryProfiles();
+  } catch (err) {
+    console.warn('Could not seed social discovery engine:', err);
   }
 }

@@ -90,6 +90,7 @@ import { HeartLogoShowcaseModal } from './brand/HeartLogoShowcaseModal';
 import { SoulJournalSanctuary } from './journal/SoulJournalSanctuary';
 import { SpotifyEmbedHubView } from './spotify/SpotifyEmbedHubView';
 import { PersonalitySanctuaryView } from './personality/PersonalitySanctuaryView';
+import { SocialDiscoveryEngineView } from './discovery/SocialDiscoveryEngineView';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -171,7 +172,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       const hash = window.location.hash.replace('#', '') as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
         'home', 'daily', 'discover', 'connect', 'connections', 'messages', 'inbox', 'profile', 
-        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games', 'personality'
+        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games', 'personality', 'discovery_engine'
       ];
       if (validRoutes.includes(hash)) {
         setCurrentRoute(hash);
@@ -728,6 +729,17 @@ export const SoulverseWebsiteShell: React.FC = () => {
                 <PersonalitySanctuaryView
                   currentUserId="usr_me"
                   onNavigateTab={(tab) => navigateTo(tab as any)}
+                />
+              </div>
+            )}
+
+            {/* SUB-VIEW: SOCIAL DISCOVERY, FRIENDSHIP AND DATING ENGINE */}
+            {currentRoute === 'discovery_engine' && (
+              <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass p-4 sm:p-6">
+                <SocialDiscoveryEngineView
+                  currentUserId="usr_me"
+                  onInitiateChat={handleInitiateChat}
+                  onOpenProfileDetail={(p) => setInspectedProfile(p)}
                 />
               </div>
             )}
