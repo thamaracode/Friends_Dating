@@ -10,7 +10,9 @@ import {
   X, 
   ShieldCheck, 
   MessageSquareQuote,
-  Feather
+  Feather,
+  Tag,
+  Plus
 } from 'lucide-react';
 import type { 
   ConfessionCategory, 
@@ -41,8 +43,29 @@ export const CreateConfessionModal: React.FC<CreateConfessionModalProps> = ({
   const [visibility, setVisibility] = useState<ConfessionVisibility>(defaultVisibility);
   const [customAlias, setCustomAlias] = useState('');
   const [isSensitive, setIsSensitive] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>(['healing', 'vulnerability']);
+  const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const SUGGESTED_TAGS = [
+    'healing', 'heartbreak', 'boundaries', 'vulnerability', 'introvert', 
+    'growth', 'forgiveness', 'anxiety', 'firstlove', 'lettinggo', 'selflove', 'unspoken'
+  ];
+
+  const handleAddTag = (tagToAdd?: string) => {
+    const raw = tagToAdd || tagInput;
+    const clean = raw.replace(/^#/, '').trim().toLowerCase();
+    if (!clean) return;
+    if (!selectedTags.includes(clean)) {
+      setSelectedTags(prev => [...prev, clean]);
+    }
+    setTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setSelectedTags(prev => prev.filter(t => t !== tagToRemove));
+  };
 
   if (!isOpen) return null;
 
@@ -88,6 +111,7 @@ export const CreateConfessionModal: React.FC<CreateConfessionModalProps> = ({
         category,
         mood,
         visibility,
+        tags: selectedTags,
         isSensitive,
         customAlias: visibility === 'anonymous' ? customAlias.trim() || undefined : undefined
       };
@@ -325,7 +349,92 @@ export const CreateConfessionModal: React.FC<CreateConfessionModalProps> = ({
           </div>
 
           {/* =============================================================== */}
-          {/* 4. SENSITIVE WARNING TOGGLE                                    */}
+          {/* 4. RELATED RESONANCE TAGS (OPTIMIZATION & RECOMMENDATIONS)      */}
+          {/* =============================================================== */}
+          <div className="space-y-3 p-4 rounded-2xl bg-white/[0.03] border border-white/10">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-heading font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5" />
+                <span>Related Resonance Tags</span>
+              </label>
+              <span className="text-[10px] text-zinc-400">
+                Optimizes future supportive recommendations
+              </span>
+            </div>
+
+            {/* Selected Tags Chips */}
+            {selectedTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {selectedTags.map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-amber-400/15 text-amber-300 border border-amber-400/30"
+                  >
+                    <span>#{tag}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="hover:text-white text-amber-400/70 p-0.5 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Custom Tag Input */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={e => setTagInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    handleAddTag();
+                  }
+                }}
+                placeholder="Type tag & press enter (e.g. #anxiety, #firstlove)..."
+                className="flex-1 px-3.5 py-2 rounded-xl bg-[#141724] border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400/60"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddTag()}
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-zinc-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Tag</span>
+              </button>
+            </div>
+
+            {/* Suggested Tags Quick Selection */}
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[11px] text-zinc-400 font-medium block">Suggested Tags to Click:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {SUGGESTED_TAGS.map(tag => {
+                  const isSelected = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => isSelected ? handleRemoveTag(tag) : handleAddTag(tag)}
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-amber-400/20 border-amber-400/50 text-amber-300 font-bold'
+                          : 'bg-white/[0.02] border-white/10 text-zinc-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      #{tag} {isSelected ? '✓' : '+'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* =============================================================== */}
+          {/* 5. SENSITIVE WARNING TOGGLE                                    */}
           {/* =============================================================== */}
           <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
             <div className="space-y-0.5">

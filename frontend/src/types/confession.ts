@@ -38,9 +38,17 @@ export interface ConfessionStory {
   reactionPeace: number;
   reactionSecrets: number;
   userReactions?: ConfessionReactionType[];
+  tags?: string[];
+  resonanceScore?: number;
+  matchedTags?: string[];
   createdAt: number;
   updatedAt: number;
   isOwner?: boolean;
+}
+
+export interface TagFrequency {
+  tag: string;
+  count: number;
 }
 
 export interface CreateConfessionPayload {
@@ -49,6 +57,7 @@ export interface CreateConfessionPayload {
   category: ConfessionCategory;
   mood: ConfessionMood;
   visibility: ConfessionVisibility;
+  tags?: string[];
   isSensitive?: boolean;
   customAlias?: string;
 }

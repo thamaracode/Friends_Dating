@@ -17,13 +17,16 @@ import {
   Smile, 
   Users,
   Compass,
-  AlertTriangle
+  AlertTriangle,
+  Tag,
+  X
 } from 'lucide-react';
 import type { 
   ConfessionStory, 
   ConfessionCategory, 
   ConfessionVisibility, 
-  ConfessionReactionType 
+  ConfessionReactionType,
+  TagFrequency
 } from '../../types/confession';
 import { confessionsApiClient } from '../../services/confessionsApiClient';
 import { CreateConfessionModal } from './CreateConfessionModal';
@@ -38,8 +41,11 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
   onSendConfessionToChat
 }) => {
   const [confessions, setConfessions] = useState<ConfessionStory[]>([]);
-  const [activeTab, setActiveTab] = useState<'all' | 'anonymous' | 'public' | 'my_vault'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'supportive' | 'anonymous' | 'public' | 'my_vault'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [trendingTags, setTrendingTags] = useState<TagFrequency[]>([]);
+  const [userResonanceTags, setUserResonanceTags] = useState<string[]>([]);
   const [revealedSensitives, setRevealedSensitives] = useState<Record<string, boolean>>({});
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -56,9 +62,13 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
       if (activeTab === 'my_vault') {
         const myData = await confessionsApiClient.getMyConfessions();
         setConfessions(myData);
+      } else if (activeTab === 'supportive') {
+        const recData = await confessionsApiClient.getRecommendations();
+        setUserResonanceTags(recData.userResonanceTags || []);
+        setConfessions(recData.recommendations || []);
       } else {
         const visibilityFilter = activeTab === 'all' ? undefined : activeTab;
-        const data = await confessionsApiClient.getConfessions(selectedCategory, visibilityFilter);
+        const data = await confessionsApiClient.getConfessions(selectedCategory, visibilityFilter, selectedTag || undefined);
         setConfessions(data);
       }
     } catch {
@@ -68,9 +78,22 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
     }
   };
 
+  const loadTrendingTags = async () => {
+    try {
+      const tags = await confessionsApiClient.getTrendingTags();
+      setTrendingTags(tags);
+    } catch {
+      // Fallback
+    }
+  };
+
   useEffect(() => {
     loadConfessions();
-  }, [activeTab, selectedCategory]);
+  }, [activeTab, selectedCategory, selectedTag]);
+
+  useEffect(() => {
+    loadTrendingTags();
+  }, []);
 
   const handleReact = async (confessionId: string, reaction: ConfessionReactionType) => {
     const updated = await confessionsApiClient.reactToConfession(confessionId, reaction);
@@ -90,7 +113,8 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
 
   const handleShare = (confession: ConfessionStory) => {
     const authorTag = confession.visibility === 'anonymous' ? (confession.authorAlias || 'Anonymous') : (confession.authorName || 'Someone');
-    const text = `🤫 [Soulverse Confession - ${authorTag}]\n"${confession.title}"\n\n${confession.story}`;
+    const tagsSuffix = confession.tags && confession.tags.length > 0 ? `\nTags: #${confession.tags.join(' #')}` : '';
+    const text = `🤫 [Soulverse Confession - ${authorTag}]\n"${confession.title}"\n\n${confession.story}${tagsSuffix}`;
     if (onSendConfessionToChat) {
       onSendConfessionToChat(text);
       showToast('Shared confession to chat!');
@@ -115,7 +139,7 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
   return (
     <div className="w-full space-y-6 animate-fadeIn pb-16">
       
-      {/* Toast */}
+      {/* Toast Notification */}
       {toastMsg && (
         <div className="fixed top-20 right-6 z-50 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-rose-900/90 to-amber-900/90 border border-amber-400/40 text-amber-200 shadow-2xl backdrop-blur-xl flex items-center gap-2 text-xs font-semibold animate-slideIn">
           <Sparkles className="w-4 h-4 text-amber-300" />
@@ -135,7 +159,7 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
               Stories We Never Tell in the Daylight.
             </h2>
             <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-              Share real feelings and secret moments without pretense. Post anonymously, publicly under your profile, or keep them securely in your private vault.
+              Share real feelings and secret moments without pretense. Tag your stories with related emotions so you can discover supportive kindred souls who truly understand.
             </p>
           </div>
 
@@ -149,17 +173,21 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
         </div>
       </div>
 
-      {/* Primary Stream Tabs (All, Anonymous, Public, My Vault) */}
+      {/* Primary Stream Tabs (All, Supportive Recommendations, Anonymous, Public, My Vault) */}
       <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/[0.04] border border-white/10 overflow-x-auto no-scrollbar">
         {[
-          { id: 'all' as const, label: '🌐 All Stories', desc: 'Public & Anonymous' },
-          { id: 'anonymous' as const, label: '🎭 Anonymous Stream', desc: 'Identity 100% hidden' },
-          { id: 'public' as const, label: '🌍 Public Stories', desc: 'By real humans' },
-          { id: 'my_vault' as const, label: '🔒 My Confession Vault', desc: 'Your private & posted stories' }
+          { id: 'all' as const, label: '🌐 All Stories' },
+          { id: 'supportive' as const, label: '✨ Supportive For You' },
+          { id: 'anonymous' as const, label: '🎭 Anonymous Stream' },
+          { id: 'public' as const, label: '🌍 Public Stories' },
+          { id: 'my_vault' as const, label: '🔒 My Confession Vault' }
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              setActiveTab(tab.id);
+              setSelectedTag(null);
+            }}
             className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
               activeTab === tab.id
                 ? 'bg-white text-[#090A0E] shadow-md font-bold'
@@ -171,22 +199,86 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
         ))}
       </div>
 
-      {/* Topic Filter Pills */}
+      {/* Supportive Recommendations Banner */}
+      {activeTab === 'supportive' && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-transparent border border-amber-400/25 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="text-zinc-200">
+              Personalized supportive matches based on your resonance tags:
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {userResonanceTags.map(tag => (
+              <span key={tag} className="px-2 py-0.5 rounded-md bg-amber-400/20 text-amber-300 font-mono text-[10px] font-bold">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Trending / Active Resonance Tags Bar */}
       {activeTab !== 'my_vault' && (
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-          {CATEGORY_PILLS.map(pill => (
-            <button
-              key={pill.id}
-              onClick={() => setSelectedCategory(pill.id)}
-              className={`h-8 px-3 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                selectedCategory === pill.id
-                  ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-sm'
-                  : 'bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]'
-              }`}
-            >
-              {pill.label}
-            </button>
-          ))}
+        <div className="space-y-2">
+          {/* Active Tag Filter Pill Indicator */}
+          {selectedTag && (
+            <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 text-xs font-semibold">
+              <Tag className="w-3.5 h-3.5" />
+              <span>Filtering by Tag: <strong>#{selectedTag}</strong></span>
+              <button
+                onClick={() => setSelectedTag(null)}
+                className="ml-auto p-1 hover:bg-amber-400/20 rounded-md transition-colors cursor-pointer"
+                title="Clear tag filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+
+          {/* Trending Tags Row */}
+          {trendingTags.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 shrink-0 flex items-center gap-1">
+                <Tag className="w-3 h-3 text-amber-400" />
+                <span>Resonance Tags:</span>
+              </span>
+              {trendingTags.map(item => {
+                const isActive = selectedTag === item.tag;
+                return (
+                  <button
+                    key={item.tag}
+                    onClick={() => setSelectedTag(isActive ? null : item.tag)}
+                    className={`h-7 px-3 rounded-full text-[11px] font-mono font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                      isActive
+                        ? 'bg-amber-400 text-[#090A0E] font-bold shadow-sm'
+                        : 'bg-white/[0.04] text-zinc-300 hover:text-white hover:bg-white/[0.08] border border-white/10'
+                    }`}
+                  >
+                    <span>#{item.tag}</span>
+                    <span className="text-[10px] opacity-70">({item.count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Topic Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+            {CATEGORY_PILLS.map(pill => (
+              <button
+                key={pill.id}
+                onClick={() => setSelectedCategory(pill.id)}
+                className={`h-8 px-3 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                  selectedCategory === pill.id
+                    ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-sm'
+                    : 'bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]'
+                }`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -201,15 +293,27 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
               No confessions found in this space
             </h4>
             <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-              Be the first to break the silence. Share a thought anonymously or record it into your private vault.
+              {selectedTag 
+                ? `No stories found matching the tag #${selectedTag}. Try clearing the tag filter.`
+                : 'Be the first to break the silence. Share a thought anonymously or record it into your private vault.'}
             </p>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="mt-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs cursor-pointer inline-flex items-center gap-2"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Whisper Something Now</span>
-            </button>
+            <div className="pt-2 flex items-center justify-center gap-3">
+              {selectedTag && (
+                <button
+                  onClick={() => setSelectedTag(null)}
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs cursor-pointer"
+                >
+                  Clear Tag Filter
+                </button>
+              )}
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 text-white font-bold text-xs cursor-pointer inline-flex items-center gap-2"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Whisper Something Now</span>
+              </button>
+            </div>
           </div>
         ) : (
           confessions.map(confession => {
@@ -220,6 +324,21 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
                 key={confession.id}
                 className="p-6 sm:p-7 rounded-3xl bg-[#12141C]/80 border border-white/10 hover:border-white/20 transition-all shadow-lg space-y-4 relative overflow-hidden"
               >
+                {/* Supportive Resonance Recommendation Pill */}
+                {confession.resonanceScore && (
+                  <div className="flex flex-wrap items-center gap-2 pb-1">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-rose-500/10 border border-amber-400/30 text-[11px] font-bold text-amber-300 shadow-sm">
+                      <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
+                      <span>{confession.resonanceScore}% Resonance Match</span>
+                    </span>
+                    {confession.matchedTags && confession.matchedTags.length > 0 && (
+                      <span className="text-zinc-400 text-[11px] font-mono">
+                        Kindred tags: #{confession.matchedTags.join(', #')}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Top Metadata Header */}
                 <div className="flex items-center justify-between gap-3">
                   {/* Author Attribution */}
@@ -318,6 +437,30 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
                   )}
                 </div>
 
+                {/* Resonance Tags Chips */}
+                {confession.tags && confession.tags.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {confession.tags.map(tag => {
+                      const isTagActive = selectedTag === tag;
+                      return (
+                        <button
+                          key={tag}
+                          onClick={() => setSelectedTag(isTagActive ? null : tag)}
+                          className={`inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                            isTagActive
+                              ? 'bg-amber-400 text-black font-bold border-amber-400'
+                              : 'bg-white/[0.04] text-amber-300/80 hover:text-white hover:bg-white/10 border-white/10'
+                          }`}
+                          title={`Filter stories tagged #${tag}`}
+                        >
+                          <Tag className="w-2.5 h-2.5 opacity-60" />
+                          <span>#{tag}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* Bottom Reactions Cluster */}
                 <div className="pt-3 border-t border-white/[0.08] flex flex-wrap items-center justify-between gap-3 text-xs">
                   <div className="flex flex-wrap items-center gap-2">
@@ -411,10 +554,14 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
       {/* Creation Modal */}
       <CreateConfessionModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          loadTrendingTags();
+        }}
         onConfessionCreated={(newConf) => {
           setConfessions(prev => [newConf, ...prev]);
-          showToast(`Published ${newConf.visibility.toUpperCase()} confession story!`);
+          loadTrendingTags();
+          showToast(`Published ${newConf.visibility.toUpperCase()} confession story with tags!`);
         }}
         defaultVisibility={activeTab === 'anonymous' ? 'anonymous' : activeTab === 'public' ? 'public' : 'anonymous'}
       />

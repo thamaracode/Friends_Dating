@@ -3929,13 +3929,13 @@ app.get('/api/v1/games/coupleplayhub/session/:id', (req, res) => {
 // ============================================================================
 
 app.get('/api/v1/confessions', (req, res) => {
-  const { category, visibility } = req.query as { category?: string; visibility?: string };
+  const { category, visibility, tag } = req.query as { category?: string; visibility?: string; tag?: string };
   const currentUserId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
 
   let query = `
     SELECT 
       c.id, c.user_id, c.title, c.story, c.category, c.mood, c.visibility,
-      c.author_alias, c.is_sensitive, c.reaction_hugs, c.reaction_relatable,
+      c.author_alias, c.tags, c.is_sensitive, c.reaction_hugs, c.reaction_relatable,
       c.reaction_peace, c.reaction_secrets, c.created_at, c.updated_at,
       u.name as author_name, u.avatar_url as author_avatar
     FROM confessions c
@@ -3952,6 +3952,12 @@ app.get('/api/v1/confessions', (req, res) => {
   if (visibility && visibility !== 'all') {
     query += ` AND c.visibility = ?`;
     params.push(visibility);
+  }
+
+  if (tag && tag !== 'all') {
+    const cleanTag = tag.replace(/^#/, '').trim().toLowerCase();
+    query += ` AND LOWER(c.tags) LIKE ?`;
+    params.push(`%${cleanTag}%`);
   }
 
   query += ` ORDER BY c.created_at DESC LIMIT 100`;
@@ -3973,6 +3979,7 @@ app.get('/api/v1/confessions', (req, res) => {
   const confessions = rows.map(row => {
     const isOwner = row.user_id === currentUserId;
     const isAnon = row.visibility === 'anonymous';
+    const tagList = (row.tags || '').split(',').map((t: string) => t.trim().toLowerCase()).filter(Boolean);
 
     return {
       id: row.id,
@@ -3982,6 +3989,7 @@ app.get('/api/v1/confessions', (req, res) => {
       category: row.category,
       mood: row.mood,
       visibility: row.visibility,
+      tags: tagList,
       authorAlias: isAnon ? (row.author_alias || 'Anonymous Soul') : undefined,
       authorName: isAnon ? undefined : row.author_name,
       authorAvatar: isAnon ? undefined : row.author_avatar,
@@ -4000,13 +4008,126 @@ app.get('/api/v1/confessions', (req, res) => {
   res.json({ success: true, count: confessions.length, confessions });
 });
 
+// ============================================================================
+// TRENDING TAGS FOR OPTIMIZATION & DISCOVERY
+// ============================================================================
+app.get('/api/v1/confessions/tags/trending', (_req, res) => {
+  const rows = db.prepare("SELECT tags FROM confessions WHERE visibility IN ('anonymous', 'public') AND tags IS NOT NULL AND tags != ''").all() as { tags: string }[];
+  const tagCounts: Record<string, number> = {};
+
+  for (const row of rows) {
+    const list = row.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+    for (const t of list) {
+      tagCounts[t] = (tagCounts[t] || 0) + 1;
+    }
+  }
+
+  const trending = Object.entries(tagCounts)
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 30);
+
+  res.json({ success: true, tags: trending });
+});
+
+// ============================================================================
+// SUPPORTIVE PERSONALIZED RECOMMENDATIONS (TAG RESONANCE ENGINE)
+// ============================================================================
+app.get('/api/v1/confessions/recommendations', (req, res) => {
+  const currentUserId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+
+  // 1. Gather user's preferred tags from their authored posts & empathy reactions
+  const userAuthoredTags = db.prepare('SELECT tags FROM confessions WHERE user_id = ?').all(currentUserId) as { tags: string }[];
+  const userReactedTags = db.prepare(`
+    SELECT c.tags FROM confession_reactions cr
+    JOIN confessions c ON cr.confession_id = c.id
+    WHERE cr.user_id = ?
+  `).all(currentUserId) as { tags: string }[];
+
+  const userTagFrequency: Record<string, number> = {};
+  for (const row of [...userAuthoredTags, ...userReactedTags]) {
+    if (!row.tags) continue;
+    const split = row.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+    for (const t of split) {
+      userTagFrequency[t] = (userTagFrequency[t] || 0) + 1;
+    }
+  }
+
+  // If user has no tags yet, seed supportive default tags
+  let userTopTags = Object.keys(userTagFrequency);
+  if (userTopTags.length === 0) {
+    userTopTags = ['healing', 'growth', 'vulnerability', 'boundaries', 'heartbreak', 'introvert'];
+  }
+
+  const userTagSet = new Set(userTopTags);
+
+  // 2. Fetch public & anonymous confessions
+  const candidates = db.prepare(`
+    SELECT 
+      c.id, c.user_id, c.title, c.story, c.category, c.mood, c.visibility,
+      c.author_alias, c.tags, c.is_sensitive, c.reaction_hugs, c.reaction_relatable,
+      c.reaction_peace, c.reaction_secrets, c.created_at, c.updated_at,
+      u.name as author_name, u.avatar_url as author_avatar
+    FROM confessions c
+    LEFT JOIN users u ON c.user_id = u.id
+    WHERE c.visibility IN ('anonymous', 'public') AND c.user_id != ?
+    ORDER BY c.created_at DESC LIMIT 60
+  `).all(currentUserId) as any[];
+
+  // 3. Score candidates based on tag overlap
+  const scored = candidates.map(row => {
+    const itemTags = (row.tags || '').split(',').map((t: string) => t.trim().toLowerCase()).filter(Boolean);
+    const matched = itemTags.filter((t: string) => userTagSet.has(t));
+    const isAnon = row.visibility === 'anonymous';
+
+    // Resonance score: base 60 + up to 38 based on tag overlap
+    const resonanceScore = matched.length > 0 
+      ? Math.min(98, 60 + Math.round((matched.length / Math.max(1, itemTags.length)) * 38))
+      : 55;
+
+    return {
+      id: row.id,
+      userId: isAnon ? 'anon' : row.user_id,
+      title: row.title,
+      story: row.story,
+      category: row.category,
+      mood: row.mood,
+      visibility: row.visibility,
+      tags: itemTags,
+      resonanceScore,
+      matchedTags: matched,
+      authorAlias: isAnon ? (row.author_alias || 'Anonymous Soul') : undefined,
+      authorName: isAnon ? undefined : row.author_name,
+      authorAvatar: isAnon ? undefined : row.author_avatar,
+      isSensitive: Boolean(row.is_sensitive),
+      reactionHugs: row.reaction_hugs || 0,
+      reactionRelatable: row.reaction_relatable || 0,
+      reactionPeace: row.reaction_peace || 0,
+      reactionSecrets: row.reaction_secrets || 0,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      isOwner: false
+    };
+  });
+
+  // Sort by resonance score descending
+  scored.sort((a, b) => (b.resonanceScore || 0) - (a.resonanceScore || 0));
+
+  res.json({
+    success: true,
+    userResonanceTags: userTopTags,
+    recommendationsCount: scored.length,
+    recommendations: scored
+  });
+});
+
 app.get('/api/v1/confessions/my', (req, res) => {
   const currentUserId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
 
   const rows = db.prepare(`
     SELECT 
       c.id, c.user_id, c.title, c.story, c.category, c.mood, c.visibility,
-      c.author_alias, c.is_sensitive, c.reaction_hugs, c.reaction_relatable,
+      c.author_alias, c.tags, c.is_sensitive, c.reaction_hugs, c.reaction_relatable,
       c.reaction_peace, c.reaction_secrets, c.created_at, c.updated_at,
       u.name as author_name, u.avatar_url as author_avatar
     FROM confessions c
@@ -4033,6 +4154,7 @@ app.get('/api/v1/confessions/my', (req, res) => {
     category: row.category,
     mood: row.mood,
     visibility: row.visibility,
+    tags: (row.tags || '').split(',').map((t: string) => t.trim().toLowerCase()).filter(Boolean),
     authorAlias: row.author_alias,
     authorName: row.author_name,
     authorAvatar: row.author_avatar,
@@ -4058,6 +4180,7 @@ app.post('/api/v1/confessions', (req, res) => {
     category = 'love_heartbreak',
     mood = 'vulnerable',
     visibility = 'anonymous',
+    tags = [],
     isSensitive = false,
     customAlias
   } = req.body;
@@ -4080,13 +4203,19 @@ app.post('/api/v1/confessions', (req, res) => {
     ? (customAlias?.trim() || `Midnight Soul #${Math.floor(Math.random() * 900) + 100}`) 
     : (visibility === 'private' ? 'Private Vault' : null);
 
+  // Normalize tags
+  const normalizedTags: string[] = Array.isArray(tags)
+    ? tags.map(t => String(t).replace(/^#/, '').trim().toLowerCase()).filter(Boolean)
+    : (typeof tags === 'string' ? tags.split(',').map(t => t.replace(/^#/, '').trim().toLowerCase()).filter(Boolean) : []);
+  const tagsStr = Array.from(new Set(normalizedTags)).join(',');
+
   db.prepare(`
     INSERT INTO confessions (
-      id, user_id, title, story, category, mood, visibility, author_alias, is_sensitive,
+      id, user_id, title, story, category, mood, visibility, author_alias, tags, is_sensitive,
       reaction_hugs, reaction_relatable, reaction_peace, reaction_secrets, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?)
   `).run(
-    id, currentUserId, title.trim(), story.trim(), category, mood, visibility, authorAlias,
+    id, currentUserId, title.trim(), story.trim(), category, mood, visibility, authorAlias, tagsStr,
     isSensitive ? 1 : 0, now, now
   );
 
@@ -4100,6 +4229,7 @@ app.post('/api/v1/confessions', (req, res) => {
     category,
     mood,
     visibility,
+    tags: Array.from(new Set(normalizedTags)),
     authorAlias: authorAlias || undefined,
     authorName: visibility === 'public' ? author?.name : undefined,
     authorAvatar: visibility === 'public' ? author?.avatar_url : undefined,

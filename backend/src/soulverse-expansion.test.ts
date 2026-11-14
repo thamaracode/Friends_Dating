@@ -807,7 +807,7 @@ describe('Soulverse Complete Product Expansion & Feature Engineering Directive -
   // Scenario 29: Sacred Confessions (Anonymous, Public, Private) & Empathy Reactions
   // --------------------------------------------------------------------------
   it('Scenario 29: Sacred Confessions (Anonymous, Public, Private) & Empathy Reactions', async () => {
-    // 1. Post an Anonymous Confession Story
+    // 1. Post an Anonymous Confession Story with Related Resonance Tags
     const anonRes = await fetch(`${API_URL}/confessions`, {
       method: 'POST',
       headers: {
@@ -820,6 +820,7 @@ describe('Soulverse Complete Product Expansion & Feature Engineering Directive -
         category: 'love_heartbreak',
         mood: 'vulnerable',
         visibility: 'anonymous',
+        tags: ['firstlove', 'acoustic', 'unspoken'],
         customAlias: 'Acoustic Shadow #77'
       })
     });
@@ -828,9 +829,11 @@ describe('Soulverse Complete Product Expansion & Feature Engineering Directive -
     expect(anonData.success).toBe(true);
     expect(anonData.confession.visibility).toBe('anonymous');
     expect(anonData.confession.authorAlias).toBe('Acoustic Shadow #77');
+    expect(anonData.confession.tags).toContain('acoustic');
+    expect(anonData.confession.tags).toContain('firstlove');
     const anonConfessionId = anonData.confession.id;
 
-    // 2. Post a Public Confession Story
+    // 2. Post a Public Confession Story with Tags
     const pubRes = await fetch(`${API_URL}/confessions`, {
       method: 'POST',
       headers: {
@@ -842,7 +845,8 @@ describe('Soulverse Complete Product Expansion & Feature Engineering Directive -
         story: 'Spent five years studying corporate finance to please my family before I realized I was suffocating my creative soul.',
         category: 'healing_recovery',
         mood: 'liberated',
-        visibility: 'public'
+        visibility: 'public',
+        tags: ['healing', 'boundaries', 'growth']
       })
     });
     expect(pubRes.status).toBe(200);
@@ -850,9 +854,10 @@ describe('Soulverse Complete Product Expansion & Feature Engineering Directive -
     expect(pubData.success).toBe(true);
     expect(pubData.confession.visibility).toBe('public');
     expect(pubData.confession.authorName).toBe('Kavindu Senanayake');
+    expect(pubData.confession.tags).toContain('healing');
     const pubConfessionId = pubData.confession.id;
 
-    // 3. Post a Private Vault Confession Story
+    // 3. Post a Private Vault Confession Story with Tags
     const privRes = await fetch(`${API_URL}/confessions`, {
       method: 'POST',
       headers: {
@@ -864,7 +869,8 @@ describe('Soulverse Complete Product Expansion & Feature Engineering Directive -
         story: 'Strictly private note: I am afraid of failing the upcoming architectural critique, but I will prepare thoroughly anyway.',
         category: 'vulnerability_fear',
         mood: 'vulnerable',
-        visibility: 'private'
+        visibility: 'private',
+        tags: ['vulnerability', 'fear', 'anxiety']
       })
     });
     expect(privRes.status).toBe(200);
@@ -932,7 +938,33 @@ describe('Soulverse Complete Product Expansion & Feature Engineering Directive -
     const unreactData = await unreactRes.json();
     expect(unreactData.confession.reactionHugs).toBe(0);
 
-    // 7. Delete Confession
+    // 7. Filter by Tag
+    const tagRes = await fetch(`${API_URL}/confessions?tag=acoustic`);
+    expect(tagRes.status).toBe(200);
+    const tagData = await tagRes.json();
+    expect(tagData.success).toBe(true);
+    expect(tagData.confessions.some((c: any) => c.tags?.includes('acoustic'))).toBe(true);
+
+    // 8. Query Trending Tags
+    const trendRes = await fetch(`${API_URL}/confessions/tags/trending`);
+    expect(trendRes.status).toBe(200);
+    const trendData = await trendRes.json();
+    expect(trendData.success).toBe(true);
+    expect(Array.isArray(trendData.tags)).toBe(true);
+    expect(trendData.tags.some((t: any) => t.tag === 'acoustic')).toBe(true);
+
+    // 9. Supportive Personalized Recommendations (Resonance Engine)
+    const recRes = await fetch(`${API_URL}/confessions/recommendations`, {
+      headers: { 'x-user-id': 'usr_alex' }
+    });
+    expect(recRes.status).toBe(200);
+    const recData = await recRes.json();
+    expect(recData.success).toBe(true);
+    expect(Array.isArray(recData.recommendations)).toBe(true);
+    expect(recData.recommendations.length).toBeGreaterThanOrEqual(1);
+    expect(recData.recommendations[0].resonanceScore).toBeGreaterThanOrEqual(50);
+
+    // 10. Delete Confession
     const delRes = await fetch(`${API_URL}/confessions/${privConfessionId}`, {
       method: 'DELETE',
       headers: { 'x-user-id': 'usr_me' }

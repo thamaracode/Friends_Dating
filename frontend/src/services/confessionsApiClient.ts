@@ -3,7 +3,8 @@ import type {
   CreateConfessionPayload, 
   ConfessionReactionType,
   ConfessionCategory,
-  ConfessionVisibility 
+  ConfessionVisibility,
+  TagFrequency
 } from '../types/confession';
 
 const API_BASE = '/api/v1/confessions';
@@ -18,6 +19,7 @@ export const INITIAL_SEED_CONFESSIONS: ConfessionStory[] = [
     mood: 'nostalgic',
     visibility: 'anonymous',
     authorAlias: 'Rainy Boulevard #482',
+    tags: ['firstlove', 'heartbreak', 'nostalgia', 'unspoken'],
     isSensitive: false,
     reactionHugs: 42,
     reactionRelatable: 87,
@@ -36,6 +38,7 @@ export const INITIAL_SEED_CONFESSIONS: ConfessionStory[] = [
     mood: 'vulnerable',
     visibility: 'anonymous',
     authorAlias: 'Quiet Thinker #109',
+    tags: ['impostor', 'introvert', 'vulnerability', 'fear'],
     isSensitive: false,
     reactionHugs: 114,
     reactionRelatable: 156,
@@ -56,6 +59,7 @@ export const INITIAL_SEED_CONFESSIONS: ConfessionStory[] = [
     visibility: 'public',
     authorName: 'Alex Rivera',
     authorAvatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
+    tags: ['heartbreak', 'lettinggo', 'unsent', 'boundaries'],
     isSensitive: false,
     reactionHugs: 67,
     reactionRelatable: 93,
@@ -74,6 +78,7 @@ export const INITIAL_SEED_CONFESSIONS: ConfessionStory[] = [
     mood: 'liberated',
     visibility: 'private',
     authorAlias: 'Private Vault',
+    tags: ['healing', 'selflove', 'growth', 'recovery'],
     isSensitive: false,
     reactionHugs: 0,
     reactionRelatable: 0,
@@ -88,11 +93,12 @@ export const INITIAL_SEED_CONFESSIONS: ConfessionStory[] = [
 class ConfessionsApiClient {
   private localCache: ConfessionStory[] = [...INITIAL_SEED_CONFESSIONS];
 
-  async getConfessions(category?: string, visibility?: string): Promise<ConfessionStory[]> {
+  async getConfessions(category?: string, visibility?: string, tag?: string): Promise<ConfessionStory[]> {
     try {
       const params = new URLSearchParams();
       if (category && category !== 'all') params.append('category', category);
       if (visibility && visibility !== 'all') params.append('visibility', visibility);
+      if (tag && tag !== 'all') params.append('tag', tag.replace(/^#/, ''));
 
       const res = await fetch(`${API_BASE}?${params.toString()}`);
       if (res.ok) {
@@ -112,7 +118,71 @@ class ConfessionsApiClient {
     if (visibility && visibility !== 'all') {
       filtered = filtered.filter(c => c.visibility === visibility);
     }
+    if (tag && tag !== 'all') {
+      const cleanTag = tag.replace(/^#/, '').toLowerCase();
+      filtered = filtered.filter(c => c.tags?.some(t => t.toLowerCase().includes(cleanTag)));
+    }
     return filtered;
+  }
+
+  async getTrendingTags(): Promise<TagFrequency[]> {
+    try {
+      const res = await fetch(`${API_BASE}/tags/trending`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.tags && Array.isArray(data.tags)) return data.tags;
+      }
+    } catch {
+      // Fallback
+    }
+
+    const counts: Record<string, number> = {};
+    for (const c of this.localCache) {
+      if (c.visibility === 'private' && !c.isOwner) continue;
+      for (const t of c.tags || []) {
+        counts[t] = (counts[t] || 0) + 1;
+      }
+    }
+    return Object.entries(counts)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  async getRecommendations(): Promise<{ userResonanceTags: string[]; recommendations: ConfessionStory[] }> {
+    try {
+      const res = await fetch(`${API_BASE}/recommendations`, {
+        headers: { 'x-user-id': 'usr_me' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.recommendations) {
+          return {
+            userResonanceTags: data.userResonanceTags || [],
+            recommendations: data.recommendations
+          };
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    const supportiveTags = ['healing', 'growth', 'vulnerability', 'boundaries', 'heartbreak', 'introvert'];
+    const recs = this.localCache
+      .filter(c => c.visibility !== 'private')
+      .map(c => {
+        const matched = (c.tags || []).filter(t => supportiveTags.includes(t));
+        return {
+          ...c,
+          resonanceScore: matched.length > 0 ? Math.min(98, 65 + matched.length * 12) : 60,
+          matchedTags: matched
+        };
+      })
+      .sort((a, b) => (b.resonanceScore || 0) - (a.resonanceScore || 0));
+
+    return {
+      userResonanceTags: supportiveTags,
+      recommendations: recs
+    };
   }
 
   async getMyConfessions(): Promise<ConfessionStory[]> {
@@ -132,6 +202,8 @@ class ConfessionsApiClient {
   }
 
   async createConfession(payload: CreateConfessionPayload): Promise<ConfessionStory> {
+    const cleanTags = (payload.tags || []).map(t => t.replace(/^#/, '').trim().toLowerCase()).filter(Boolean);
+
     try {
       const res = await fetch(API_BASE, {
         method: 'POST',
@@ -139,7 +211,7 @@ class ConfessionsApiClient {
           'Content-Type': 'application/json',
           'x-user-id': 'usr_me'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ ...payload, tags: cleanTags })
       });
       if (res.ok) {
         const data = await res.json();
@@ -160,6 +232,7 @@ class ConfessionsApiClient {
       category: payload.category,
       mood: payload.mood,
       visibility: payload.visibility,
+      tags: cleanTags,
       authorAlias: payload.visibility === 'anonymous' ? (payload.customAlias || `Midnight Soul #${Math.floor(Math.random() * 900) + 100}`) : undefined,
       authorName: payload.visibility === 'public' ? 'Kavindu Senanayake' : undefined,
       authorAvatar: payload.visibility === 'public' ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80' : undefined,

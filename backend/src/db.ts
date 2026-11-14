@@ -900,6 +900,7 @@ export function initDatabase() {
       mood TEXT NOT NULL DEFAULT 'vulnerable',
       visibility TEXT NOT NULL CHECK(visibility IN ('anonymous', 'public', 'private')) DEFAULT 'anonymous',
       author_alias TEXT,
+      tags TEXT DEFAULT '',
       is_sensitive INTEGER DEFAULT 0,
       reaction_hugs INTEGER DEFAULT 0,
       reaction_relatable INTEGER DEFAULT 0,
@@ -1065,6 +1066,12 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_audit_created ON configuration_audit_logs(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_feat_usage_time ON feature_usage_events(feature_id, event_type, created_at);
   `);
+
+  try {
+    db.exec("ALTER TABLE confessions ADD COLUMN tags TEXT DEFAULT ''");
+  } catch {
+    // Column already exists
+  }
 
   seedInitialData();
   seedStickerEcosystem();
@@ -2557,67 +2564,78 @@ function seedCouplePlayHubGames() {
 
 function seedConfessions() {
   const count = db.prepare('SELECT COUNT(*) as count FROM confessions').get() as { count: number };
-  if (count.count > 0) return;
-
   const now = Date.now();
+
   const insertConfession = db.prepare(`
     INSERT OR IGNORE INTO confessions (
-      id, user_id, title, story, category, mood, visibility, author_alias, is_sensitive,
+      id, user_id, title, story, category, mood, visibility, author_alias, tags, is_sensitive,
       reaction_hugs, reaction_relatable, reaction_peace, reaction_secrets, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  insertConfession.run(
-    'cnf_seed_1',
-    'usr_tara',
-    'I still drive past the café where we said goodbye',
-    'It has been three years since you moved to Berlin. Every Sunday evening on my way back from the studio, I take the longer boulevard route just to see the warm yellow streetlights through the windows of that corner table. I never stop. I never go inside. I just want to remember that for two hours on a rainy October night, we were completely honest with each other.',
-    'love_heartbreak',
-    'nostalgic',
-    'anonymous',
-    'Rainy Boulevard #482',
-    0, 42, 87, 19, 31,
-    now - 3600000 * 5, now - 3600000 * 5
-  );
+  if (count.count === 0) {
+    insertConfession.run(
+      'cnf_seed_1',
+      'usr_tara',
+      'I still drive past the café where we said goodbye',
+      'It has been three years since you moved to Berlin. Every Sunday evening on my way back from the studio, I take the longer boulevard route just to see the warm yellow streetlights through the windows of that corner table. I never stop. I never go inside. I just want to remember that for two hours on a rainy October night, we were completely honest with each other.',
+      'love_heartbreak',
+      'nostalgic',
+      'anonymous',
+      'Rainy Boulevard #482',
+      'firstlove,heartbreak,nostalgia,unspoken',
+      0, 42, 87, 19, 31,
+      now - 3600000 * 5, now - 3600000 * 5
+    );
 
-  insertConfession.run(
-    'cnf_seed_2',
-    'usr_me',
-    'Behind the confident persona, I feel like an impostor every day',
-    'Everyone around me treats me like the calm, collected problem solver who always knows what to do next. When I close my apartment door at night, the silence feels overwhelming. I am terrified that one day people will realize I am just guessing and doing my best not to fall apart.',
-    'secret_identity',
-    'vulnerable',
-    'anonymous',
-    'Quiet Thinker #109',
-    0, 114, 156, 34, 62,
-    now - 3600000 * 18, now - 3600000 * 18
-  );
+    insertConfession.run(
+      'cnf_seed_2',
+      'usr_me',
+      'Behind the confident persona, I feel like an impostor every day',
+      'Everyone around me treats me like the calm, collected problem solver who always knows what to do next. When I close my apartment door at night, the silence feels overwhelming. I am terrified that one day people will realize I am just guessing and doing my best not to fall apart.',
+      'secret_identity',
+      'vulnerable',
+      'anonymous',
+      'Quiet Thinker #109',
+      'impostor,introvert,vulnerability,fear',
+      0, 114, 156, 34, 62,
+      now - 3600000 * 18, now - 3600000 * 18
+    );
 
-  insertConfession.run(
-    'cnf_seed_3',
-    'usr_alex',
-    'I never told you why I left the party early',
-    'You were laughing with someone else under the string lights by the balcony, and you looked so effortlessly happy. I realized in that split second that the future I had been imagining for months only existed inside my head. Leaving without saying goodbye was cowardice, but watching you forget me in real time would have broken whatever composure I had left.',
-    'unsent_feelings',
-    'heartbroken',
-    'public',
-    null,
-    0, 67, 93, 12, 45,
-    now - 3600000 * 32, now - 3600000 * 32
-  );
+    insertConfession.run(
+      'cnf_seed_3',
+      'usr_alex',
+      'I never told you why I left the party early',
+      'You were laughing with someone else under the string lights by the balcony, and you looked so effortlessly happy. I realized in that split second that the future I had been imagining for months only existed inside my head. Leaving without saying goodbye was cowardice, but watching you forget me in real time would have broken whatever composure I had left.',
+      'unsent_feelings',
+      'heartbroken',
+      'public',
+      null,
+      'heartbreak,lettinggo,unsent,boundaries',
+      0, 67, 93, 12, 45,
+      now - 3600000 * 32, now - 3600000 * 32
+    );
 
-  insertConfession.run(
-    'cnf_seed_4',
-    'usr_me',
-    'The unwritten letter to my younger self',
-    'You thought being alone meant you were unlovable. It didn’t. It just meant the people around you at nineteen hadn’t learned how to see beyond the surface yet. Stop apologizing for the depth of your feelings.',
-    'healing_recovery',
-    'liberated',
-    'private',
-    'Private Vault',
-    0, 0, 0, 0, 0,
-    now - 3600000 * 72, now - 3600000 * 72
-  );
+    insertConfession.run(
+      'cnf_seed_4',
+      'usr_me',
+      'The unwritten letter to my younger self',
+      'You thought being alone meant you were unlovable. It didn’t. It just meant the people around you at nineteen hadn’t learned how to see beyond the surface yet. Stop apologizing for the depth of your feelings.',
+      'healing_recovery',
+      'liberated',
+      'private',
+      'Private Vault',
+      'healing,selflove,growth,recovery',
+      0, 0, 0, 0, 0,
+      now - 3600000 * 72, now - 3600000 * 72
+    );
+  } else {
+    // Ensure existing seed items have tags populated
+    db.prepare("UPDATE confessions SET tags = 'firstlove,heartbreak,nostalgia,unspoken' WHERE id = 'cnf_seed_1' AND (tags IS NULL OR tags = '')").run();
+    db.prepare("UPDATE confessions SET tags = 'impostor,introvert,vulnerability,fear' WHERE id = 'cnf_seed_2' AND (tags IS NULL OR tags = '')").run();
+    db.prepare("UPDATE confessions SET tags = 'heartbreak,lettinggo,unsent,boundaries' WHERE id = 'cnf_seed_3' AND (tags IS NULL OR tags = '')").run();
+    db.prepare("UPDATE confessions SET tags = 'healing,selflove,growth,recovery' WHERE id = 'cnf_seed_4' AND (tags IS NULL OR tags = '')").run();
+  }
 }
 
 function seedFeatureControlLayer() {
