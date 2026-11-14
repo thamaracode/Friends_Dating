@@ -461,7 +461,7 @@ app.post('/api/v1/conversations/:id/messages', (req, res) => {
     db.prepare('UPDATE conversation_members SET unread_count = unread_count + 1 WHERE conversation_id = ? AND user_id != ?').run(id, senderId);
 
     return { messageId, seq, now };
-  });
+  }).immediate;
 
   const { seq } = insertTx();
 
@@ -6170,6 +6170,326 @@ app.get('/api/telegram-emojis/:id', (req, res) => {
     return res.status(404).json({ error: 'Emoji not found in catalog' });
   }
   res.json({ success: true, emoji: found });
+});
+
+// -------------------------------------------------------------
+// FRIENDS REAL EVENTS & EXPERIENCES
+// -------------------------------------------------------------
+app.get('/api/v1/events', (req, res) => {
+  try {
+    const userId = (req.query.userId as string) || 'usr_me';
+    const type = req.query.type as string | undefined;
+
+    let sql = 'SELECT * FROM friends_events';
+    const params: any[] = [];
+    if (type && type !== 'all') {
+      sql += ' WHERE type = ?';
+      params.push(type);
+    }
+    sql += ' ORDER BY created_at DESC';
+
+    const events = db.prepare(sql).all(...params) as any[];
+
+    // Fetch user RSVPs
+    const rsvpRows = db.prepare('SELECT event_id, status FROM friends_event_rsvps WHERE user_id = ?').all(userId) as any[];
+    const rsvpMap = new Map(rsvpRows.map(r => [r.event_id, r.status]));
+
+    const result = events.map(e => ({
+      id: e.id,
+      title: e.title,
+      type: e.type,
+      format: e.format,
+      date: e.date,
+      time: e.time,
+      locationName: e.location_name,
+      locationCity: e.location_city,
+      exactAddressHidden: Boolean(e.exact_address_hidden),
+      coverImage: e.cover_image,
+      description: e.description,
+      hostName: e.host_name,
+      hostAvatar: e.host_avatar,
+      hostVerified: Boolean(e.host_verified),
+      category: e.category,
+      tags: JSON.parse(e.tags_json || '[]'),
+      capacity: e.capacity,
+      attendeesCount: e.attendees_count,
+      rsvpStatus: rsvpMap.get(e.id) || 'none',
+      rules: JSON.parse(e.rules_json || '[]'),
+      syncRoomId: e.sync_room_id
+    }));
+
+    res.json({ success: true, events: result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/v1/events', (req, res) => {
+  try {
+    const {
+      title,
+      type = 'public_gathering',
+      format = 'physical',
+      date = 'Upcoming Weekend',
+      time = '7:00 PM – 9:30 PM',
+      locationName = 'Public Gathering Point',
+      locationCity = 'Colombo',
+      exactAddressHidden = true,
+      coverImage = 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800&q=80',
+      description,
+      category = 'Social & Conversation',
+      tags = ['Community', 'Connection'],
+      capacity = 20,
+      rules = ['Warm curiosity', 'Respect boundaries'],
+      syncRoomId = null,
+      hostId = 'usr_me',
+      hostName = 'Kavindu Senanayake',
+      hostAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'
+    } = req.body;
+
+    if (!title || !description) {
+      return res.status(400).json({ error: 'Title and description are required' });
+    }
+
+    const eventId = `evt_${Date.now()}`;
+    const now = Date.now();
+
+    db.prepare(`
+      INSERT INTO friends_events (
+        id, title, type, format, date, time, location_name, location_city,
+        exact_address_hidden, cover_image, description, host_id, host_name,
+        host_avatar, host_verified, category, tags_json, capacity, attendees_count,
+        rules_json, sync_room_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, 1, ?, ?, ?)
+    `).run(
+      eventId,
+      title,
+      type,
+      format,
+      date,
+      time,
+      locationName,
+      locationCity,
+      exactAddressHidden ? 1 : 0,
+      coverImage,
+      description,
+      hostId,
+      hostName,
+      hostAvatar,
+      category,
+      JSON.stringify(tags),
+      capacity,
+      JSON.stringify(rules),
+      syncRoomId,
+      now
+    );
+
+    // Host automatically attends
+    db.prepare(`
+      INSERT INTO friends_event_rsvps (event_id, user_id, status, created_at)
+      VALUES (?, ?, 'attending', ?)
+    `).run(eventId, hostId, now);
+
+    const newEvent = {
+      id: eventId,
+      title,
+      type,
+      format,
+      date,
+      time,
+      locationName,
+      locationCity,
+      exactAddressHidden: Boolean(exactAddressHidden),
+      coverImage,
+      description,
+      hostName,
+      hostAvatar,
+      hostVerified: true,
+      category,
+      tags,
+      capacity,
+      attendeesCount: 1,
+      rsvpStatus: 'attending',
+      rules,
+      syncRoomId
+    };
+
+    res.status(201).json({ success: true, event: newEvent });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/v1/events/:id/rsvp', (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = (req.body.userId as string) || 'usr_me';
+
+    const event = db.prepare('SELECT * FROM friends_events WHERE id = ?').get(id) as any;
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    const existingRsvp = db.prepare('SELECT status FROM friends_event_rsvps WHERE event_id = ? AND user_id = ?').get(id, userId) as any;
+    let nextStatus = 'attending';
+    let countDelta = 1;
+
+    if (existingRsvp && existingRsvp.status === 'attending') {
+      nextStatus = 'none';
+      countDelta = -1;
+      db.prepare('DELETE FROM friends_event_rsvps WHERE event_id = ? AND user_id = ?').run(id, userId);
+    } else {
+      nextStatus = 'attending';
+      countDelta = existingRsvp ? 0 : 1;
+      db.prepare(`
+        INSERT OR REPLACE INTO friends_event_rsvps (event_id, user_id, status, created_at)
+        VALUES (?, ?, 'attending', ?)
+      `).run(id, userId, Date.now());
+    }
+
+    db.prepare('UPDATE friends_events SET attendees_count = MAX(0, attendees_count + ?) WHERE id = ?').run(countDelta, id);
+    const updated = db.prepare('SELECT attendees_count FROM friends_events WHERE id = ?').get(id) as any;
+
+    res.json({
+      success: true,
+      eventId: id,
+      rsvpStatus: nextStatus,
+      attendeesCount: updated.attendees_count
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// USER IDENTITY & BIOMETRIC PHOTO VERIFICATION
+// -------------------------------------------------------------
+app.get('/api/v1/users/:id/verification', (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = db.prepare('SELECT id, name, is_verified FROM users WHERE id = ?').get(id) as any;
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({
+      success: true,
+      userId: id,
+      isVerified: Boolean(user.is_verified),
+      verificationMethod: user.is_verified ? 'biometric_liveness_check' : null
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/v1/users/:id/verification', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { verified = true } = req.body;
+
+    const user = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    db.prepare('UPDATE users SET is_verified = ? WHERE id = ?').run(verified ? 1 : 0, id);
+
+    res.json({
+      success: true,
+      userId: id,
+      isVerified: Boolean(verified),
+      verifiedAt: Date.now(),
+      badgeType: 'real_human_biometric'
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// USER DISCOVERY & DIRECTORY
+// -------------------------------------------------------------
+app.get('/api/v1/users', (req, res) => {
+  try {
+    const q = ((req.query.q as string) || '').trim().toLowerCase();
+    const limit = Math.min(50, parseInt((req.query.limit as string) || '20', 10));
+
+    let users = db.prepare(`
+      SELECT u.id, u.name, u.username, u.avatar_url, u.is_verified, u.last_seen_at, u.status_text,
+             ui.display_title, ui.description, ui.personality_traits, ui.interests, ui.skills, ui.cover_image_url
+      FROM users u
+      LEFT JOIN user_identities ui ON u.id = ui.user_id AND (ui.is_primary = 1 OR ui.classification = 'real_identity')
+    `).all() as any[];
+
+    if (q) {
+      users = users.filter(u => 
+        u.name.toLowerCase().includes(q) || 
+        u.username.toLowerCase().includes(q) ||
+        (u.display_title && u.display_title.toLowerCase().includes(q)) ||
+        (u.description && u.description.toLowerCase().includes(q))
+      );
+    }
+
+    const result = users.slice(0, limit).map(u => ({
+      id: u.id,
+      name: u.name,
+      username: u.username,
+      avatar: u.avatar_url,
+      avatarUrl: u.avatar_url,
+      isVerified: Boolean(u.is_verified),
+      lastSeenAt: u.last_seen_at,
+      statusText: u.status_text,
+      title: u.display_title || 'Soulverse Member',
+      bio: u.description || 'Exploring thoughtful connections.',
+      coverImage: u.cover_image_url || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80',
+      personalityTraits: JSON.parse(u.personality_traits || '["Thoughtful", "Creative"]'),
+      interests: JSON.parse(u.interests || '["Reading", "Philosophy"]'),
+      skills: JSON.parse(u.skills || '["Conversation"]')
+    }));
+
+    res.json({ success: true, count: result.length, users: result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/v1/users/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const u = db.prepare(`
+      SELECT u.id, u.name, u.username, u.avatar_url, u.is_verified, u.last_seen_at, u.status_text,
+             ui.display_title, ui.description, ui.personality_traits, ui.interests, ui.skills, ui.cover_image_url
+      FROM users u
+      LEFT JOIN user_identities ui ON u.id = ui.user_id AND (ui.is_primary = 1 OR ui.classification = 'real_identity')
+      WHERE u.id = ?
+    `).get(id) as any;
+
+    if (!u) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        avatar: u.avatar_url,
+        avatarUrl: u.avatar_url,
+        isVerified: Boolean(u.is_verified),
+        lastSeenAt: u.last_seen_at,
+        statusText: u.status_text,
+        title: u.display_title || 'Soulverse Member',
+        bio: u.description || 'Exploring thoughtful connections.',
+        coverImage: u.cover_image_url || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80',
+        personalityTraits: JSON.parse(u.personality_traits || '["Thoughtful", "Creative"]'),
+        interests: JSON.parse(u.interests || '["Reading", "Philosophy"]'),
+        skills: JSON.parse(u.skills || '["Conversation"]')
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 

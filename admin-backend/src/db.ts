@@ -4,9 +4,10 @@ import { AdminCrypto } from './auth/crypto';
 
 export const adminDb = new Database(CONFIG.DB_PATH);
 
-// Enable WAL mode and foreign keys
+// Enable WAL mode, foreign keys, and busy timeout
 adminDb.pragma('journal_mode = WAL');
 adminDb.pragma('foreign_keys = ON');
+adminDb.pragma('busy_timeout = 5000');
 
 export function initAdminDatabase() {
   adminDb.exec(`

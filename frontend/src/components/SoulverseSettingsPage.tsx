@@ -117,6 +117,23 @@ export const SoulverseSettingsPage: React.FC = () => {
     setTimeout(() => setRestoreFeedback(false), 2500);
   };
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    try {
+      localStorage.removeItem('soulverse_auth_token');
+      localStorage.removeItem('soulverse_active_session');
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn('Storage clear notice:', e);
+    }
+    setTimeout(() => {
+      setIsLoggingOut(false);
+      window.location.reload();
+    }, 800);
+  };
+
   return (
     <div className="w-full space-y-6 animate-fadeIn pb-24 max-w-4xl mx-auto">
       
@@ -996,11 +1013,12 @@ export const SoulverseSettingsPage: React.FC = () => {
 
             {/* Logout */}
             <button
-              onClick={() => alert('Logged out safely.')}
-              className="w-full py-3.5 rounded-2xl bg-white/[0.05] hover:bg-white/15 text-white font-bold text-xs border border-white/10 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="w-full py-3.5 rounded-2xl bg-white/[0.05] hover:bg-white/15 text-white font-bold text-xs border border-white/10 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <LogOut className="w-4 h-4" />
-              <span>Logout</span>
+              <span>{isLoggingOut ? 'Terminating Session...' : 'Logout'}</span>
             </button>
 
             {/* Version 7.42.1 (Image 10) */}

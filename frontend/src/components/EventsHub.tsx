@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Calendar, 
   MapPin, 
@@ -18,17 +18,41 @@ import {
   Filter,
   CheckCircle2,
   Video,
-  Play
+  Play,
+  Loader2
 } from 'lucide-react';
 import { MOCK_EVENTS } from '../mockData';
 import type { FriendsEvent, EventType } from '../types';
 
 export const EventsHub = () => {
   const [eventsList, setEventsList] = useState<FriendsEvent[]>(MOCK_EVENTS);
+  const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<'all' | EventType>('all');
   const [activeEventModal, setActiveEventModal] = useState<FriendsEvent | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  // Form State
+  const [newTitle, setNewTitle] = useState('');
+  const [newFormat, setNewFormat] = useState('physical');
+  const [newType, setNewType] = useState<EventType>('public_gathering');
+  const [newDescription, setNewDescription] = useState('');
+  const [newCity, setNewCity] = useState('Colombo');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Fetch real events from database
+  useEffect(() => {
+    fetch('/api/v1/events?userId=usr_me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.events) && data.events.length > 0) {
+          setEventsList(data.events);
+        }
+      })
+      .catch(err => console.warn('Using local fallback events:', err))
+      .finally(() => setLoading(false));
+  }, []);
 
   // Filter Logic
   const filteredEvents = eventsList.filter(evt => {
@@ -36,28 +60,93 @@ export const EventsHub = () => {
     return evt.type === selectedFilter;
   });
 
-  const toggleRsvp = (eventId: string) => {
+  const toggleRsvp = async (eventId: string) => {
+    // Optimistic UI update
     setEventsList(prev => prev.map(evt => {
       if (evt.id === eventId) {
         const isAttending = evt.rsvpStatus === 'attending';
         return {
           ...evt,
           rsvpStatus: isAttending ? 'none' : 'attending',
-          attendeesCount: isAttending ? evt.attendeesCount - 1 : evt.attendeesCount + 1
+          attendeesCount: isAttending ? Math.max(0, evt.attendeesCount - 1) : evt.attendeesCount + 1
         };
       }
       return evt;
     }));
+
+    try {
+      const res = await fetch(`/api/v1/events/${eventId}/rsvp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: 'usr_me' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEventsList(prev => prev.map(evt => 
+          evt.id === eventId 
+            ? { ...evt, rsvpStatus: data.rsvpStatus, attendeesCount: data.attendeesCount }
+            : evt
+        ));
+      }
+    } catch (err) {
+      console.error('RSVP persistence error:', err);
+    }
   };
 
   const handleCopy = (eventId: string) => {
-    navigator.clipboard.writeText(`https://friends.app/events/${eventId}`);
+    navigator.clipboard.writeText(`${window.location.origin}/events/${eventId}`);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newDescription.trim()) return;
+
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/v1/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newTitle,
+          type: newType,
+          format: newFormat,
+          description: newDescription,
+          locationCity: newCity,
+          locationName: newFormat === 'physical' ? `${newCity} Public Gathering Point` : 'Soulverse Virtual Lounge',
+          date: 'Upcoming Saturday',
+          time: '6:30 PM – 9:00 PM',
+          capacity: 25,
+          tags: ['Community', 'Connection', 'Gathering'],
+          rules: ['Zero harassment tolerance', 'Respect mutual boundaries', 'Curiosity first']
+        })
+      });
+
+      const data = await res.json();
+      if (data.success && data.event) {
+        setEventsList(prev => [data.event, ...prev]);
+        setShowCreateModal(false);
+        setNewTitle('');
+        setNewDescription('');
+        setNotification(`"${data.event.title}" published and stored in SQLite database!`);
+        setTimeout(() => setNotification(null), 4000);
+      }
+    } catch (err) {
+      console.error('Event publish error:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
+      {notification && (
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-2xl text-xs flex items-center gap-2 shadow-lg animate-in fade-in slide-in-from-top-2">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+          <span className="font-semibold">{notification}</span>
+        </div>
+      )}
       
       {/* 1. Header Banner: FRIENDS EVENTS */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-950/40 via-purple-950/40 to-slate-900 border border-amber-500/30 p-6 md:p-8">
@@ -336,35 +425,59 @@ export const EventsHub = () => {
               Gather people around movies, games, tea, or hiking. No influencer status required.
             </p>
 
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              alert("Event created and published to FRIENDS community discovery!");
-              setShowCreateModal(false);
-            }} className="space-y-3 text-xs">
+            <form onSubmit={handleCreateEvent} className="space-y-3 text-xs">
               <div>
                 <label className="text-slate-300 font-bold block mb-1">Event Name</label>
                 <input
                   type="text"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="e.g. Midnight Film Noir & Tea Tasting"
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-amber-500"
                   required
                 />
               </div>
 
-              <div>
-                <label className="text-slate-300 font-bold block mb-1">Format</label>
-                <select className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
-                  <option value="physical">Physical Public Gathering (Colombo / Kandy)</option>
-                  <option value="watch_party">Online Watch Together (Synchronized Film)</option>
-                  <option value="online_party">Online Room / Co-working Lounge</option>
-                  <option value="private_party">Private Invite-Only Party</option>
-                </select>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-slate-300 font-bold block mb-1">Format</label>
+                  <select 
+                    value={newFormat} 
+                    onChange={(e) => {
+                      const f = e.target.value;
+                      setNewFormat(f);
+                      if (f === 'physical') setNewType('public_gathering');
+                      else if (f === 'watch_party') setNewType('watch_party');
+                      else if (f === 'online_party') setNewType('online_party');
+                      else setNewType('private_party');
+                    }}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="physical">Physical Public Gathering</option>
+                    <option value="watch_party">Online Watch Together</option>
+                    <option value="online_party">Online Room Lounge</option>
+                    <option value="private_party">Private Invite Party</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-300 font-bold block mb-1">City / Region</label>
+                  <input
+                    type="text"
+                    value={newCity}
+                    onChange={(e) => setNewCity(e.target.value)}
+                    placeholder="e.g. Colombo, Kandy"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="text-slate-300 font-bold block mb-1">Brief Description</label>
                 <textarea
                   rows={3}
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
                   placeholder="What will you do? What makes this cozy and low-pressure?"
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500"
                   required
@@ -378,9 +491,11 @@ export const EventsHub = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer shadow-lg shadow-amber-500/20 mt-2"
+                disabled={submitting}
+                className="w-full py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer shadow-lg shadow-amber-500/20 mt-2 flex items-center justify-center gap-2"
               >
-                Publish Experience Draft
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                <span>{submitting ? 'Publishing to Database...' : 'Publish Experience to SQLite Database'}</span>
               </button>
             </form>
           </div>

@@ -50,6 +50,7 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
 
   // Active Identity Space: 'real' | 'cinematic' | 'fantasy' | 'aspirational'
   const [activePersona, setActivePersona] = useState<'real' | 'cinematic' | 'fantasy' | 'aspirational'>('real');
+  const [copiedProfileLink, setCopiedProfileLink] = useState(false);
 
   // Life Timeline Scrubber selection
   const [selectedTimelineYear, setSelectedTimelineYear] = useState<string>('2026');
@@ -377,13 +378,14 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
 
             <button
               onClick={() => {
-                navigator.clipboard.writeText('https://soulverse.im/@kavindu');
-                alert('Profile link copied!');
+                navigator.clipboard.writeText(`${window.location.origin}/@${(currentPersona as any).handle || 'kavindu'}`);
+                setCopiedProfileLink(true);
+                setTimeout(() => setCopiedProfileLink(false), 2000);
               }}
               className="h-10 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-heading font-bold border border-white/15 flex items-center gap-2 cursor-pointer transition-all"
             >
-              <Share2 className="w-4 h-4" />
-              <span>Share Profile</span>
+              {copiedProfileLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+              <span>{copiedProfileLink ? 'Link Copied!' : 'Share Profile'}</span>
             </button>
           </div>
 

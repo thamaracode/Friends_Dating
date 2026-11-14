@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Heart, 
@@ -30,8 +30,46 @@ export const DiscoverHumansView: React.FC<DiscoverHumansViewProps> = ({
   const [intentFilter, setIntentFilter] = useState<'all' | 'Friendship' | 'Dating'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEnergy, setSelectedEnergy] = useState<string>('all');
+  const [profiles, setProfiles] = useState<UserProfile[]>(MOCK_PROFILES);
 
-  const filteredProfiles = MOCK_PROFILES.filter(p => {
+  useEffect(() => {
+    fetch('/api/v1/users')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.users) && data.users.length > 0) {
+          const apiUsers: UserProfile[] = data.users.map((u: any) => ({
+            id: u.id,
+            name: u.name,
+            username: u.username,
+            age: 26,
+            location: 'Colombo, Sri Lanka',
+            avatar: u.avatar || u.avatarUrl,
+            verified: Boolean(u.isVerified),
+            bio: u.bio || u.title,
+            tags: u.interests || ['Philosophy', 'Indie Craft'],
+            values: ['Authenticity', 'Curiosity'],
+            lookingFor: 'Thoughtful conversation & collaborative connection',
+            dealbreakers: ['Superficial small talk'],
+            matchScore: 92,
+            musicInterest: 'Ambient & Lo-Fi',
+            activeStatus: u.statusText || 'Active now',
+            status: u.title || 'Soulverse Member'
+          }));
+          const seen = new Set();
+          const combined: UserProfile[] = [];
+          for (const p of [...apiUsers, ...MOCK_PROFILES]) {
+            if (!seen.has(p.id)) {
+              seen.add(p.id);
+              combined.push(p);
+            }
+          }
+          setProfiles(combined);
+        }
+      })
+      .catch(e => console.warn('Discover humans fetch notice:', e));
+  }, []);
+
+  const filteredProfiles = profiles.filter(p => {
     if (intentFilter !== 'all' && p.intent !== intentFilter) return false;
     if (selectedEnergy !== 'all' && p.energy !== selectedEnergy) return false;
     if (searchQuery.trim()) {

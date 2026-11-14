@@ -17,7 +17,8 @@ import {
   PhoneCall,
   Search,
   Lock,
-  UserCheck
+  UserCheck,
+  CheckCircle2
 } from 'lucide-react';
 import { MOCK_PROFILES } from '../mockData';
 
@@ -26,6 +27,8 @@ export const MessagesRoomsHub: React.FC = () => {
   const [selectedRoom, setSelectedRoom] = useState<string>('room-1');
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
+  const [isHandRaised, setIsHandRaised] = useState(false);
+  const [hubNotice, setHubNotice] = useState<string | null>(null);
   const [chatMessage, setChatMessage] = useState('');
   
   // AI Coach interactive mock
@@ -73,7 +76,7 @@ export const MessagesRoomsHub: React.FC = () => {
   ];
 
   // Direct messages mock
-  const [directConversations] = useState([
+  const [directConversations, setDirectConversations] = useState([
     {
       id: 'conv-1',
       user: MOCK_PROFILES[0], // Alex
@@ -122,6 +125,12 @@ export const MessagesRoomsHub: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
+      {hubNotice && (
+        <div className="p-3.5 bg-[#D6AD60]/10 border border-[#D6AD60]/30 text-[#F1D99F] rounded-2xl text-xs flex items-center gap-2 shadow-lg animate-in fade-in slide-in-from-top-2">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-[#D6AD60]" />
+          <span className="font-semibold">{hubNotice}</span>
+        </div>
+      )}
       {/* View Header & Mode Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#302B22]">
         <div>
@@ -342,13 +351,27 @@ export const MessagesRoomsHub: React.FC = () => {
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => alert("Simulating 'Raised Hand' to speak next.")}
-                  className="px-3.5 py-2 rounded-xl bg-[#211E18] hover:bg-[#302B22] border border-[#302B22] text-xs font-medium text-[#F5F0E6] cursor-pointer"
+                  onClick={() => {
+                    const next = !isHandRaised;
+                    setIsHandRaised(next);
+                    setHubNotice(next ? 'Hand raised to speak next in audio lounge.' : 'Hand lowered.');
+                    setTimeout(() => setHubNotice(null), 3000);
+                  }}
+                  className={`px-3.5 py-2 rounded-xl border text-xs font-medium cursor-pointer transition-colors ${
+                    isHandRaised 
+                      ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 font-bold' 
+                      : 'bg-[#211E18] hover:bg-[#302B22] border-[#302B22] text-[#F5F0E6]'
+                  }`}
                 >
-                  ✋ Raise Hand
+                  {isHandRaised ? '✋ Hand Raised' : '✋ Raise Hand'}
                 </button>
                 <button
-                  onClick={() => alert("Leaving audio room.")}
+                  onClick={() => {
+                    setSelectedRoom('');
+                    setIsHandRaised(false);
+                    setHubNotice('Left audio lounge.');
+                    setTimeout(() => setHubNotice(null), 3000);
+                  }}
                   className="px-3.5 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 text-xs font-semibold cursor-pointer"
                 >
                   Leave Room
@@ -430,8 +453,11 @@ export const MessagesRoomsHub: React.FC = () => {
                   </div>
 
                   <button
-                    onClick={() => alert("Opening safety & verification report for this user.")}
-                    className="text-xs text-[#A7A094] hover:text-[#D6AD60] transition-colors"
+                    onClick={() => {
+                      setHubNotice(`Trust & Safety: ${currentDirectConv.user.name} is photo-verified. Safe chat encryption active.`);
+                      setTimeout(() => setHubNotice(null), 4000);
+                    }}
+                    className="text-xs text-[#A7A094] hover:text-[#D6AD60] transition-colors cursor-pointer"
                   >
                     Safety Tools ▾
                   </button>
@@ -448,13 +474,23 @@ export const MessagesRoomsHub: React.FC = () => {
                       </p>
                       <div className="flex justify-center gap-3 pt-2">
                         <button 
-                          onClick={() => alert("Accepted connection request!")}
+                          onClick={() => {
+                            setDirectConversations(prev => prev.map(c => c.id === currentDirectConv.id ? { ...c, isGateUnlocked: true } : c));
+                            setHubNotice(`Connection accepted with ${currentDirectConv.user.name}! Connection gate opened.`);
+                            setTimeout(() => setHubNotice(null), 4000);
+                          }}
                           className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D6AD60] to-[#F1D99F] text-[#090909] font-bold text-xs cursor-pointer shadow-md shadow-[#D6AD60]/20"
                         >
                           Accept Connection
                         </button>
                         <button 
-                          onClick={() => alert("Declined with zero awkwardness or notification.")}
+                          onClick={() => {
+                            setDirectConversations(prev => prev.filter(c => c.id !== currentDirectConv.id));
+                            const remaining = directConversations.filter(c => c.id !== currentDirectConv.id);
+                            if (remaining.length > 0) setActiveDirectConvId(remaining[0].id);
+                            setHubNotice(`Connection request politely declined.`);
+                            setTimeout(() => setHubNotice(null), 3000);
+                          }}
                           className="px-4 py-2 rounded-xl bg-[#211E18] text-[#A7A094] hover:text-[#F5F0E6] text-xs font-semibold cursor-pointer"
                         >
                           Decline Politely

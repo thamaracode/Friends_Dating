@@ -210,6 +210,9 @@ describe('Soulverse Quotes Sanctuary & Infinite Wisdom Discovery Engine', () => 
 
       const reported = db.prepare('SELECT report_count FROM quotes WHERE id = ?').get(quote.id) as any;
       expect(reported.report_count).toBeGreaterThanOrEqual(1);
+
+      // Clean up report count so continuous test executions do not auto-demote seed quotes
+      db.prepare('UPDATE quotes SET report_count = 0, is_moderated = 1 WHERE id = ?').run(quote.id);
     });
   });
 

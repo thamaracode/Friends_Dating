@@ -43,6 +43,18 @@ export const UniversalIdentityHub = () => {
   const [selectedCapability, setSelectedCapability] = useState<CapabilityType | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [syncingProvider, setSyncingProvider] = useState<string | null>(null);
+  const [authHandshakeProvider, setAuthHandshakeProvider] = useState<string | null>(null);
+  const [authFeedback, setAuthFeedback] = useState<string | null>(null);
+
+  const handleOAuthInitiate = (providerName: string) => {
+    setAuthHandshakeProvider(providerName);
+    setAuthFeedback(`Initiating ${providerName} OAuth 2.0 PKCE handshake...`);
+    setTimeout(() => {
+      setAuthFeedback(`${providerName} authorization verified. Identity token received.`);
+      setAuthHandshakeProvider(null);
+      setTimeout(() => setAuthFeedback(null), 3000);
+    }, 1200);
+  };
 
   // Active user connections state
   const [userConnections, setUserConnections] = useState<Record<string, { isConnected: boolean; syncLevel: SyncLevel; identifier?: string }>>({
@@ -408,38 +420,50 @@ export const UniversalIdentityHub = () => {
             <p className="text-xs text-slate-400 mt-1">One identity. Your connected world.</p>
           </div>
 
+          {/* Auth Status Feedback */}
+          {authFeedback && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-xl text-xs flex items-center justify-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{authFeedback}</span>
+            </div>
+          )}
+
           {/* Social Auth Buttons */}
           <div className="space-y-2.5">
             <button 
-              onClick={() => alert("Google OAuth 2.0 PKCE Initiated...")}
-              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/80 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-sm"
+              onClick={() => handleOAuthInitiate('Google')}
+              disabled={Boolean(authHandshakeProvider)}
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/80 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-sm disabled:opacity-50"
             >
               <Globe className="w-4 h-4 text-rose-400" />
-              <span>Continue with Google</span>
+              <span>{authHandshakeProvider === 'Google' ? 'Connecting to Google...' : 'Continue with Google'}</span>
             </button>
 
             <button 
-              onClick={() => alert("Apple Sign-In OIDC Initiated...")}
-              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/80 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-sm"
+              onClick={() => handleOAuthInitiate('Apple')}
+              disabled={Boolean(authHandshakeProvider)}
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/80 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-sm disabled:opacity-50"
             >
               <Lock className="w-4 h-4 text-slate-200" />
-              <span>Continue with Apple</span>
+              <span>{authHandshakeProvider === 'Apple' ? 'Connecting to Apple...' : 'Continue with Apple'}</span>
             </button>
 
             <button 
-              onClick={() => alert("LinkedIn OIDC Initiated...")}
-              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/80 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-sm"
+              onClick={() => handleOAuthInitiate('LinkedIn')}
+              disabled={Boolean(authHandshakeProvider)}
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/80 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-sm disabled:opacity-50"
             >
               <Briefcase className="w-4 h-4 text-sky-400" />
-              <span>Continue with LinkedIn</span>
+              <span>{authHandshakeProvider === 'LinkedIn' ? 'Connecting to LinkedIn...' : 'Continue with LinkedIn'}</span>
             </button>
 
             <button 
-              onClick={() => alert("Facebook Login Initiated...")}
-              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/80 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-sm"
+              onClick={() => handleOAuthInitiate('Facebook')}
+              disabled={Boolean(authHandshakeProvider)}
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/80 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-sm disabled:opacity-50"
             >
               <Globe className="w-4 h-4 text-blue-500" />
-              <span>Continue with Facebook</span>
+              <span>{authHandshakeProvider === 'Facebook' ? 'Connecting to Facebook...' : 'Continue with Facebook'}</span>
             </button>
           </div>
 

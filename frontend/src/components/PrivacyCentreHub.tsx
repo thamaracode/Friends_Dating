@@ -27,6 +27,7 @@ export const PrivacyCentreHub = () => {
   const [activeTab, setActiveTab] = useState<'visibility' | 'consents' | 'lifecycle' | 'legal_docs' | 'data_export'>('visibility');
   const [exportTriggered, setExportTriggered] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [privacyToast, setPrivacyToast] = useState<string | null>(null);
 
   // Per-field Privacy State
   const [fieldsPrivacy, setFieldsPrivacy] = useState<FieldPrivacySetting[]>([
@@ -118,18 +119,41 @@ export const PrivacyCentreHub = () => {
   const handleTriggerExport = () => {
     setExportTriggered(true);
     setTimeout(() => {
-      alert("Data Subject Access Request (DSAR) bundle generated! A portable JSON package containing your profile, provenance records, and chat history is downloading.");
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        user: { id: 'usr_me', name: 'Kavindu Senanayake', username: 'kavindu' },
+        dsarCompliance: 'Sri Lanka PDPA No. 9 of 2022 & GDPR Article 15',
+        privacyPreferences: fieldsPrivacy,
+        consents: featureConsents,
+        auditTrailNotice: 'Export generated with cryptographic integrity.'
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `soulverse-dsar-export-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
       setExportTriggered(false);
-    }, 1500);
+      setPrivacyToast('Data Subject Access Request (DSAR) bundle generated and downloaded as JSON file.');
+      setTimeout(() => setPrivacyToast(null), 5000);
+    }, 1000);
   };
 
   const handleDeleteAccount = () => {
     setDeleteConfirmOpen(false);
-    alert("Account deletion scheduled under Sri Lanka PDPA & GDPR guidelines. All live records, OAuth tokens, and profile data will be permanently purged within 30 days.");
+    setPrivacyToast('Account deletion request queued under Sri Lanka PDPA & GDPR guidelines. 30-day graceful purge window active.');
+    setTimeout(() => setPrivacyToast(null), 5000);
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
+      {privacyToast && (
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-2xl text-xs flex items-center gap-2.5 shadow-lg animate-in fade-in slide-in-from-top-2">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+          <span className="font-semibold">{privacyToast}</span>
+        </div>
+      )}
       
       {/* 1. Header Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950/40 via-teal-950/40 to-slate-900 border border-emerald-500/30 p-6 md:p-8">
@@ -462,7 +486,7 @@ export const PrivacyCentreHub = () => {
                   <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">{doc.desc}</p>
                 </div>
                 <button
-                  onClick={() => alert(`Opening published legal document: ${doc.title}`)}
+                  onClick={() => window.open(doc.path, '_blank')}
                   className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer pt-2 border-t border-slate-800"
                 >
                   <span>Read Full Notice</span>

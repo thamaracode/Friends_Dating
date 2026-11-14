@@ -23,11 +23,60 @@ import type { FriendshipWishlist, FriendQuizQuestion } from '../types';
 export const ShareEngineHub = () => {
   const [activeTab, setActiveTab] = useState<'identity_card' | 'wishlist' | 'know_me_quiz' | 'ama_link'>('identity_card');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
 
   // Identity Card Customization
   const [cardTheme, setCardTheme] = useState<'neon_violet' | 'midnight_amber' | 'emerald_noir'>('neon_violet');
   const [vibeTagline, setVibeTagline] = useState('Professional overthinker. Amateur philosopher. Sends 17 memes before saying hello.');
+
+  const handleDownloadStory = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const grad = ctx.createLinearGradient(0, 0, 1080, 1920);
+      grad.addColorStop(0, '#0f0a1c');
+      grad.addColorStop(0.5, '#190e2b');
+      grad.addColorStop(1, '#080511');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.strokeStyle = '#D6AD60';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(100, 240, 880, 1440, 48);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 54px sans-serif';
+      ctx.fillText(CURRENT_USER.name, 160, 420);
+
+      ctx.fillStyle = '#D6AD60';
+      ctx.font = '36px sans-serif';
+      ctx.fillText(`@${CURRENT_USER.username} • Soulverse`, 160, 480);
+
+      ctx.fillStyle = '#E2E8F0';
+      ctx.font = '38px sans-serif';
+      ctx.fillText(`"${vibeTagline.slice(0, 60)}..."`, 160, 620);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `soulverse-story-card-${Date.now()}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          setDownloadNotice('High-resolution 1080x1920 Instagram Story PNG rendered and downloaded!');
+          setTimeout(() => setDownloadNotice(null), 4000);
+        }
+      });
+    }
+  };
 
   // Wishlist State ("The People I Want In My Life")
   const [wishlist, setWishlist] = useState<FriendshipWishlist>({
@@ -126,6 +175,12 @@ export const ShareEngineHub = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
+      {downloadNotice && (
+        <div className="p-4 bg-purple-500/10 border border-purple-500/30 text-purple-300 rounded-2xl text-xs flex items-center gap-2.5 shadow-lg animate-in fade-in slide-in-from-top-2">
+          <Check className="w-4 h-4 flex-shrink-0 text-purple-400" />
+          <span className="font-semibold">{downloadNotice}</span>
+        </div>
+      )}
       
       {/* 1. Header Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-rose-950/40 via-purple-950/40 to-slate-900 border border-purple-500/30 p-6 md:p-8">
@@ -328,10 +383,10 @@ export const ShareEngineHub = () => {
               </button>
 
               <button
-                onClick={() => alert("Card rendered into high-resolution 1080x1920 PNG for Instagram Stories!")}
+                onClick={handleDownloadStory}
                 className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold cursor-pointer transition"
               >
-                Download Story Image
+                Download Story Image (1080x1920)
               </button>
             </div>
           </div>

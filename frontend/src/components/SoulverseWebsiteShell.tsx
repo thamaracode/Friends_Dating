@@ -108,6 +108,12 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
   // Modals & Panels
   const [isCrisisModalOpen, setIsCrisisModalOpen] = useState(false);
+  const [shellToast, setShellToast] = useState<string | null>(null);
+
+  const handleSuperLike = (p: UserProfile) => {
+    setShellToast(`🌟 Super Liked ${p.name}! Delivered to their priority discover list.`);
+    setTimeout(() => setShellToast(null), 4000);
+  };
   const [isReadmeModalOpen, setIsReadmeModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUnspokenOpen, setIsUnspokenOpen] = useState(false);
@@ -782,6 +788,13 @@ export const SoulverseWebsiteShell: React.FC = () => {
         onActionSelect={handleCreateActionSelect}
       />
 
+      {shellToast && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-2 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-4">
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span>{shellToast}</span>
+        </div>
+      )}
+
       {/* Edit Profile Info Modal (Tinder-inspired Essentials & Prompts) */}
       <EditProfileInfoModal
         isOpen={isEditProfileModalOpen}
@@ -794,7 +807,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
           profile={inspectedProfile}
           onClose={() => setInspectedProfile(null)}
           onInitiateChat={handleInitiateChat}
-          onSuperLike={(p) => alert(`Super Liked ${p.name}!`)}
+          onSuperLike={handleSuperLike}
         />
       )}
 

@@ -609,4 +609,117 @@ describe('Soulverse Complete Product Expansion & Feature Engineering Directive -
     const reviewData = await reviewRes.json();
     expect(reviewData.error).toContain('Review eligibility requires an established interaction history');
   });
+
+  // --------------------------------------------------------------------------
+  // Scenario 25: Real Friends Events & RSVPs with SQLite Persistence
+  // --------------------------------------------------------------------------
+  it('Scenario 25: Real Friends Events & RSVPs with SQLite Persistence', async () => {
+    // 1. Fetch all events
+    const resList = await fetch(`${API_URL}/events?userId=usr_me`);
+    expect(resList.status).toBe(200);
+    const dataList = await resList.json();
+    expect(dataList.success).toBe(true);
+    expect(Array.isArray(dataList.events)).toBe(true);
+    expect(dataList.events.length).toBeGreaterThanOrEqual(1);
+
+    // 2. Create a new real event
+    const newEventPayload = {
+      title: 'Nuanced Tea & Distributed Systems Debate',
+      type: 'public_gathering',
+      format: 'physical',
+      description: 'Cozy gathering discussing local-first software and mountain tea.',
+      locationCity: 'Colombo',
+      locationName: 'Rooftop Lounge Colombo 07',
+      date: 'Next Saturday',
+      time: '6:00 PM – 9:00 PM',
+      capacity: 15,
+      tags: ['LocalFirst', 'TeaRituals', 'Engineering']
+    };
+
+    const resCreate = await fetch(`${API_URL}/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newEventPayload)
+    });
+    expect(resCreate.status).toBe(201);
+    const dataCreate = await resCreate.json();
+    expect(dataCreate.success).toBe(true);
+    expect(dataCreate.event.id).toBeDefined();
+    expect(dataCreate.event.title).toBe(newEventPayload.title);
+    expect(dataCreate.event.rsvpStatus).toBe('attending');
+
+    const createdEventId = dataCreate.event.id;
+
+    // 3. Toggle RSVP for another user (usr_alex)
+    const resRsvp1 = await fetch(`${API_URL}/events/${createdEventId}/rsvp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: 'usr_alex' })
+    });
+    expect(resRsvp1.status).toBe(200);
+    const dataRsvp1 = await resRsvp1.json();
+    expect(dataRsvp1.rsvpStatus).toBe('attending');
+    expect(dataRsvp1.attendeesCount).toBe(2);
+
+    // 4. Toggle RSVP off for usr_alex
+    const resRsvp2 = await fetch(`${API_URL}/events/${createdEventId}/rsvp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: 'usr_alex' })
+    });
+    expect(resRsvp2.status).toBe(200);
+    const dataRsvp2 = await resRsvp2.json();
+    expect(dataRsvp2.rsvpStatus).toBe('none');
+    expect(dataRsvp2.attendeesCount).toBe(1);
+  });
+
+  // --------------------------------------------------------------------------
+  // Scenario 26: Biometric Verification & User Verification Status
+  // --------------------------------------------------------------------------
+  it('Scenario 26: Biometric Verification & User Verification Status', async () => {
+    // 1. Fetch current status
+    const resStatus = await fetch(`${API_URL}/users/usr_me/verification`);
+    expect(resStatus.status).toBe(200);
+    const dataStatus = await resStatus.json();
+    expect(dataStatus.success).toBe(true);
+    expect(dataStatus.userId).toBe('usr_me');
+
+    // 2. Submit verification update
+    const resVerify = await fetch(`${API_URL}/users/usr_me/verification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verified: true })
+    });
+    expect(resVerify.status).toBe(200);
+    const dataVerify = await resVerify.json();
+    expect(dataVerify.success).toBe(true);
+    expect(dataVerify.isVerified).toBe(true);
+  });
+
+  // --------------------------------------------------------------------------
+  // Scenario 27: User Directory & Discovery Search
+  // --------------------------------------------------------------------------
+  it('Scenario 27: User Directory & Discovery Search', async () => {
+    // 1. Fetch all users directory
+    const resUsers = await fetch(`${API_URL}/users`);
+    expect(resUsers.status).toBe(200);
+    const dataUsers = await resUsers.json();
+    expect(dataUsers.success).toBe(true);
+    expect(Array.isArray(dataUsers.users)).toBe(true);
+    expect(dataUsers.users.length).toBeGreaterThanOrEqual(1);
+
+    // 2. Search by query
+    const resSearch = await fetch(`${API_URL}/users?q=kavindu`);
+    expect(resSearch.status).toBe(200);
+    const dataSearch = await resSearch.json();
+    expect(dataSearch.users.length).toBeGreaterThanOrEqual(1);
+    expect(dataSearch.users[0].name.toLowerCase()).toContain('kavindu');
+
+    // 3. Fetch specific user by ID
+    const resUser = await fetch(`${API_URL}/users/usr_me`);
+    expect(resUser.status).toBe(200);
+    const dataUser = await resUser.json();
+    expect(dataUser.success).toBe(true);
+    expect(dataUser.user.id).toBe('usr_me');
+  });
 });

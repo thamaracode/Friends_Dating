@@ -72,7 +72,15 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
   // Tinder-Inspired Attributes & Edit Info State
   const [userAttributes, setUserAttributes] = useState<FullUserAttributes>(loadUserAttributes);
   const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const { linkSpotify } = useSpotifyMusic();
+
+  const handleShareProfile = () => {
+    if (!profile) return;
+    navigator.clipboard.writeText(`${window.location.origin}/profile/${profile.id}`);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   const isSelf = profile ? profile.id === CURRENT_USER.id : false;
 
@@ -184,10 +192,11 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
 
         <div className="flex items-center gap-2 pointer-events-auto">
           <button
-            onClick={() => alert("Profile shared!")}
+            onClick={handleShareProfile}
             className="w-11 h-11 rounded-full dark-glass flex items-center justify-center text-zinc-100 hover:text-white border border-white/20 shadow-xl cursor-pointer active:scale-95 transition-all"
+            title="Share profile link"
           >
-            <Share2 className="w-4 h-4" />
+            {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
           </button>
         </div>
       </div>

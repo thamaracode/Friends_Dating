@@ -32,7 +32,22 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
   onNavigateSubsystem
 }) => {
   const [profile] = useState(CURRENT_USER);
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isIncognito, setIsIncognito] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setAvatarUrl(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   const [isReadmeModalOpen, setIsReadmeModalOpen] = useState(false);
 
   return (
@@ -41,15 +56,22 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
       <div className="relative rounded-3xl overflow-hidden glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 shadow-2xl p-5 space-y-4 glass-panel">
         <div className="flex items-center gap-4">
           <div className="relative">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
             <img 
-              src={profile.avatar} 
+              src={avatarUrl} 
               alt={profile.name} 
               className="w-20 h-20 rounded-2xl object-cover border-2 border-[#FFFFFF] shadow-lg"
             />
             <button 
-              onClick={() => alert("Upload new portrait")}
-              className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[#FFFFFF] text-white flex items-center justify-center shadow-md cursor-pointer hover:scale-105 transition-transform"
-              title="Change Photo"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[#FFFFFF] text-black flex items-center justify-center shadow-md cursor-pointer hover:scale-105 transition-transform"
+              title="Upload New Photo"
             >
               <Camera className="w-3.5 h-3.5" />
             </button>

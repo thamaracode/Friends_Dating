@@ -62,6 +62,13 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
   const [worlds, setWorlds] = useState<ProfileWorld[]>([]);
   const [activeTab, setActiveTab] = useState<'worlds' | 'about' | 'timeline' | 'collections' | 'connections'>('worlds');
   const [searchQuery, setSearchQuery] = useState('');
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  const handleShareProfile = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/@${(profile as any).handle || profile.username || 'kavindu'}`);
+    setCopiedShare(true);
+    setTimeout(() => setCopiedShare(false), 2000);
+  };
 
   // Default iconic showcase worlds matching Luna's profile screenshot
   const defaultShowcaseWorlds: Array<{
@@ -213,11 +220,12 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
                 <span>Edit Profile</span>
               </button>
               <button
-                onClick={() => alert("Profile shared")}
-                className="p-2 rounded-2xl dark-glass border border-white/[0.08] text-zinc-400 hover:text-white hover:border-white/20 transition-all cursor-pointer"
-                title="More options"
+                onClick={handleShareProfile}
+                className="px-3 py-2 rounded-2xl dark-glass border border-white/[0.08] text-zinc-300 hover:text-white hover:border-white/20 transition-all cursor-pointer text-xs font-semibold flex items-center gap-1.5"
+                title="Share profile link"
               >
-                •••
+                <Share2 className="w-3.5 h-3.5 text-amber-400" />
+                <span>{copiedShare ? 'Copied!' : 'Share'}</span>
               </button>
             </div>
           </div>

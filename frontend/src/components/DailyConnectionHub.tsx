@@ -60,6 +60,7 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
   const [editEdition, setEditEdition] = useState<DailyEdition>('universal');
   const [editSituation, setEditSituation] = useState<RelationshipSituation>('single');
   const [editFriendTrack, setEditFriendTrack] = useState<FriendshipTrack>('making_new_friends');
+  const [copyFeedback, setCopyFeedback] = useState(false);
 
   const loadDailyData = async () => {
     try {
@@ -696,12 +697,15 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
                 size="md"
                 onClick={() => {
                   navigator.clipboard.writeText(`"${currentItem.quote_one_liner}" — ${currentItem.category_name} (via Soulverse)`);
-                  alert("Quote copied to clipboard!");
-                  setIsShareModalOpen(false);
+                  setCopyFeedback(true);
+                  setTimeout(() => {
+                    setCopyFeedback(false);
+                    setIsShareModalOpen(false);
+                  }, 1200);
                 }}
                 className="w-full"
               >
-                Copy Text for Telegram / Instagram
+                {copyFeedback ? '✓ Copied to Clipboard!' : 'Copy Text for Telegram / Instagram'}
               </GlassButton>
             </div>
           </div>

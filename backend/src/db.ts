@@ -4,9 +4,10 @@ import path from 'path';
 const dbPath = path.resolve(__dirname, '../../data.db');
 export const db = new Database(dbPath);
 
-// Enable WAL mode and foreign keys for high-performance concurrent writes
+// Enable WAL mode, foreign keys, and busy timeout for high-performance concurrent writes
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
+db.pragma('busy_timeout = 5000');
 
 export function initDatabase() {
   db.exec(`
@@ -3098,6 +3099,41 @@ function seedFeatureControlLayer() {
       failure_count INTEGER DEFAULT 0,
       updated_at INTEGER NOT NULL
     );
+
+    -- Friends Real Events & Gatherings
+    CREATE TABLE IF NOT EXISTS friends_events (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      type TEXT NOT NULL,
+      format TEXT NOT NULL,
+      date TEXT NOT NULL,
+      time TEXT NOT NULL,
+      location_name TEXT NOT NULL,
+      location_city TEXT NOT NULL,
+      exact_address_hidden INTEGER DEFAULT 1,
+      cover_image TEXT,
+      description TEXT NOT NULL,
+      host_id TEXT DEFAULT 'usr_me',
+      host_name TEXT NOT NULL,
+      host_avatar TEXT,
+      host_verified INTEGER DEFAULT 1,
+      category TEXT NOT NULL,
+      tags_json TEXT DEFAULT '[]',
+      capacity INTEGER DEFAULT 25,
+      attendees_count INTEGER DEFAULT 1,
+      rules_json TEXT DEFAULT '[]',
+      sync_room_id TEXT,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS friends_event_rsvps (
+      event_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('attending', 'waitlist', 'declined')),
+      created_at INTEGER NOT NULL,
+      PRIMARY KEY (event_id, user_id),
+      FOREIGN KEY (event_id) REFERENCES friends_events(id) ON DELETE CASCADE
+    );
   `);
 
   // Seed default admin quote providers
@@ -3149,5 +3185,142 @@ function seedFeatureControlLayer() {
     } catch (err) {
       console.warn('Could not seed initial curated quotes:', err);
     }
+  }
+
+  // Seed initial events if empty
+  const eventCount = (db.prepare('SELECT COUNT(*) as c FROM friends_events').get() as any)?.c || 0;
+  if (eventCount === 0) {
+    const insertEvent = db.prepare(`
+      INSERT INTO friends_events (
+        id, title, type, format, date, time, location_name, location_city, exact_address_hidden,
+        cover_image, description, host_id, host_name, host_avatar, host_verified, category,
+        tags_json, capacity, attendees_count, rules_json, sync_room_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const initialEvents = [
+      {
+        id: 'evt_1',
+        title: 'The Friday Social: Rooftop Acoustic & Nuanced Debates',
+        type: 'public_gathering',
+        format: 'physical',
+        date: 'Friday, Nov 14',
+        time: '6:00 PM – 9:30 PM',
+        locationName: 'Public Rooftop Pavilion (Colombo 07)',
+        locationCity: 'Colombo',
+        exactAddressHidden: 1,
+        coverImage: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800&q=80',
+        description: 'Good people, ambient acoustics, and conversations that do not end after three messages. Designed for people who want to meet new faces without alcohol-fueled club pressure.',
+        hostId: 'usr_me',
+        hostName: 'Kavindu Senanayake',
+        hostAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        hostVerified: 1,
+        category: 'Social & Music',
+        tags: ['Acoustic', 'Philosophy', 'IntrovertFriendly'],
+        capacity: 25,
+        attendeesCount: 18,
+        rules: ['Zero harassment tolerance', 'No aggressive pitching or sales', 'Bring warm curiosity'],
+        syncRoomId: null
+      },
+      {
+        id: 'evt_2',
+        title: 'Synchronized Watch Party: Studio Ghibli - Spirited Away',
+        type: 'watch_party',
+        format: 'watch_party',
+        date: 'Saturday, Nov 15',
+        time: '8:30 PM – 10:45 PM',
+        locationName: 'FRIENDS Synchronized Theater #04',
+        locationCity: 'Virtual Room',
+        exactAddressHidden: 0,
+        coverImage: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+        description: 'Ultra-low-latency synchronized stream. Voice chat enabled during intermission, cozy text sidebar during the film.',
+        hostId: 'usr_tara',
+        hostName: 'Tara Perera',
+        hostAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+        hostVerified: 1,
+        category: 'Cinema & Chill',
+        tags: ['Ghibli', 'Anime', 'SyncStream', 'CozyNight'],
+        capacity: 50,
+        attendeesCount: 34,
+        rules: ['Mute microphones during playback', 'Spoiler warnings enforced in sidebar'],
+        syncRoomId: 'sync_ghibli_01'
+      },
+      {
+        id: 'evt_3',
+        title: 'Midnight Hackathon & Chill Lo-Fi Co-Working',
+        type: 'online_party',
+        format: 'online_party',
+        date: 'Sunday, Nov 16',
+        time: '10:00 PM – 2:00 AM',
+        locationName: 'Soulverse Audio Hall 3',
+        locationCity: 'Global Virtual Lounge',
+        exactAddressHidden: 0,
+        coverImage: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80',
+        description: 'Deep work sprint with shared ambient lo-fi music. Check in every 45 minutes on what you built.',
+        hostId: 'usr_alex',
+        hostName: 'Alex Rivera',
+        hostAvatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
+        hostVerified: 1,
+        category: 'Builders & Coders',
+        tags: ['CoWorking', 'LoFi', 'Productivity'],
+        capacity: 30,
+        attendeesCount: 22,
+        rules: ['Cameras optional', 'Pomodoro breaks every 45 mins'],
+        syncRoomId: null
+      },
+      {
+        id: 'evt_4',
+        title: 'Sunset Film Photography Walk & Darkroom Basics',
+        type: 'meet_new_people',
+        format: 'physical',
+        date: 'Saturday, Nov 22',
+        time: '4:30 PM – 7:00 PM',
+        locationName: 'Kandy Lake Circular Walk',
+        locationCity: 'Kandy',
+        exactAddressHidden: 1,
+        coverImage: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&w=800&q=80',
+        description: 'Bring any 35mm film or vintage camera. We walk around Kandy Lake catching golden hour light, then review prints over ginger tea.',
+        hostId: 'usr_me',
+        hostName: 'Kavindu Senanayake',
+        hostAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        hostVerified: 1,
+        category: 'Creative Arts',
+        tags: ['FilmPhotography', 'Kandy', 'GoldenHour', 'TeaRituals'],
+        capacity: 12,
+        attendeesCount: 9,
+        rules: ['All skill levels welcome', 'Wear comfortable walking shoes'],
+        syncRoomId: null
+      }
+    ];
+
+    const curTime = Date.now();
+    for (const e of initialEvents) {
+      insertEvent.run(
+        e.id,
+        e.title,
+        e.type,
+        e.format,
+        e.date,
+        e.time,
+        e.locationName,
+        e.locationCity,
+        e.exactAddressHidden,
+        e.coverImage,
+        e.description,
+        e.hostId,
+        e.hostName,
+        e.hostAvatar,
+        e.hostVerified,
+        e.category,
+        JSON.stringify(e.tags),
+        e.capacity,
+        e.attendeesCount,
+        JSON.stringify(e.rules),
+        e.syncRoomId,
+        curTime
+      );
+    }
+
+    db.prepare('INSERT OR IGNORE INTO friends_event_rsvps (event_id, user_id, status, created_at) VALUES (?, ?, ?, ?)').run('evt_1', 'usr_me', 'attending', curTime);
   }
 }

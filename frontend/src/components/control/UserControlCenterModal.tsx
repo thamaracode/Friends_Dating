@@ -98,6 +98,23 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
   const [features, setFeatures] = useState<EvaluatedFeature[]>(() => FeatureControlService.getEvaluatedFeatures());
   const [activePreset, setActivePreset] = useState<ExperiencePresetKey>(() => FeatureControlService.getActivePreset());
   const [registry, setRegistry] = useState<RegisteredFeature[]>([]);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    try {
+      localStorage.removeItem('soulverse_auth_token');
+      localStorage.removeItem('soulverse_active_session');
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn('Storage clear notice:', e);
+    }
+    setTimeout(() => {
+      setIsLoggingOut(false);
+      onClose();
+      window.location.reload();
+    }, 800);
+  };
   
   // Persistent Settings
   const [discovery, setDiscovery] = useState<DiscoverySettings>(loadDiscoverySettings);
@@ -1345,11 +1362,12 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
                     </button>
 
                     <button
-                      onClick={() => alert('Logged out safely. Your offline data remains cryptographically preserved.')}
-                      className="w-full py-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/15 text-xs font-bold text-white transition-all cursor-pointer flex items-center justify-center gap-2"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="w-full py-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/15 text-xs font-bold text-white transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
+                      <span>{isLoggingOut ? 'Logging Out & Purging Session...' : 'Logout'}</span>
                     </button>
 
                     {/* Logo & Version (Screenshot 10) */}
