@@ -87,6 +87,7 @@ import { CouplePlayHubView } from './games/CouplePlayHubView';
 import { CreateConfessionModal } from './confessions/CreateConfessionModal';
 import { HeartLogoVariant, SoulverseBrandLogo } from './brand/SoulverseHeartLogos';
 import { HeartLogoShowcaseModal } from './brand/HeartLogoShowcaseModal';
+import { SoulJournalSanctuary } from './journal/SoulJournalSanctuary';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -218,7 +219,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
     } else if (actionType === 'timeline') {
       navigateTo('timeline');
     } else if (actionType === 'journal') {
-      setIsReadmeModalOpen(true);
+      navigateTo('journal');
     } else if (actionType === 'story') {
       setIsEditProfileModalOpen(true);
     } else if (actionType === 'confession') {
@@ -263,6 +264,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       items: [
         { id: 'discover' as SoulverseRoute, label: 'Discover Humans', icon: Compass, featureId: 'feat_dating' },
         { id: 'quotes' as SoulverseRoute, label: 'Quotes Sanctuary', icon: QuoteIcon, badge: 'Wise', featureId: 'feat_daily_quotes' },
+        { id: 'journal' as SoulverseRoute, label: 'Soul Prompts & Journal', icon: BookOpen, badge: 'Soul', featureId: 'feat_daily_quotes' },
         { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily', featureId: 'feat_daily_quotes' },
         { id: 'unspoken' as SoulverseRoute, label: 'The Unspoken', icon: Sparkles, badge: 'Inner', featureId: 'feat_the_unspoken' },
       ]
@@ -700,6 +702,18 @@ export const SoulverseWebsiteShell: React.FC = () => {
                 <CouplePlayHubView
                   onNavigateToChat={() => navigateTo('messages')}
                   partnerName={inspectedProfile?.name || 'Elena Rostova'}
+                />
+              </div>
+            )}
+
+            {/* SUB-VIEW: SOUL PROMPTS & RESONANCE SANCTUARY */}
+            {currentRoute === 'journal' && (
+              <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass">
+                <SoulJournalSanctuary
+                  onNavigateToChat={(convId, partnerName) => {
+                    navigateTo('messages');
+                  }}
+                  onClose={() => navigateTo('discover')}
                 />
               </div>
             )}

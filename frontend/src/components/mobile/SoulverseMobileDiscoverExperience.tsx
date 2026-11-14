@@ -264,6 +264,45 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
         )}
       </div>
 
+      {/* 3.5 SOUL PROMPTS & RESONANCE SANCTUARY (DAILY INTROSPECTION & COMPATIBILITY) */}
+      <div className="rounded-3xl bg-gradient-to-br from-violet-950/50 via-slate-900 to-rose-950/40 border border-violet-500/30 p-5 sm:p-6 space-y-3.5 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-violet-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-violet-400 shadow-[0_0_8px_#8B5CF6]" />
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-violet-300">
+              Soul Prompt Sanctuary · Single-Player Value
+            </span>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+            #EmotionalSafety
+          </span>
+        </div>
+
+        <p className="text-sm sm:text-base font-bold text-white leading-snug">
+          "What is an unspoken expectation you used to bring into relationships that you have since outgrown?"
+        </p>
+
+        <p className="text-xs text-slate-300/80 leading-relaxed italic border-l-2 border-violet-500/40 pl-3">
+          We often expect partners to read our minds without realizing we are asking them to heal wounds they never created.
+        </p>
+
+        <div className="flex items-center justify-between pt-2">
+          <span className="text-xs text-slate-400">
+            Zero matches needed. Write your truth or read community echoes.
+          </span>
+          <button
+            onClick={() => {
+              window.location.hash = '#journal';
+            }}
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 via-rose-500 to-amber-500 hover:opacity-95 text-white shadow-md shadow-violet-500/20 flex items-center gap-1.5 transition"
+          >
+            <span>Open Sanctuary</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
       {/* 4. MODE A: SWIPE STACK CARDS */}
       {viewMode === 'swipe' && currentSwipeProfile && (
         <div className="relative w-full aspect-[3/4.4] sm:aspect-[3/4.2] max-h-[680px] rounded-3xl overflow-hidden border border-white/15 shadow-2xl bg-[#0F1117] flex flex-col justify-end p-6 sm:p-8 select-none animate-fadeIn">

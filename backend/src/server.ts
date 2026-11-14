@@ -31,6 +31,7 @@ import {
 import { QuoteDiscoveryService } from './quotes/service';
 import { QuoteProviderRegistry } from './quotes/registry';
 import { QUOTE_CATEGORIES, QuoteCategoryKey } from './quotes/types';
+import { SoulPromptsService } from './soul-prompts/service';
 import {
   createRateLimiter,
   isUserSuspended,
@@ -41,6 +42,7 @@ import {
 } from './security';
 
 initDatabase();
+SoulPromptsService.initTables();
 
 const app = express();
 app.use(cors({
@@ -7103,6 +7105,120 @@ app.get('/api/v1/users/:id', (req, res) => {
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================================================
+// SOUL PROMPTS & RESONANCE SANCTUARY (DAILY INTROSPECTION & EMOTIONAL COMPATIBILITY)
+// ============================================================================
+
+app.get('/api/v1/soul-prompts/today', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const data = SoulPromptsService.getTodayPrompt(userId);
+    res.json({ success: true, ...data });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch today prompt' });
+  }
+});
+
+app.get('/api/v1/soul-prompts/all', (_req, res) => {
+  try {
+    const prompts = SoulPromptsService.getAllPrompts();
+    res.json({ success: true, prompts });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch prompts' });
+  }
+});
+
+app.post('/api/v1/soul-prompts/:promptId/respond', (req, res) => {
+  try {
+    const { promptId } = req.params;
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { responseText, visibility, moodTag, customAlias } = req.body;
+
+    if (!responseText || typeof responseText !== 'string' || responseText.trim().length < 5) {
+      return res.status(400).json({ error: 'Response must be at least 5 characters' });
+    }
+
+    const response = SoulPromptsService.respondToPrompt(promptId, userId, {
+      responseText,
+      visibility,
+      moodTag,
+      customAlias
+    });
+
+    res.json({ success: true, response });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to save prompt response' });
+  }
+});
+
+app.get('/api/v1/soul-prompts/:promptId/community', (req, res) => {
+  try {
+    const { promptId } = req.params;
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+
+    const responses = SoulPromptsService.getCommunityResponses(promptId, userId, limit);
+    res.json({ success: true, responses });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch community responses' });
+  }
+});
+
+app.post('/api/v1/soul-prompts/responses/:responseId/resonate', (req, res) => {
+  try {
+    const { responseId } = req.params;
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { reactionType } = req.body;
+
+    if (!reactionType || !['felt_deeply', 'mind_shifted', 'inspired'].includes(reactionType)) {
+      return res.status(400).json({ error: 'Invalid resonance reaction type' });
+    }
+
+    const result = SoulPromptsService.submitResonance(responseId, userId, reactionType);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to submit resonance' });
+  }
+});
+
+app.get('/api/v1/soul-prompts/my-journal', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const journal = SoulPromptsService.getUserJournal(userId);
+    res.json({ success: true, ...journal });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch user journal' });
+  }
+});
+
+app.get('/api/v1/soul-prompts/compatibility/:targetUserId', (req, res) => {
+  try {
+    const { targetUserId } = req.params;
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+
+    if (userId === targetUserId) {
+      return res.status(400).json({ error: 'Cannot compute compatibility with yourself' });
+    }
+
+    const insight = SoulPromptsService.computeCompatibility(userId, targetUserId);
+    res.json({ success: true, ...insight });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to compute compatibility' });
+  }
+});
+
+app.post('/api/v1/soul-prompts/responses/:responseId/icebreaker', (req, res) => {
+  try {
+    const { responseId } = req.params;
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+
+    const icebreaker = SoulPromptsService.createPromptIcebreaker(responseId, userId);
+    res.json({ success: true, ...icebreaker });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to create prompt icebreaker' });
   }
 });
 
