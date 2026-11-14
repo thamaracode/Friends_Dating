@@ -40,7 +40,8 @@ import {
   Sliders,
   ExternalLink,
   Quote as QuoteIcon,
-  Gamepad2
+  Gamepad2,
+  Brain
 } from 'lucide-react';
 import { SearchBar, PulseBadge } from './klyven';
 
@@ -88,6 +89,7 @@ import { HeartLogoVariant, SoulverseBrandLogo } from './brand/SoulverseHeartLogo
 import { HeartLogoShowcaseModal } from './brand/HeartLogoShowcaseModal';
 import { SoulJournalSanctuary } from './journal/SoulJournalSanctuary';
 import { SpotifyEmbedHubView } from './spotify/SpotifyEmbedHubView';
+import { PersonalitySanctuaryView } from './personality/PersonalitySanctuaryView';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -156,7 +158,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
   // Map route to 5 primary mobile destinations
   const getActiveMobileTab = (): MobilePrimaryTab => {
-    if (currentRoute === 'discover' || currentRoute === 'daily' || currentRoute === 'home' || currentRoute === 'quotes') return 'discover';
+    if (currentRoute === 'discover' || currentRoute === 'daily' || currentRoute === 'home' || currentRoute === 'quotes' || currentRoute === 'personality') return 'discover';
     if (currentRoute === 'connect' || currentRoute === 'worlds' || currentRoute === 'connections') return 'connect';
     if (currentRoute === 'messages' || currentRoute === 'inbox') return 'inbox';
     if (currentRoute === 'profile' || currentRoute === 'settings' || currentRoute === 'identities' || currentRoute === 'account') return 'profile';
@@ -169,7 +171,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       const hash = window.location.hash.replace('#', '') as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
         'home', 'daily', 'discover', 'connect', 'connections', 'messages', 'inbox', 'profile', 
-        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games'
+        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games', 'personality'
       ];
       if (validRoutes.includes(hash)) {
         setCurrentRoute(hash);
@@ -263,6 +265,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       title: 'Discover & Wisdom',
       items: [
         { id: 'discover' as SoulverseRoute, label: 'Discover Humans', icon: Compass, featureId: 'feat_dating' },
+        { id: 'personality' as SoulverseRoute, label: 'Personality & EI Sanctuary', icon: Brain, badge: 'EI', featureId: 'feat_personality_exploration' },
         { id: 'quotes' as SoulverseRoute, label: 'Quotes Sanctuary', icon: QuoteIcon, badge: 'Wise', featureId: 'feat_daily_quotes' },
         { id: 'journal' as SoulverseRoute, label: 'Soul Prompts & Journal', icon: BookOpen, badge: 'Soul', featureId: 'feat_daily_quotes' },
         { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily', featureId: 'feat_daily_quotes' },
@@ -715,6 +718,16 @@ export const SoulverseWebsiteShell: React.FC = () => {
                     navigateTo('messages');
                   }}
                   onClose={() => navigateTo('discover')}
+                />
+              </div>
+            )}
+
+            {/* SUB-VIEW: PERSONALITY, HUMAN BEHAVIOR AND EMOTIONAL INTELLIGENCE FRAMEWORK */}
+            {currentRoute === 'personality' && (
+              <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass p-4 sm:p-6">
+                <PersonalitySanctuaryView
+                  currentUserId="usr_me"
+                  onNavigateTab={(tab) => navigateTo(tab as any)}
                 />
               </div>
             )}

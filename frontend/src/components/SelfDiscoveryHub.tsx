@@ -161,6 +161,14 @@ export const SelfDiscoveryHub: React.FC = () => {
                 <Copy className="w-3.5 h-3.5" />
               </button>
             </div>
+
+            <button
+              onClick={() => { window.location.hash = '#personality'; }}
+              className="w-full mt-2 py-2.5 px-3 bg-white/10 hover:bg-white/15 text-white border border-white/15 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99]"
+            >
+              <span>Explore Personality & EI Sanctuary</span>
+              <span className="text-purple-400">→</span>
+            </button>
           </div>
 
           {/* Public Profile Link Explanation */}

@@ -285,6 +285,18 @@ export const DiscoverExplorationView: React.FC<DiscoverExplorationViewProps> = (
             <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto">
               Skip superficial swiping. Connect with people whose communication cadence and values align with yours.
             </p>
+            <div className="pt-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.hash = '#personality';
+                }}
+                className="px-4 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 inline-flex items-center gap-1.5"
+              >
+                <span>Open Personality & EI Sanctuary</span>
+                <span className="text-emerald-400">✦</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3">

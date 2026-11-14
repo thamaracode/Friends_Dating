@@ -1108,6 +1108,99 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_feat_pref_user ON user_feature_preferences(user_id, state);
     CREATE INDEX IF NOT EXISTS idx_audit_created ON configuration_audit_logs(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_feat_usage_time ON feature_usage_events(feature_id, event_type, created_at);
+
+    -- ========================================================================
+    -- MASTER PROMPT 03: PERSONALITY, HUMAN BEHAVIOR & EMOTIONAL INTELLIGENCE
+    -- ========================================================================
+    CREATE TABLE IF NOT EXISTS psychology_concepts (
+      id TEXT PRIMARY KEY,
+      domain TEXT NOT NULL,
+      framework_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      scientific_name TEXT,
+      definition TEXT NOT NULL,
+      practical_example TEXT NOT NULL,
+      related_concepts TEXT NOT NULL DEFAULT '[]',
+      appropriate_context TEXT NOT NULL,
+      limitations_and_caveats TEXT NOT NULL,
+      spectrum_low_label TEXT,
+      spectrum_high_label TEXT,
+      badge_color TEXT,
+      sort_order INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_personality_profiles (
+      user_id TEXT PRIMARY KEY,
+      dimensions TEXT NOT NULL DEFAULT '{}',
+      selected_traits TEXT NOT NULL DEFAULT '[]',
+      trait_explanations TEXT NOT NULL DEFAULT '{}',
+      communication_style TEXT DEFAULT 'unspecified',
+      communication_notes TEXT DEFAULT '',
+      listening_style TEXT DEFAULT 'unspecified',
+      attachment_awareness TEXT DEFAULT 'unspecified',
+      attachment_notes TEXT DEFAULT '',
+      core_values TEXT NOT NULL DEFAULT '[]',
+      values_explanations TEXT NOT NULL DEFAULT '{}',
+      emotional_boundaries TEXT DEFAULT '',
+      conflict_style TEXT DEFAULT '',
+      visibility TEXT NOT NULL DEFAULT 'public',
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS reflection_exercises (
+      id TEXT PRIMARY KEY,
+      domain TEXT NOT NULL,
+      title TEXT NOT NULL,
+      subtitle TEXT NOT NULL,
+      estimated_minutes INTEGER DEFAULT 5,
+      framework_type TEXT NOT NULL,
+      prompts_json TEXT NOT NULL,
+      ethical_disclaimer TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS user_reflection_responses (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      exercise_id TEXT NOT NULL,
+      answers_json TEXT NOT NULL,
+      personal_takeaway TEXT,
+      visibility TEXT NOT NULL DEFAULT 'private',
+      completed_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (exercise_id) REFERENCES reflection_exercises(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS user_perception_feedback (
+      id TEXT PRIMARY KEY,
+      target_user_id TEXT NOT NULL,
+      author_user_id TEXT NOT NULL,
+      strengths_observed TEXT NOT NULL DEFAULT '[]',
+      communication_impression TEXT,
+      values_witnessed TEXT NOT NULL DEFAULT '[]',
+      warmth_resonance_rating INTEGER DEFAULT 5,
+      constructive_perspective TEXT,
+      is_anonymous INTEGER DEFAULT 0,
+      visibility TEXT NOT NULL DEFAULT 'private_to_target',
+      is_approved_by_target INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS user_trait_history (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      snapshot_label TEXT NOT NULL,
+      dimensions_json TEXT NOT NULL,
+      core_values_json TEXT NOT NULL,
+      growth_reflections TEXT,
+      recorded_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
 
   try {
@@ -1127,6 +1220,7 @@ export function initDatabase() {
   seedFeatureControlLayer();
   seedCouplePlayHubGames();
   seedConfessions();
+  seedPsychologyFramework();
 }
 
 function seedInitialData() {
@@ -3673,5 +3767,93 @@ function seedFeatureControlLayer() {
     }
   } catch (err) {
     console.warn('Identity schema migration notice:', err);
+  }
+}
+
+function seedPsychologyFramework() {
+  try {
+    const { INITIAL_PSYCHOLOGY_CONCEPTS, INITIAL_REFLECTION_EXERCISES } = require('./psychology/seedData');
+
+    const conceptCount = db.prepare('SELECT COUNT(*) as count FROM psychology_concepts').get() as { count: number };
+    if (conceptCount.count === 0) {
+      const insertConcept = db.prepare(`
+        INSERT INTO psychology_concepts (
+          id, domain, framework_type, title, scientific_name, definition,
+          practical_example, related_concepts, appropriate_context,
+          limitations_and_caveats, spectrum_low_label, spectrum_high_label,
+          badge_color, sort_order, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      for (const c of INITIAL_PSYCHOLOGY_CONCEPTS) {
+        insertConcept.run(
+          c.id, c.domain, c.framework_type, c.title, c.scientific_name || null, c.definition,
+          c.practical_example, JSON.stringify(c.related_concepts), c.appropriate_context,
+          c.limitations_and_caveats, c.spectrum_low_label || null, c.spectrum_high_label || null,
+          c.badge_color || null, c.sort_order, c.created_at
+        );
+      }
+    }
+
+    const exCount = db.prepare('SELECT COUNT(*) as count FROM reflection_exercises').get() as { count: number };
+    if (exCount.count === 0) {
+      const insertEx = db.prepare(`
+        INSERT INTO reflection_exercises (
+          id, domain, title, subtitle, estimated_minutes, framework_type,
+          prompts_json, ethical_disclaimer, sort_order
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      for (const ex of INITIAL_REFLECTION_EXERCISES) {
+        insertEx.run(
+          ex.id, ex.domain, ex.title, ex.subtitle, ex.estimated_minutes, ex.framework_type,
+          JSON.stringify(ex.prompts), ex.ethical_disclaimer, ex.sort_order
+        );
+      }
+    }
+
+    // Seed baseline profile for usr_me if none exists
+    const profileCount = db.prepare("SELECT COUNT(*) as count FROM user_personality_profiles WHERE user_id = 'usr_me'").get() as { count: number };
+    if (profileCount.count === 0) {
+      db.prepare(`
+        INSERT INTO user_personality_profiles (
+          user_id, dimensions, selected_traits, trait_explanations,
+          communication_style, communication_notes, listening_style,
+          attachment_awareness, attachment_notes, core_values,
+          values_explanations, emotional_boundaries, conflict_style,
+          visibility, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        'usr_me',
+        JSON.stringify({
+          introversion_extraversion: 35,
+          openness: 85,
+          conscientiousness: 78,
+          agreeableness: 82,
+          emotional_stability: 72
+        }),
+        JSON.stringify(['Reflective', 'Empathetic', 'Deep Thinker', 'Curious', 'Integrity-Driven']),
+        JSON.stringify({
+          introversion_extraversion: 'I love hosting intimate dinners, but need quiet solitary hours in the morning to think clearly.',
+          openness: 'Drawn to philosophical literature, indie game narratives, and midnight stargazing.'
+        }),
+        'empathetic',
+        'I value clarity wrapped in kindness. I prefer discussing hard topics with patience rather than avoidance.',
+        'reflective',
+        'secure_leaning',
+        'I value deep emotional connection and reciprocal vulnerability while honoring healthy autonomy.',
+        JSON.stringify(['integrity', 'authenticity', 'curiosity', 'compassion', 'independence']),
+        JSON.stringify({
+          integrity: 'Doing what is right even when inconvenient.',
+          authenticity: 'Living without masks and speaking truthfully with care.'
+        }),
+        'Clear and sovereign: I hold space for loved ones without absorbing their panic.',
+        'Collaborative de-escalation: taking a pause to cool down, then solving the core issue together.',
+        'public',
+        Date.now()
+      );
+    }
+  } catch (err) {
+    console.warn('Could not seed psychology framework:', err);
   }
 }

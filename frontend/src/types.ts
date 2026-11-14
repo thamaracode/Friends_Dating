@@ -19,6 +19,7 @@ export type SoulverseRoute =
   | 'quotes'
   | 'admin'
   | 'mini_games'
+  | 'personality'
   | 'spotify';
 
 export type MobilePrimaryTab = 'discover' | 'connect' | 'create' | 'inbox' | 'profile';

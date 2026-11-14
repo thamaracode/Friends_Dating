@@ -32,6 +32,7 @@ import { QuoteDiscoveryService } from './quotes/service';
 import { QuoteProviderRegistry } from './quotes/registry';
 import { QUOTE_CATEGORIES, QuoteCategoryKey } from './quotes/types';
 import { SoulPromptsService } from './soul-prompts/service';
+import { psychologyService } from './psychology/service';
 import {
   createRateLimiter,
   isUserSuspended,
@@ -3799,6 +3800,179 @@ app.delete('/api/v1/identities/:identityId/timeline/:eventId', (req, res) => {
 
   db.prepare('DELETE FROM identity_timeline_events WHERE id = ?').run(eventId);
   res.json({ success: true, message: 'Timeline event deleted' });
+});
+
+// ============================================================================
+// MASTER PROMPT 03: PERSONALITY, HUMAN BEHAVIOR & EMOTIONAL INTELLIGENCE
+// ============================================================================
+
+app.get('/api/v1/psychology/concepts', (req, res) => {
+  try {
+    const { domain, frameworkType, search } = req.query as { domain?: any; frameworkType?: any; search?: string };
+    const concepts = psychologyService.getAllConcepts(domain, frameworkType, search);
+    res.json({ success: true, concepts, count: concepts.length });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/v1/psychology/concepts/:conceptId', (req, res) => {
+  try {
+    const concept = psychologyService.getConceptById(req.params.conceptId);
+    if (!concept) return res.status(404).json({ success: false, error: 'Concept not found' });
+    res.json({ success: true, concept });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/v1/psychology/profile/:userId', (req, res) => {
+  try {
+    const viewerId = (req.query.viewerId as string) || (req.headers['x-user-id'] as string) || 'usr_me';
+    const profile = psychologyService.getUserProfile(req.params.userId, viewerId);
+    if (!profile) return res.status(404).json({ success: false, error: 'Personality profile not found or private' });
+    res.json({ success: true, profile });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/v1/psychology/profile', (req, res) => {
+  try {
+    const callerId = getCallerUserId(req);
+    const userId = req.body.userId || callerId || 'usr_me';
+    
+    // Authorization check
+    if (callerId && callerId !== userId && callerId !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Cannot modify another user personality profile' });
+    }
+
+    const updated = psychologyService.saveUserProfile(userId, req.body);
+    res.json({ success: true, profile: updated, message: 'Personality profile updated successfully' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/v1/psychology/exercises', (req, res) => {
+  try {
+    const domain = req.query.domain as any;
+    const exercises = psychologyService.getAllExercises(domain);
+    res.json({ success: true, exercises, count: exercises.length });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/v1/psychology/exercises/:exerciseId', (req, res) => {
+  try {
+    const exercise = psychologyService.getExerciseById(req.params.exerciseId);
+    if (!exercise) return res.status(404).json({ success: false, error: 'Exercise not found' });
+    res.json({ success: true, exercise });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/v1/psychology/exercises/:exerciseId/submit', (req, res) => {
+  try {
+    const callerId = getCallerUserId(req);
+    const userId = req.body.userId || callerId || 'usr_me';
+    const { answers, personalTakeaway, visibility } = req.body;
+
+    if (!answers || typeof answers !== 'object') {
+      return res.status(400).json({ success: false, error: 'Answers payload required' });
+    }
+
+    const response = psychologyService.submitExerciseResponse(
+      userId,
+      req.params.exerciseId,
+      answers,
+      personalTakeaway,
+      visibility || 'private'
+    );
+    res.json({ success: true, response, message: 'Reflection exercise submitted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/v1/psychology/exercises/user/:userId', (req, res) => {
+  try {
+    const viewerId = (req.query.viewerId as string) || (req.headers['x-user-id'] as string) || 'usr_me';
+    const responses = psychologyService.getUserExerciseResponses(req.params.userId, viewerId);
+    res.json({ success: true, responses });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/v1/psychology/feedback/:targetUserId', (req, res) => {
+  try {
+    const callerId = getCallerUserId(req);
+    const authorUserId = req.body.authorUserId || callerId || 'usr_me';
+    const targetUserId = req.params.targetUserId;
+
+    if (authorUserId === targetUserId) {
+      return res.status(400).json({ success: false, error: 'Cannot submit perception feedback for yourself' });
+    }
+
+    const feedback = psychologyService.submitPerceptionFeedback(authorUserId, targetUserId, req.body);
+    res.json({ success: true, feedback, message: 'Perception feedback delivered to companion' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/v1/psychology/feedback/:targetUserId', (req, res) => {
+  try {
+    const viewerId = (req.query.viewerId as string) || (req.headers['x-user-id'] as string) || 'usr_me';
+    const feedback = psychologyService.getUserPerceptionFeedback(req.params.targetUserId, viewerId);
+    res.json({ success: true, feedback });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/v1/psychology/history/snapshot', (req, res) => {
+  try {
+    const callerId = getCallerUserId(req);
+    const userId = req.body.userId || callerId || 'usr_me';
+    const { snapshotLabel, growthReflections } = req.body;
+
+    if (!snapshotLabel) {
+      return res.status(400).json({ success: false, error: 'Snapshot label is required' });
+    }
+
+    const snapshot = psychologyService.recordTraitSnapshot(userId, snapshotLabel, growthReflections);
+    res.json({ success: true, snapshot, message: 'Trait history snapshot recorded' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/v1/psychology/history/:userId', (req, res) => {
+  try {
+    const viewerId = (req.query.viewerId as string) || (req.headers['x-user-id'] as string) || 'usr_me';
+    const snapshots = psychologyService.getUserTraitHistory(req.params.userId, viewerId);
+    res.json({ success: true, snapshots });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/v1/psychology/compatibility', (req, res) => {
+  try {
+    const { userAId, userBId } = req.body;
+    if (!userAId || !userBId) {
+      return res.status(400).json({ success: false, error: 'Both userAId and userBId are required' });
+    }
+
+    const report = psychologyService.calculateCompatibilityResonance(userAId, userBId);
+    res.json({ success: true, report });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // ============================================================================
