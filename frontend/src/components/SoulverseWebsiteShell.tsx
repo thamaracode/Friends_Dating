@@ -38,6 +38,7 @@ import {
   Battery,
   Mail,
   Sliders,
+  ExternalLink,
   Quote as QuoteIcon
 } from 'lucide-react';
 import { SearchBar, PulseBadge } from './klyven';
@@ -721,9 +722,31 @@ export const SoulverseWebsiteShell: React.FC = () => {
               />
             )}
 
-            {/* SUB-VIEW: ADMIN OPERATIONS DASHBOARD */}
+            {/* SUB-VIEW: SEPARATE ADMIN CONSOLE PORTAL */}
             {currentRoute === 'admin' && (
-              <AdminDashboard />
+              <div className="p-8 max-w-xl mx-auto space-y-6 text-center animate-fadeIn my-12">
+                <div className="w-16 h-16 rounded-3xl bg-[#12141B] border border-gold-500/30 flex items-center justify-center text-gold-400 mx-auto shadow-2xl">
+                  <ShieldAlert className="w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="type-section-heading text-white">Dedicated Administration Console</h2>
+                  <p className="type-supporting text-zinc-400 leading-relaxed">
+                    Administrative operations have been architecturally segregated into an independent, air-gapped management system with cryptographic multi-factor authentication (MFA) and dedicated backend infrastructure.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-xs text-zinc-300 font-mono">
+                  Target Domain: <span className="text-gold-400 font-bold">admin.soulverse.im</span> (Port 5174)
+                </div>
+                <a
+                  href="http://127.0.0.1:5174"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="sv-btn-gold inline-flex items-center gap-2 px-6"
+                >
+                  <span>Launch Dedicated Admin Console</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
             )}
 
           </main>

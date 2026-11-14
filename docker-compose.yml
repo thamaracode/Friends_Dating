@@ -1,0 +1,91 @@
+services:
+  # 1. User Application Frontend (Public Domain: app.soulverse.im)
+  soulverse-user-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: soulverse-user-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_API_URL=http://localhost:3001
+    networks:
+      - soulverse-network
+
+  # 2. User API Service (Public REST & WebSockets: api.soulverse.im)
+  soulverse-user-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: soulverse-user-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - sqlite-data:/app/data
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - DB_PATH=/app/data/data.db
+    networks:
+      - soulverse-network
+
+  # 3. Dedicated Admin Frontend (Management Domain: admin.soulverse.im)
+  soulverse-admin-frontend:
+    build:
+      context: ./admin-frontend
+      dockerfile: Dockerfile
+    container_name: soulverse-admin-frontend
+    restart: unless-stopped
+    ports:
+      - "5174:80"
+    environment:
+      - VITE_ADMIN_API_URL=http://localhost:3002/api/v1/admin
+    networks:
+      - soulverse-network
+
+  # 4. Dedicated Admin API Service (Management Domain: admin-api.soulverse.im)
+  soulverse-admin-api:
+    build:
+      context: ./admin-backend
+      dockerfile: Dockerfile
+    container_name: soulverse-admin-api
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    volumes:
+      - sqlite-data:/app/data
+    environment:
+      - ADMIN_PORT=3002
+      - NODE_ENV=production
+      - DB_PATH=/app/data/data.db
+      - ADMIN_JWT_SECRET=production-hyper-secure-secret-random-hex-key
+      - ADMIN_CORS_ORIGIN=http://localhost:5174,https://admin.soulverse.im
+    networks:
+      - soulverse-network
+
+  # 5. Reverse Proxy Router for Subdomain Segregation
+  soulverse-proxy:
+    image: nginx:alpine
+    container_name: soulverse-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - soulverse-user-frontend
+      - soulverse-user-api
+      - soulverse-admin-frontend
+      - soulverse-admin-api
+    networks:
+      - soulverse-network
+
+volumes:
+  sqlite-data:
+    driver: local
+
+networks:
+  soulverse-network:
+    driver: bridge

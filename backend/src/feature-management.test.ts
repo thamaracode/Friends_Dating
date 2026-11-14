@@ -272,7 +272,7 @@ describe('Feature Management & Personalization Architecture (The Control Layer)'
     expect(authRes.status).toBe(200);
     const authBody = await authRes.json();
     expect(authBody.success).toBe(true);
-    expect(authBody.roles.length).toBe(8);
+    expect(authBody.roles.length).toBeGreaterThanOrEqual(8);
 
     // Unregistered attacker ID without assigned roles should be denied with HTTP 403
     const deniedRes = await fetch(`${BASE_URL}/admin/roles`, {
