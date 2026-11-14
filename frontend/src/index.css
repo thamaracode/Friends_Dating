@@ -1,9 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* Centralized Typography Families */
+  --font-heading: 'Plus Jakarta Sans', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-editorial: 'Playfair Display', 'Lora', Georgia, serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  font-family: var(--font-body);
   color-scheme: dark;
+
+  /* 10-Step Global Spacing System Tokens */
+  --space-micro: 4px;
+  --space-compact: 8px;
+  --space-small: 12px;
+  --space-standard: 16px;
+  --space-comfortable: 20px;
+  --space-card: 24px;
+  --space-section: 32px;
+  --space-major: 40px;
+  --space-large: 48px;
+  --space-transition: 64px;
 
   /* Klyven × Soulverse: Titanium Glass & Obsidian Architecture */
   --bg-primary: #090A0E;
@@ -19,7 +36,7 @@
   --glass-subtle-bg: rgba(255, 255, 255, 0.04);
   --glass-action-bg: rgba(28, 30, 38, 0.82);
 
-  /* Specular Highlight Rim (Klyven Pillar 3 - Physical Glass Reflection) */
+  /* Specular Highlight Rim (Physical Glass Reflection) */
   --glass-border: rgba(255, 255, 255, 0.09);
   --glass-border-hover: rgba(255, 255, 255, 0.22);
   --glass-border-active: rgba(255, 255, 255, 0.40);
@@ -34,7 +51,14 @@
   --color-text-muted: #9CA3AF;
   --color-ambient-silver: rgba(255, 255, 255, 0.05);
 
-  /* Kinetic Spring Physics Curves (Klyven Pillar 4) */
+  /* Selective, Restrained Gold Brand Accents */
+  --gold-400: #F6C138;
+  --gold-500: #E5A817;
+  --gold-border: rgba(246, 193, 56, 0.26);
+  --gold-muted: rgba(246, 193, 56, 0.10);
+  --gold-glow: 0 0 24px rgba(246, 193, 56, 0.16);
+
+  /* Kinetic Spring Physics Curves */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-bounce-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -55,13 +79,292 @@ body {
   padding: 0;
   background-color: var(--bg-primary);
   color: var(--color-text-main);
+  font-family: var(--font-body);
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
   selection-background-color: rgba(255, 255, 255, 0.25);
   selection-color: #FFFFFF;
+}
+
+/* ========================================================================= */
+/* CENTRALIZED TYPOGRAPHY SYSTEM CLASSES                                      */
+/* ========================================================================= */
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-editorial {
+  font-family: var(--font-editorial);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.type-hero {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 4vw, 2.5rem); /* 32px – 40px */
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.type-page-heading {
+  font-family: var(--font-heading);
+  font-size: clamp(1.75rem, 3vw, 2.125rem); /* 28px – 34px */
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.type-section-heading {
+  font-family: var(--font-heading);
+  font-size: 1.4375rem; /* 21px – 25px */
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.type-card-heading {
+  font-family: var(--font-heading);
+  font-size: 1.125rem; /* 17px – 20px */
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+  color: #F9FAFB;
+}
+
+.type-body {
+  font-family: var(--font-body);
+  font-size: 1rem; /* 15px – 17px */
+  line-height: 1.6;
+  letter-spacing: 0;
+  color: #E5E7EB;
+}
+
+.type-supporting {
+  font-family: var(--font-body);
+  font-size: 0.875rem; /* 13px – 14px */
+  line-height: 1.5;
+  color: #9CA3AF;
+}
+
+.type-metadata {
+  font-family: var(--font-body);
+  font-size: 0.75rem; /* 12px min limit */
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: #9CA3AF;
+}
+
+.type-editorial-quote {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: clamp(1.25rem, 2.5vw, 1.875rem);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: #F9FAFB;
+}
+
+/* ========================================================================= */
+/* STANDARDIZED SOULVERSE COMPONENT GEOMETRY & RESTYLED UTILITIES             */
+/* ========================================================================= */
+
+/* Standard Card (Spacious, Elegant, Restrained) */
+.sv-card {
+  background: var(--glass-card-bg);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.5rem; /* 24px */
+  padding: 1.5rem;       /* 24px comfortable padding */
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.40), var(--glass-specular);
+  transition: transform 0.22s var(--ease-spring), border-color 0.22s var(--ease-spring), box-shadow 0.22s var(--ease-spring), background 0.22s var(--ease-spring);
+}
+
+@media (max-width: 640px) {
+  .sv-card {
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+  }
+}
+
+.sv-card-interactive {
+  background: var(--glass-card-bg);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.40), var(--glass-specular);
+  transition: transform 0.22s var(--ease-spring), border-color 0.22s var(--ease-spring), box-shadow 0.22s var(--ease-spring), background 0.22s var(--ease-spring);
+}
+
+.sv-card-interactive:hover {
+  background: rgba(24, 27, 36, 0.72);
+  border-color: var(--glass-border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 44px -4px rgba(0, 0, 0, 0.65), var(--glass-specular-bright), 0 0 20px -2px rgba(255, 255, 255, 0.06);
+}
+
+/* Standard Touch-Compliant Buttons (Min 44px Height) */
+.sv-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border-radius: 0.875rem;
+  background: #FFFFFF;
+  color: #090A0E;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 18px -2px rgba(255, 255, 255, 0.25);
+  transition: transform 0.15s var(--ease-spring), background 0.15s var(--ease-spring), box-shadow 0.15s var(--ease-spring);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sv-btn-primary:hover {
+  background: #E5E7EB;
+  box-shadow: 0 6px 24px -2px rgba(255, 255, 255, 0.40);
+  transform: translateY(-1px);
+}
+
+.sv-btn-primary:active {
+  transform: scale(0.97);
+}
+
+.sv-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #F3F4F6;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: transform 0.15s var(--ease-spring), background 0.15s var(--ease-spring), border-color 0.15s var(--ease-spring);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sv-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+}
+
+.sv-btn-secondary:active {
+  transform: scale(0.97);
+}
+
+/* Selective Restrained Gold Button for Signature Actions */
+.sv-btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, #F6C138 0%, #E5A817 100%);
+  color: #090A0E;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: 1px solid rgba(246, 193, 56, 0.6);
+  box-shadow: 0 4px 20px -2px rgba(246, 193, 56, 0.35);
+  transition: transform 0.15s var(--ease-spring), filter 0.15s var(--ease-spring);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sv-btn-gold:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.sv-btn-gold:active {
+  transform: scale(0.97);
+}
+
+/* Standardized Form Inputs (48px Height) */
+.sv-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 1rem;
+  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #F9FAFB;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: border-color 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-spring);
+}
+
+.sv-input::placeholder {
+  color: #6B7280;
+}
+
+.sv-input:focus {
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
+}
+
+/* Standardized Section Container & Vertical Rhythm */
+.sv-screen-container {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  padding-top: 1.5rem;
+  padding-bottom: 7rem;
+}
+
+@media (min-width: 640px) {
+  .sv-screen-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-top: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .sv-screen-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+    padding-top: 2.5rem;
+  }
+}
+
+.sv-section-spacer {
+  margin-bottom: 2.5rem; /* 40px major separation */
 }
 
 /* ========================================================================= */

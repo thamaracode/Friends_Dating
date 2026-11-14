@@ -98,25 +98,25 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
       <div className="space-y-4 max-h-[82vh] overflow-y-auto no-scrollbar pr-1">
         
         {/* SERENE HEADER BANNER */}
-        <div className="p-5 rounded-3xl dark-glass border border-white/15 relative overflow-hidden shadow-2xl">
+        <div className="p-6 sm:p-7 rounded-3xl dark-glass border border-white/15 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-rose-500/10 via-purple-500/5 to-transparent pointer-events-none" />
 
-          <div className="space-y-1.5">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-300 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+          <div className="space-y-2">
+            <span className="type-metadata font-mono font-bold uppercase tracking-wider text-rose-300 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
               <span>Sanctuary of Quiet Depth</span>
             </span>
-            <h3 className="text-xl font-black text-white font-serif tracking-tight">
+            <h3 className="type-section-heading text-white tracking-tight">
               The Unspoken & The Inner Room
             </h3>
-            <p className="text-xs text-zinc-300 leading-relaxed max-w-lg">
+            <p className="type-supporting text-zinc-300 leading-relaxed max-w-lg">
               For everything you feel but don't always know how to say. No matching required, no pressure to perform. Just a quiet room to breathe and reflect.
             </p>
           </div>
         </div>
 
         {/* NAVIGATION TABS */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/[0.04] border border-white/10 overflow-x-auto no-scrollbar text-xs">
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/[0.04] border border-white/10 overflow-x-auto no-scrollbar">
           {[
             { id: 'inner_room' as const, label: '🧘 The Inner Room' },
             { id: 'unspoken' as const, label: '✨ The Unspoken' },
@@ -128,10 +128,10 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+              className={`h-10 px-4 rounded-xl font-heading font-semibold text-xs whitespace-nowrap transition-all cursor-pointer ${
                 activeTab === tab.id
                   ? 'bg-white text-[#090A0E] shadow-md'
-                  : 'text-zinc-400 hover:text-white'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.05]'
               }`}
             >
               {tab.label}
@@ -143,14 +143,14 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
         {/* TAB 1: THE INNER ROOM (MOOD-BASED EMOTIONAL DISCOVERY ENGINE)     */}
         {/* ================================================================= */}
         {activeTab === 'inner_room' && (
-          <div className="space-y-4 animate-fadeIn">
+          <div className="space-y-6 animate-fadeIn">
             
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+            <div className="space-y-3">
+              <label className="type-metadata font-bold text-zinc-400 uppercase tracking-wider block">
                 What do you feel like reading right now?
               </label>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {[
                   { id: 'vulnerable' as const, label: '🫂 I want to feel understood' },
                   { id: 'romantic' as const, label: '❤️ I want to understand love' },
@@ -162,7 +162,7 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
                   <button
                     key={mood.id}
                     onClick={() => setSelectedMood(mood.id)}
-                    className={`p-2.5 rounded-2xl border text-left text-xs font-semibold transition-all cursor-pointer ${
+                    className={`min-h-[44px] p-3 rounded-2xl border text-left text-xs font-semibold transition-all cursor-pointer ${
                       selectedMood === mood.id
                         ? 'bg-white text-[#090A0E] font-bold shadow-md scale-[1.01]'
                         : 'bg-white/[0.03] border-white/10 text-zinc-300 hover:text-white hover:bg-white/[0.06]'
@@ -175,30 +175,30 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
             </div>
 
             {/* Displaying Thought / Question Cards for this Mood */}
-            <div className="space-y-3 pt-2">
-              <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider block">
+            <div className="space-y-4 pt-2">
+              <span className="type-metadata uppercase font-bold text-zinc-400 tracking-wider block">
                 A Little Reflection For This Moment
               </span>
 
               {currentMoodItems.map(item => (
                 <div
                   key={item.id}
-                  className="p-4 sm:p-5 rounded-3xl dark-glass border border-white/10 hover:border-white/20 transition-all space-y-3 shadow-lg"
+                  className="sv-card p-5 sm:p-6 space-y-4 shadow-lg"
                 >
-                  <blockquote className="text-sm sm:text-base font-serif italic text-white leading-relaxed">
+                  <blockquote className="font-editorial italic text-base sm:text-lg text-white/95 leading-relaxed">
                     "{item.content}"
                   </blockquote>
 
                   {item.subtext && (
-                    <p className="text-xs text-zinc-400 leading-normal">
+                    <p className="type-supporting text-zinc-300 leading-relaxed">
                       {item.subtext}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-xs">
+                  <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {item.tags.map(t => (
-                        <span key={t} className="px-2 py-0.5 rounded-md bg-white/5 text-zinc-400 text-[10px]">
+                        <span key={t} className="px-2.5 py-1 rounded-md bg-white/5 text-zinc-400 type-metadata">
                           #{t}
                         </span>
                       ))}
@@ -207,17 +207,17 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleCopy(item.id, item.content)}
-                        className="px-2.5 py-1 rounded-xl bg-white/[0.06] hover:bg-white/15 text-zinc-300 text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                        className="h-8 px-3 rounded-xl bg-white/[0.06] hover:bg-white/15 text-zinc-300 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
                       >
-                        {copiedId === item.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        {copiedId === item.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                         <span>{copiedId === item.id ? 'Copied' : 'Copy'}</span>
                       </button>
 
                       <button
                         onClick={() => handleSave(item.id, item.content)}
-                        className="px-2.5 py-1 rounded-xl bg-white/[0.06] hover:bg-white/15 text-zinc-300 text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                        className="h-8 px-3 rounded-xl bg-white/[0.06] hover:bg-white/15 text-zinc-300 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
                       >
-                        {savedId === item.id ? <Check className="w-3 h-3 text-rose-400" /> : <Bookmark className="w-3 h-3" />}
+                        {savedId === item.id ? <Check className="w-3.5 h-3.5 text-rose-400" /> : <Bookmark className="w-3.5 h-3.5" />}
                         <span>{savedId === item.id ? 'Saved' : 'Save'}</span>
                       </button>
                     </div>
@@ -233,25 +233,25 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
         {/* TAB 2: THE UNSPOKEN SIGNATURE THOUGHTS                            */}
         {/* ================================================================= */}
         {activeTab === 'unspoken' && (
-          <div className="space-y-3.5 animate-fadeIn">
+          <div className="space-y-4 animate-fadeIn">
             {THE_UNSPOKEN_COLLECTION.map(thought => (
               <div
                 key={thought.id}
-                className="p-5 rounded-3xl dark-glass border border-white/10 space-y-3 shadow-lg"
+                className="sv-card p-6 space-y-3.5 shadow-lg"
               >
-                <h4 className="text-sm sm:text-base font-serif italic text-white leading-relaxed">
+                <h4 className="font-editorial italic text-base sm:text-lg text-white/95 leading-relaxed">
                   "{thought.content}"
                 </h4>
-                <p className="text-xs text-zinc-400">
+                <p className="type-supporting text-zinc-300 leading-relaxed">
                   {thought.subtext}
                 </p>
 
-                <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-xs">
-                  <span className="text-[10px] text-zinc-500 font-mono">The Unspoken Archive</span>
+                <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
+                  <span className="type-metadata text-zinc-500 font-mono">The Unspoken Archive</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleCopy(thought.id, thought.content)}
-                      className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold cursor-pointer"
+                      className="h-8 px-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold cursor-pointer"
                     >
                       {copiedId === thought.id ? 'Copied ✓' : 'Copy Thought'}
                     </button>
@@ -266,8 +266,8 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
         {/* TAB 3: MIDNIGHT THOUGHTS                                          */}
         {/* ================================================================= */}
         {activeTab === 'midnight' && (
-          <div className="space-y-3.5 animate-fadeIn">
-            <div className="p-3.5 rounded-2xl bg-indigo-950/20 border border-indigo-500/20 text-xs text-indigo-200 leading-relaxed">
+          <div className="space-y-4 animate-fadeIn">
+            <div className="p-4 rounded-2xl bg-indigo-950/20 border border-indigo-500/20 type-supporting text-indigo-200 leading-relaxed">
               <Moon className="w-4 h-4 text-indigo-400 inline mr-2" />
               Special evening collection for quiet late-night contemplation when the rest of the world is asleep.
             </div>
@@ -275,12 +275,12 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
             {MIDNIGHT_THOUGHTS_COLLECTION.map(item => (
               <div
                 key={item.id}
-                className="p-5 rounded-3xl dark-glass border border-white/10 space-y-2.5 shadow-lg"
+                className="sv-card p-6 space-y-3 shadow-lg"
               >
-                <blockquote className="text-sm sm:text-base font-serif italic text-white leading-relaxed">
+                <blockquote className="font-editorial italic text-base sm:text-lg text-white/95 leading-relaxed">
                   "{item.content}"
                 </blockquote>
-                <p className="text-xs text-zinc-400">{item.subtext}</p>
+                <p className="type-supporting text-zinc-300 leading-relaxed">{item.subtext}</p>
               </div>
             ))}
           </div>
@@ -290,8 +290,8 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
         {/* TAB 4: UNOPENED LETTERS (EASTER EGG IN QUIET CORNERS)             */}
         {/* ================================================================= */}
         {activeTab === 'letters' && (
-          <div className="space-y-3.5 animate-fadeIn">
-            <p className="text-xs text-zinc-400">
+          <div className="space-y-4 animate-fadeIn">
+            <p className="type-supporting text-zinc-300">
               Warm letters from quiet corners of the universe waiting to be opened when you need them.
             </p>
 
@@ -300,18 +300,18 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
                 <div
                   key={lettr.id}
                   onClick={() => setActiveLetter(lettr)}
-                  className="p-4 rounded-3xl dark-glass border border-white/10 hover:border-white/25 transition-all cursor-pointer space-y-2 shadow-md group"
+                  className="sv-card p-5 hover:border-white/25 transition-all cursor-pointer space-y-2 shadow-md group"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <Mail className="w-4 h-4 text-amber-300" />
-                      <span className="text-xs font-bold text-white group-hover:text-amber-200 transition-colors">
+                      <span className="text-sm font-heading font-semibold text-white group-hover:text-amber-200 transition-colors">
                         {lettr.title}
                       </span>
                     </div>
-                    <span className="text-[10px] font-bold text-zinc-400">Open Letter ›</span>
+                    <span className="type-metadata font-bold text-zinc-400">Open Letter ›</span>
                   </div>
-                  <p className="text-xs text-zinc-300 italic">
+                  <p className="type-supporting text-zinc-300 font-editorial italic">
                     "{lettr.previewPrompt}"
                   </p>
                 </div>
@@ -319,10 +319,10 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
             </div>
 
             {activeLetter && (
-              <div className="p-5 rounded-3xl bg-[#141620] border border-amber-400/30 space-y-3 animate-fadeIn shadow-2xl relative">
+              <div className="p-6 rounded-3xl bg-[#141620] border border-amber-400/30 space-y-3.5 animate-fadeIn shadow-2xl relative">
                 <button
                   onClick={() => setActiveLetter(null)}
-                  className="absolute top-3 right-3 text-zinc-400 hover:text-white"
+                  className="w-8 h-8 rounded-full flex items-center justify-center absolute top-4 right-4 text-zinc-400 hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -330,10 +330,10 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
                   <Mail className="w-4 h-4" />
                   <span>{activeLetter.title}</span>
                 </div>
-                <p className="text-xs sm:text-sm text-zinc-200 leading-relaxed font-serif italic">
+                <p className="font-editorial italic text-base sm:text-lg text-zinc-100 leading-relaxed">
                   "{activeLetter.message}"
                 </p>
-                <p className="text-xs text-amber-300 font-semibold pt-1">
+                <p className="text-sm text-amber-300 font-semibold pt-1">
                   — {activeLetter.closing}
                 </p>
               </div>

@@ -828,16 +828,16 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               </div>
 
               <div>
-                <div className="flex items-center gap-1">
-                  <h3 className="text-xs font-bold text-[#F3F4F6]">{currentConv.title}</h3>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-sm font-heading font-bold text-white tracking-tight">{currentConv.title}</h3>
                   {currentConv.isVerified && (
-                    <TgEmoji id="5206607081334906820" fallback="✅" size={14} title="Verified Telegram Identity" />
+                    <TgEmoji id="5206607081334906820" fallback="✅" size={15} title="Verified Telegram Identity" />
                   )}
-                  <TgEmoji id="5172484558305625218" fallback="⭐" size={14} title="Telegram Premium Stars VIP" />
+                  <TgEmoji id="5172484558305625218" fallback="⭐" size={15} title="Telegram Premium Stars VIP" />
                 </div>
-                <span className="text-[10px] text-[#9CA3AF]">
+                <span className="type-metadata text-zinc-400">
                   {typingPartnerText ? (
-                    <span className="text-[#FFFFFF] font-semibold animate-pulse">{typingPartnerText}</span>
+                    <span className="text-amber-300 font-semibold animate-pulse">{typingPartnerText}</span>
                   ) : (
                     currentConv.lastSeenText
                   )}
@@ -847,14 +847,14 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
           </div>
 
           {/* Calling, Search & Settings Options */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {/* Before You Talk / Relationship Memory Briefing Pill */}
             <button
               onClick={() => setIsBriefingOpen(true)}
-              className="px-2.5 py-1 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-sm"
+              className="h-9 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/25 text-xs font-heading font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
               title="Before You Talk Instant Briefing"
             >
-              <Sparkles className="w-3 h-3 text-rose-300" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span className="hidden sm:inline">Before You Talk</span>
             </button>
             {/* One Question, Two People Mutual Game Pill */}
@@ -1357,8 +1357,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             </div>
           </div>
         ) : (
-          <div className="p-3 bg-[#180412]/95 border-t border-[#FF1A75]/20 backdrop-blur-2xl">
-            <div className="max-w-3xl xl:max-w-4xl mx-auto w-full flex items-center gap-2">
+          <div className="p-4 bg-[#12141B]/95 border-t border-white/[0.08] backdrop-blur-2xl">
+            <div className="max-w-3xl xl:max-w-4xl mx-auto w-full flex items-center gap-2.5">
               <button
                 onClick={() => setIsActionDockOpen(!isActionDockOpen)}
                 className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${

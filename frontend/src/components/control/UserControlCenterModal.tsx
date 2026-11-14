@@ -311,55 +311,55 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
         <div className="w-full max-w-5xl h-[94vh] dark-glass border border-white/15 rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.95)] flex flex-col overflow-hidden relative">
           
           {/* Top Bar Header */}
-          <div className="h-16 border-b border-white/10 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-white/[0.02]">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner">
-                <Sliders className="w-4 h-4 text-zinc-200" />
+          <div className="h-16 sm:h-20 border-b border-white/10 px-5 sm:px-8 flex items-center justify-between shrink-0 bg-[#12141B]/80 backdrop-blur-xl">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner">
+                <Sliders className="w-5 h-5 text-gold-400" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white font-serif tracking-tight flex items-center gap-2">
+                <h3 className="type-card-heading text-white tracking-tight flex items-center gap-2.5">
                   <span>My App Control Center</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-zinc-300">
+                  <span className="type-metadata font-mono px-2 py-0.5 rounded-full bg-white/10 text-zinc-300">
                     v7.42.1
                   </span>
                 </h3>
-                <p className="text-[11px] text-zinc-400">
+                <p className="type-metadata text-zinc-400">
                   Everything available. Nothing forced. Everything understandable.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               {/* Feature Discovery Buttons */}
               <button
                 onClick={() => setIsGlossaryOpen(true)}
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl dark-glass border border-white/10 text-xs text-zinc-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="hidden md:flex items-center gap-2 h-10 px-4 rounded-xl dark-glass border border-white/10 text-xs font-heading font-semibold text-zinc-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 title="Browse Architecture Glossary"
               >
-                <BookOpen className="w-3.5 h-3.5" />
+                <BookOpen className="w-4 h-4" />
                 <span>Glossary</span>
               </button>
 
               <button
                 onClick={() => setIsWhatsNewOpen(true)}
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl dark-glass border border-white/10 text-xs text-emerald-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="hidden md:flex items-center gap-2 h-10 px-4 rounded-xl dark-glass border border-white/10 text-xs font-heading font-semibold text-emerald-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 title="What's New in this Release"
               >
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <Sparkles className="w-4 h-4 text-emerald-400" />
                 <span>What's New</span>
               </button>
 
               {/* Setup completion indicator */}
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-zinc-300">
+              <div className="hidden sm:flex items-center gap-2 h-10 px-4 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-zinc-300">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span>{completionPercentage}% Active</span>
               </div>
 
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full dark-glass border border-white/15 flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer"
+                className="w-10 h-10 rounded-full dark-glass border border-white/15 flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -368,8 +368,8 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
           <div className="flex-1 flex min-h-0 overflow-hidden">
             
             {/* Left Nav Menu */}
-            <aside className="w-56 sm:w-64 border-r border-white/10 p-3 space-y-1 overflow-y-auto no-scrollbar shrink-0 bg-black/30">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 px-3 py-1.5">
+            <aside className="w-60 sm:w-68 border-r border-white/10 p-4 space-y-1.5 overflow-y-auto no-scrollbar shrink-0 bg-black/40">
+              <div className="type-metadata font-bold uppercase tracking-wider text-zinc-500 px-3 py-2">
                 Architecture Sections
               </div>
               {sections.map(sec => {
@@ -379,18 +379,18 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
                   <button
                     key={sec.id}
                     onClick={() => setActiveSection(sec.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                    className={`w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-heading font-semibold transition-all cursor-pointer ${
                       isActive 
-                        ? 'bg-white text-[#090A0E] font-bold shadow-lg shadow-white/5' 
+                        ? 'bg-white text-[#090A0E] shadow-lg shadow-white/5' 
                         : 'text-zinc-400 hover:text-white hover:bg-white/[0.05]'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Icon className="w-4 h-4 shrink-0" />
                       <span className="truncate">{sec.label}</span>
                     </div>
                     {sec.badge && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                      <span className={`text-[11px] px-2 py-0.5 rounded-md font-mono ${
                         isActive ? 'bg-[#090A0E]/15 text-[#090A0E]' : 'bg-white/10 text-zinc-300'
                       }`}>
                         {sec.badge}
@@ -402,16 +402,16 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
             </aside>
 
             {/* Right Scrollable Content Pane */}
-            <main className="flex-1 p-4 sm:p-6 overflow-y-auto no-scrollbar space-y-6">
+            <main className="flex-1 p-6 sm:p-8 overflow-y-auto no-scrollbar space-y-8">
               
               {/* SECTION 1: MY EXPERIENCE (PRESETS) */}
               {activeSection === 'experience' && (
                 <div className="space-y-6 animate-fadeIn">
                   <div>
-                    <h3 className="text-lg font-serif font-bold text-white tracking-tight">
+                    <h3 className="type-section-heading text-white tracking-tight">
                       Choose Your Experience Preset
                     </h3>
-                    <p className="text-xs text-zinc-400 leading-relaxed mt-0.5">
+                    <p className="type-supporting text-zinc-400 leading-relaxed mt-1">
                       Presets provide ready-made starting configurations. You can customize any individual feature anytime afterward.
                     </p>
                   </div>

@@ -253,32 +253,34 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
   };
 
   return (
-    <div className="w-full space-y-5 pb-28 max-w-xl mx-auto animate-fadeIn">
+    <div className="w-full space-y-8 pb-32 max-w-2xl mx-auto animate-fadeIn px-1 sm:px-2">
       
       {/* 1. TOP HEADER ACTIONS */}
-      <div className="flex items-center justify-between px-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         <div>
-          <h1 className="text-lg font-black text-white font-serif tracking-tight flex items-center gap-2">
-            <User className="w-5 h-5 text-zinc-300" />
+          <h1 className="type-page-heading flex items-center gap-2.5">
+            <User className="w-6 h-6 text-amber-300" />
             <span>Identity Sanctuary</span>
           </h1>
-          <p className="text-[11px] text-zinc-400">Multiple lives, real identity, timeline and external integrations</p>
+          <p className="type-supporting mt-1">Multiple lives, real identity, timeline and external integrations</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <button
             onClick={onNavigateToSettings}
-            className="p-2 rounded-2xl bg-white/[0.06] hover:bg-white/15 text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+            className="h-10 px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer flex items-center gap-2 text-xs font-heading font-semibold"
             title="Settings"
           >
             <Settings className="w-4 h-4" />
+            <span>Settings</span>
           </button>
           <button
             onClick={onNavigateToAdmin}
-            className="p-2 rounded-2xl bg-white/[0.06] hover:bg-white/15 text-emerald-400 border border-emerald-500/20 transition-colors cursor-pointer"
+            className="h-10 px-3.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/25 transition-colors cursor-pointer flex items-center gap-2 text-xs font-heading font-semibold"
             title="Admin Console"
           >
             <ShieldAlert className="w-4 h-4" />
+            <span>Admin</span>
           </button>
         </div>
       </div>
@@ -290,19 +292,19 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
       />
 
       {/* 2. PERSONA SWITCHER PILLS (Real Me, Cinematic Me, Fantasy Life, Aspirational) */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between px-1 text-[11px] font-bold">
-          <span className="text-zinc-400 uppercase tracking-wider">Switch Persona & Universe</span>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-1 text-xs font-heading font-bold">
+          <span className="text-zinc-400 uppercase tracking-wider">Switch Persona &amp; Universe</span>
           <button 
             onClick={onOpenCharacterBuilder}
-            className="text-zinc-300 hover:text-white flex items-center gap-1 cursor-pointer"
+            className="text-amber-300 hover:text-white flex items-center gap-1.5 cursor-pointer transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>Add Persona</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-1">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
           {[
             { id: 'real' as const, label: '👤 Real Me', sub: 'Verified' },
             { id: 'cinematic' as const, label: '🎬 Cinematic Me', sub: 'Noir' },
@@ -312,10 +314,10 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
             <button
               key={p.id}
               onClick={() => setActivePersona(p.id)}
-              className={`px-3 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`h-10 px-4 rounded-full text-xs font-heading font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                 activePersona === p.id
-                  ? 'bg-white text-[#090A0E] shadow-lg scale-[1.02]'
-                  : 'bg-white/[0.04] text-zinc-400 hover:text-white border border-white/10'
+                  ? 'bg-white text-[#090A0E] shadow-md font-bold'
+                  : 'bg-white/[0.04] text-zinc-300 hover:text-white hover:bg-white/[0.08] border border-white/10'
               }`}
             >
               <span>{p.label}</span>
@@ -325,26 +327,26 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
       </div>
 
       {/* 3. HERO IDENTITY CARD */}
-      <div className="rounded-3xl dark-glass border border-white/15 overflow-hidden shadow-2xl relative">
+      <div className="sv-card p-0 overflow-hidden relative">
         {/* Cover Image */}
-        <div className="relative h-36 sm:h-44 w-full overflow-hidden bg-black/60">
+        <div className="relative h-44 sm:h-56 w-full overflow-hidden bg-black/60">
           <img
             src={currentPersona.cover}
             alt="Cover"
             className="w-full h-full object-cover transition-all duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#090A0E] via-black/30 to-black/30 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#090A0E] via-black/35 to-black/30 pointer-events-none" />
 
           {/* Persona Verification Disclaimer Tag */}
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-4 left-4">
             {currentPersona.isVerifiedReal ? (
-              <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/80 backdrop-blur-md text-white border border-emerald-400/40 flex items-center gap-1.5 shadow-md">
-                <ShieldCheck className="w-3.5 h-3.5" />
+              <span className="h-8 px-3.5 rounded-full text-xs font-heading font-bold bg-emerald-500/80 backdrop-blur-md text-white border border-emerald-400/40 flex items-center gap-1.5 shadow-md">
+                <ShieldCheck className="w-4 h-4" />
                 <span>Verified Real-Life Human</span>
               </span>
             ) : (
-              <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-purple-500/80 backdrop-blur-md text-white border border-purple-400/40 flex items-center gap-1.5 shadow-md">
-                <Sparkles className="w-3.5 h-3.5" />
+              <span className="h-8 px-3.5 rounded-full text-xs font-heading font-bold bg-purple-500/80 backdrop-blur-md text-white border border-purple-400/40 flex items-center gap-1.5 shadow-md">
+                <Sparkles className="w-4 h-4" />
                 <span>Fictional / Creative Universe</span>
               </span>
             )}
@@ -352,7 +354,7 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
 
           <button
             onClick={onEditProfileModal}
-            className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md hover:bg-black/80 text-white text-xs font-bold border border-white/20 flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="absolute top-4 right-4 h-9 px-3.5 rounded-xl bg-black/60 backdrop-blur-md hover:bg-black/80 text-white text-xs font-heading font-bold border border-white/20 flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Edit3 className="w-3.5 h-3.5" />
             <span>Edit</span>
@@ -360,10 +362,10 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
         </div>
 
         {/* Profile Avatar & Info Section */}
-        <div className="px-4 sm:px-6 pb-6 pt-0 relative">
-          <div className="flex justify-between items-end -mt-12 mb-3">
+        <div className="px-6 sm:px-8 pb-8 pt-0 relative">
+          <div className="flex justify-between items-end -mt-14 mb-4">
             <div className="relative">
-              <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full overflow-hidden border-3 border-[#090A0E] shadow-2xl bg-black ring-2 ring-white/20">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-[#090A0E] shadow-2xl bg-black ring-2 ring-white/20">
                 <img
                   src={currentPersona.avatar}
                   alt={currentPersona.name}
@@ -378,16 +380,16 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
                 navigator.clipboard.writeText('https://soulverse.im/@kavindu');
                 alert('Profile link copied!');
               }}
-              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/15 flex items-center gap-1.5 cursor-pointer transition-all"
+              className="h-10 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-heading font-bold border border-white/15 flex items-center gap-2 cursor-pointer transition-all"
             >
-              <Share2 className="w-3.5 h-3.5" />
+              <Share2 className="w-4 h-4" />
               <span>Share Profile</span>
             </button>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-white font-serif tracking-tight">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading tracking-tight">
                 {currentPersona.name}
               </h2>
               {currentPersona.isVerifiedReal && (
@@ -395,27 +397,27 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
               )}
             </div>
 
-            <p className="text-xs font-medium text-zinc-300">
+            <p className="type-card-heading text-zinc-300 font-medium">
               {currentPersona.title}
             </p>
 
-            <p className="text-xs text-zinc-400 italic pt-1">
+            <p className="type-body text-zinc-400 italic pt-1">
               "{currentPersona.tagline}"
             </p>
           </div>
 
-          <p className="text-xs text-zinc-300 leading-relaxed mt-3 pt-3 border-t border-white/[0.08]">
+          <p className="type-body text-zinc-200 leading-relaxed mt-4 pt-4 border-t border-white/[0.08]">
             {currentPersona.bio}
           </p>
 
           {/* Persona Specific Attributes Grid */}
-          <div className="grid grid-cols-2 gap-2 mt-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
             {currentPersona.attributes.map(attr => (
-              <div key={attr.label} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs">
-                <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block">
+              <div key={attr.label} className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs">
+                <span className="text-[11px] text-zinc-400 uppercase font-heading font-bold tracking-wider block">
                   {attr.label}
                 </span>
-                <span className="text-zinc-200 font-semibold mt-0.5 block truncate">
+                <span className="text-zinc-100 font-semibold mt-1 block truncate text-sm">
                   {attr.value}
                 </span>
               </div>
@@ -425,36 +427,36 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
       </div>
 
       {/* 4. LIFE TIMELINE EXPLORER (Historical BCE/BC, Modern, Imagined) */}
-      <div className="rounded-3xl dark-glass border border-white/15 p-5 space-y-4 shadow-xl">
+      <div className="sv-card space-y-5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-zinc-300" />
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-              Life Timeline & Eras
+          <div className="flex items-center gap-2.5">
+            <Clock className="w-5 h-5 text-amber-300" />
+            <h3 className="type-card-heading font-bold text-white uppercase tracking-wider">
+              Life Timeline &amp; Eras
             </h3>
           </div>
           <button
             onClick={onNavigateToTimeline}
-            className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            className="text-xs font-heading font-bold text-amber-300 hover:text-white transition-colors cursor-pointer"
           >
             Full Timeline ›
           </button>
         </div>
 
-        <p className="text-xs text-zinc-400">
+        <p className="type-supporting text-zinc-300">
           Explore historical milestones, present entries, or imagined future timelines.
         </p>
 
         {/* Timeline Year Scrubber Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
           {Object.keys(timelineMilestones).map(year => (
             <button
               key={year}
               onClick={() => setSelectedTimelineYear(year)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              className={`h-10 px-4 rounded-xl text-xs font-heading font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center ${
                 selectedTimelineYear === year
                   ? 'bg-white text-[#090A0E] shadow-md'
-                  : 'bg-white/[0.04] text-zinc-400 hover:text-white border border-white/10'
+                  : 'bg-white/[0.04] text-zinc-300 hover:text-white hover:bg-white/[0.08] border border-white/10'
               }`}
             >
               {year}
@@ -464,68 +466,68 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
 
         {/* Milestone Detail Card */}
         {timelineMilestones[selectedTimelineYear] && (
-          <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2">
-            <div className="flex items-center justify-between text-[10px] font-bold">
-              <span className="text-zinc-400 uppercase tracking-wider">
+          <div className="p-5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2.5">
+            <div className="flex items-center justify-between text-xs font-heading font-bold">
+              <span className="text-amber-300 uppercase tracking-wider">
                 {timelineMilestones[selectedTimelineYear].era}
               </span>
-              <span className="px-2 py-0.5 rounded-md bg-white/10 text-white">
+              <span className="px-2.5 py-1 rounded-md bg-white/10 text-white font-medium">
                 {timelineMilestones[selectedTimelineYear].tag}
               </span>
             </div>
-            <h4 className="text-sm font-bold text-white tracking-tight">
+            <h4 className="type-card-heading font-bold text-white tracking-tight">
               {timelineMilestones[selectedTimelineYear].title}
             </h4>
-            <p className="text-xs text-zinc-300 leading-relaxed">
+            <p className="type-body text-zinc-300 leading-relaxed">
               {timelineMilestones[selectedTimelineYear].description}
             </p>
           </div>
         )}
       </div>
 
-      {/* 5. EXTERNAL SOCIAL INTEGRATIONS (Prompt Section 5: Granular & Revocable) */}
-      <div className="rounded-3xl dark-glass border border-white/15 p-5 space-y-4 shadow-xl">
+      {/* 5. EXTERNAL SOCIAL INTEGRATIONS */}
+      <div className="sv-card space-y-5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe2 className="w-4 h-4 text-zinc-300" />
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-              Connected Platforms & Integrations
+          <div className="flex items-center gap-2.5">
+            <Globe2 className="w-5 h-5 text-amber-300" />
+            <h3 className="type-card-heading font-bold text-white uppercase tracking-wider">
+              Connected Platforms &amp; Integrations
             </h3>
           </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+          <span className="text-xs font-heading font-bold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
             Granular Controls
           </span>
         </div>
 
-        <p className="text-xs text-zinc-400 leading-relaxed">
+        <p className="type-supporting text-zinc-300 leading-relaxed">
           Link external services to verify your identity, showcase music taste, or share social handles. Permissions are granular and revocable at any time.
         </p>
 
-        {/* Integration Rows */}
-        <div className="space-y-2.5">
+        {/* Integration Rows with comfortable spacing */}
+        <div className="space-y-3">
           {socialIntegrations.map(integ => (
             <div
               key={integ.id}
-              className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] transition-colors flex items-center justify-between gap-3 text-xs"
+              className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] transition-colors flex items-center justify-between gap-4"
             >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-white tracking-tight">{integ.name}</span>
+              <div className="min-w-0 space-y-1">
+                <div className="flex items-center gap-2.5">
+                  <span className="font-heading font-bold text-white text-sm sm:text-base">{integ.name}</span>
                   {integ.enabled ? (
-                    <span className="text-[9px] font-bold px-2 py-0.2 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 flex items-center gap-1">
-                      <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                    <span className="text-xs font-heading font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                       <span>Connected</span>
                     </span>
                   ) : (
-                    <span className="text-[9px] font-bold px-2 py-0.2 rounded-full bg-white/5 text-zinc-500 border border-white/10">
+                    <span className="text-xs font-heading font-medium px-2.5 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10">
                       Optional
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
+                <p className="type-supporting text-zinc-300 truncate">
                   {integ.description}
                 </p>
-                <code className="text-[10px] text-zinc-500 font-mono block mt-1">
+                <code className="text-xs text-zinc-400 font-mono block pt-0.5">
                   {integ.handle}
                 </code>
               </div>
@@ -533,7 +535,7 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
               {/* Action Toggle / Connect Button */}
               <div className="shrink-0">
                 {integ.isPrimary ? (
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase px-2 py-1 bg-white/5 rounded-lg">
+                  <span className="text-xs font-heading font-bold text-zinc-400 uppercase px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
                     Primary SSO
                   </span>
                 ) : (
@@ -545,7 +547,7 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
                         toggleIntegration(integ.id);
                       }
                     }}
-                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                    className={`h-10 px-4 rounded-xl font-heading font-bold text-xs transition-all cursor-pointer ${
                       integ.enabled
                         ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20'
                         : 'bg-white/10 hover:bg-white/20 text-white border border-white/15'
@@ -561,33 +563,37 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
       </div>
 
       {/* 6. PLATFORM SETTINGS & OPS ACCESS */}
-      <div className="space-y-2 pt-1">
+      <div className="space-y-3 pt-1">
         <button
           onClick={onNavigateToSettings}
-          className="w-full p-4 rounded-2xl dark-glass border border-white/10 hover:border-white/20 flex items-center justify-between text-xs cursor-pointer transition-all"
+          className="w-full p-5 rounded-2xl dark-glass border border-white/10 hover:border-white/25 flex items-center justify-between text-left cursor-pointer transition-all"
         >
-          <div className="flex items-center gap-3">
-            <Sliders className="w-4 h-4 text-zinc-300" />
-            <div className="text-left">
-              <span className="font-bold text-white block">Discovery Preferences & Visibility</span>
-              <span className="text-[11px] text-zinc-400">Distance radius, age bracket, incognito mode</span>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-zinc-300">
+              <Sliders className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-heading font-bold text-white text-sm sm:text-base block">Discovery Preferences &amp; Visibility</span>
+              <span className="type-supporting text-zinc-400">Distance radius, age bracket, incognito mode</span>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-zinc-500" />
+          <ChevronRight className="w-5 h-5 text-zinc-400" />
         </button>
 
         <button
           onClick={onNavigateToAdmin}
-          className="w-full p-4 rounded-2xl dark-glass border border-emerald-500/20 bg-emerald-950/10 hover:bg-emerald-950/20 flex items-center justify-between text-xs cursor-pointer transition-all"
+          className="w-full p-5 rounded-2xl dark-glass border border-emerald-500/25 bg-emerald-950/15 hover:bg-emerald-950/25 flex items-center justify-between text-left cursor-pointer transition-all"
         >
-          <div className="flex items-center gap-3">
-            <ShieldAlert className="w-4 h-4 text-emerald-400" />
-            <div className="text-left">
-              <span className="font-bold text-white block">Platform Admin Operations Portal</span>
-              <span className="text-[11px] text-zinc-400">User management, liveness audits, matching weights</span>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-heading font-bold text-white text-sm sm:text-base block">Platform Admin Operations Portal</span>
+              <span className="type-supporting text-zinc-400">User management, liveness audits, matching weights</span>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-emerald-400" />
+          <ChevronRight className="w-5 h-5 text-emerald-400" />
         </button>
       </div>
 

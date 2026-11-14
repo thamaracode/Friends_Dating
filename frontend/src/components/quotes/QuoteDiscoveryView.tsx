@@ -329,44 +329,44 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
       )}
 
       {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-xl shrink-0">
-        <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-purple-500/10 to-transparent border border-indigo-500/30 text-indigo-400">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-5 border-b border-white/[0.08] bg-[#0E1017]/80 backdrop-blur-xl shrink-0">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400/20 via-white/[0.05] to-transparent border border-amber-400/30 text-amber-300 flex items-center justify-center">
             <QuoteIcon className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold tracking-wide text-white flex items-center gap-2 font-serif">
-              Soulverse Quotes
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <h2 className="type-section-heading flex items-center gap-2.5">
+              <span>Quotes Sanctuary</span>
+              <span className="text-xs font-heading font-bold px-2.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/25">
                 Infinite Sanctuary
               </span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="type-supporting mt-0.5">
               Timeless wisdom on love, boundaries, psychology, and personal sovereignty
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2.5 self-start sm:self-auto flex-wrap">
           {/* Feed vs Card Switcher */}
-          <div className="p-1 rounded-xl bg-slate-900 border border-slate-800 flex items-center text-xs">
+          <div className="p-1 rounded-xl bg-white/[0.06] border border-white/10 flex items-center text-xs h-10">
             <button
               onClick={() => setViewMode('card')}
-              className={`px-3 py-1 rounded-lg font-medium transition-all ${
+              className={`h-8 px-3.5 rounded-lg font-heading font-bold transition-all ${
                 viewMode === 'card'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-[#090A0E] shadow-sm'
+                  : 'text-zinc-400 hover:text-white'
               }`}
             >
               Focus Card
             </button>
             <button
               onClick={() => setViewMode('feed')}
-              className={`px-3 py-1 rounded-lg font-medium transition-all ${
+              className={`h-8 px-3.5 rounded-lg font-heading font-bold transition-all ${
                 viewMode === 'feed'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-[#090A0E] shadow-sm'
+                  : 'text-zinc-400 hover:text-white'
               }`}
             >
               Infinite Feed
@@ -376,16 +376,17 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
           {/* Saved Quotes Collection Button */}
           <button
             onClick={loadSavedQuotes}
-            className="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 transition-colors"
+            className="h-10 px-3.5 text-zinc-300 hover:text-white rounded-xl bg-white/[0.06] border border-white/10 hover:bg-white/[0.12] transition-colors flex items-center gap-2 text-xs font-heading font-semibold"
             title="Saved Quotes Sanctuary"
           >
-            <Bookmark className="w-4 h-4 text-indigo-400" />
+            <Bookmark className="w-4 h-4 text-amber-300" />
+            <span className="hidden md:inline">Saved</span>
           </button>
 
           {/* Filter Preferences */}
           <button
             onClick={() => setShowPreferencesModal(true)}
-            className="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 transition-colors"
+            className="h-10 w-10 flex items-center justify-center text-zinc-300 hover:text-white rounded-xl bg-white/[0.06] border border-white/10 hover:bg-white/[0.12] transition-colors"
             title="Personalize Categories & Length"
           >
             <Sliders className="w-4 h-4" />
@@ -394,7 +395,7 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
           {onClose && (
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 transition-colors"
+              className="h-10 w-10 flex items-center justify-center text-zinc-300 hover:text-white rounded-xl bg-white/[0.06] border border-white/10 hover:bg-white/[0.12] transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -403,7 +404,7 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
       </div>
 
       {/* Categories Filter Strip */}
-      <div className="flex items-center px-6 py-2.5 border-b border-slate-800/60 bg-slate-950/40 gap-2 overflow-x-auto no-scrollbar shrink-0 text-xs">
+      <div className="flex items-center px-6 py-3 border-b border-white/[0.08] bg-[#0E1017]/50 gap-2 overflow-x-auto no-scrollbar shrink-0 text-xs">
         <button
           onClick={() => {
             setSelectedCategory(null);
@@ -412,10 +413,10 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
             }
             handleFetchNextQuote();
           }}
-          className={`px-3 py-1.5 rounded-full font-medium transition-all shrink-0 border ${
+          className={`h-9 px-4 rounded-full font-heading font-semibold transition-all shrink-0 border flex items-center ${
             !selectedCategory
-              ? 'bg-white text-[#090A0E] border-white font-bold'
-              : 'border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 bg-slate-900/40'
+              ? 'bg-white text-[#090A0E] border-white font-bold shadow-sm'
+              : 'border-white/10 text-zinc-400 hover:text-white hover:border-white/20 bg-white/[0.04]'
           }`}
         >
           All Categories
@@ -431,16 +432,16 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
                 quoteService.updatePreferences({ includedCategories: [cat.key] });
                 handleFetchNextQuote();
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all shrink-0 border ${
+              className={`flex items-center gap-2 h-9 px-4 rounded-full font-heading font-semibold transition-all shrink-0 border ${
                 isSelected
-                  ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 font-bold'
-                  : 'border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 bg-slate-900/40'
+                  ? 'border-amber-400/50 bg-amber-400/15 text-amber-300 font-bold shadow-sm'
+                  : 'border-white/10 text-zinc-400 hover:text-white hover:border-white/20 bg-white/[0.04]'
               }`}
             >
-              {renderCategoryIcon(cat.icon, "w-3 h-3")}
+              {renderCategoryIcon(cat.icon, "w-3.5 h-3.5")}
               <span>{cat.label}</span>
               {cat.quoteCount !== undefined && cat.quoteCount > 0 && (
-                <span className="text-[10px] opacity-60 font-mono">({cat.quoteCount})</span>
+                <span className="text-[11px] opacity-60 font-mono">({cat.quoteCount})</span>
               )}
             </button>
           );
@@ -486,70 +487,57 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
       <div className="flex-1 overflow-y-auto p-6 flex flex-col justify-center items-center">
         {/* VIEW MODE 1: SINGLE CARD DISCOVERY (Default Hero View) */}
         {viewMode === 'card' && (
-          <div className="w-full max-w-2xl my-auto flex flex-col items-center space-y-6">
+          <div className="w-full max-w-3xl my-auto flex flex-col items-center space-y-6 py-4">
             {isLoading ? (
-              <div className="w-full h-80 rounded-3xl border border-slate-800/80 bg-slate-900/30 animate-pulse flex flex-col items-center justify-center p-8 space-y-4">
-                <div className="w-12 h-12 rounded-full bg-slate-800" />
-                <div className="w-3/4 h-6 rounded-xl bg-slate-800" />
-                <div className="w-1/2 h-4 rounded-xl bg-slate-800" />
+              <div className="w-full h-96 rounded-3xl border border-white/10 bg-[#12141B]/50 animate-pulse flex flex-col items-center justify-center p-10 space-y-5">
+                <div className="w-14 h-14 rounded-full bg-white/10" />
+                <div className="w-3/4 h-8 rounded-xl bg-white/10" />
+                <div className="w-1/2 h-5 rounded-xl bg-white/10" />
               </div>
             ) : currentQuote ? (
               <div
-                className={`w-full rounded-3xl p-8 md:p-10 border border-slate-800/80 bg-gradient-to-b from-slate-900/60 via-slate-950/80 to-[#0A0C11] shadow-2xl relative transition-all duration-300 ${
-                  isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+                className={`w-full rounded-3xl p-8 sm:p-12 border border-white/[0.12] bg-[#12141B]/85 backdrop-blur-2xl shadow-2xl relative transition-all duration-300 ${
+                  isTransitioning ? 'opacity-0 scale-98' : 'opacity-100 scale-100'
                 }`}
               >
-                {/* Ambient Top Glow */}
-                <div
-                  className="absolute top-0 inset-x-0 h-1 rounded-t-3xl opacity-60"
-                  style={{
-                    backgroundColor: categoryMeta?.accentColor || '#6366F1',
-                    boxShadow: `0 0 24px ${categoryMeta?.accentColor || '#6366F1'}`
-                  }}
-                />
+                {/* Ambient Top Subtle Gold Glow Rim */}
+                <div className="absolute top-0 inset-x-0 h-1 rounded-t-3xl bg-amber-400/50 shadow-[0_0_20px_rgba(246,193,56,0.3)]" />
 
                 {/* Card Header: Category & Attribution Tag */}
-                <div className="flex items-center justify-between text-xs text-slate-400 mb-6">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 border"
-                      style={{
-                        borderColor: `${categoryMeta?.accentColor || '#6366F1'}40`,
-                        backgroundColor: `${categoryMeta?.accentColor || '#6366F1'}15`,
-                        color: categoryMeta?.accentColor || '#6366F1'
-                      }}
-                    >
+                <div className="flex items-center justify-between text-xs text-zinc-400 mb-6">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-8 px-3.5 rounded-full text-xs font-heading font-semibold flex items-center gap-2 border border-amber-400/30 bg-amber-400/10 text-amber-300">
                       {renderCategoryIcon(categoryMeta?.icon || 'Sparkles', "w-3.5 h-3.5")}
                       {categoryMeta?.label || currentQuote.category}
                     </span>
 
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800/80 text-slate-400">
+                    <span className="text-xs font-mono px-2.5 py-1 rounded-lg bg-white/[0.06] text-zinc-400 border border-white/10">
                       {currentQuote.provider}
                     </span>
                   </div>
 
-                  <span className="text-[10px] text-slate-500 font-mono">
+                  <span className="text-xs text-zinc-500 font-mono">
                     #{historyIndex + 1}
                   </span>
                 </div>
 
-                {/* The Quote Body */}
-                <div className="space-y-4 my-4">
-                  <div className="text-indigo-400/40 text-4xl font-serif select-none -mb-2">“</div>
-                  <blockquote className="text-xl md:text-2xl font-serif text-white leading-relaxed tracking-wide font-normal">
+                {/* The Quote Body in Expressive Playfair Display Editorial Type */}
+                <div className="space-y-4 my-6">
+                  <div className="text-amber-400/30 text-5xl font-editorial select-none -mb-3">“</div>
+                  <blockquote className="font-editorial italic text-2xl sm:text-3xl md:text-4xl text-white leading-relaxed tracking-normal font-normal">
                     {currentQuote.text}
                   </blockquote>
-                  <div className="text-indigo-400/40 text-4xl font-serif select-none text-right -mt-4">”</div>
+                  <div className="text-amber-400/30 text-5xl font-editorial select-none text-right -mt-5">”</div>
                 </div>
 
                 {/* Author & Source */}
-                <div className="mt-6 pt-4 border-t border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="mt-8 pt-5 border-t border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-base font-bold text-white font-serif">
+                    <h3 className="type-card-heading text-xl font-bold font-heading text-white">
                       {currentQuote.author}
                     </h3>
                     {currentQuote.attribution && (
-                      <p className="text-xs text-slate-400 italic">
+                      <p className="type-supporting text-zinc-400 italic mt-0.5">
                         {currentQuote.attribution}
                       </p>
                     )}
@@ -557,9 +545,9 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
 
                   {/* Tags */}
                   {currentQuote.tags && currentQuote.tags.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {currentQuote.tags.slice(0, 3).map((tag, i) => (
-                        <span key={i} className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800/60 text-slate-400">
+                        <span key={i} className="text-xs font-mono px-2.5 py-1 rounded-lg bg-white/[0.04] text-zinc-400 border border-white/10">
                           #{tag}
                         </span>
                       ))}
@@ -567,16 +555,16 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
                   )}
                 </div>
 
-                {/* Action Bar */}
-                <div className="mt-8 pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                {/* Action Bar with Standard 44px Touch Targets */}
+                <div className="mt-8 pt-5 border-t border-white/[0.08] flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-2.5">
                     {/* Like Action */}
                     <button
                       onClick={() => handleToggleLike(currentQuote)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                      className={`min-h-[44px] px-4 rounded-xl text-xs font-heading font-semibold border transition-all flex items-center gap-2 ${
                         currentQuote.isLiked
-                          ? 'border-rose-500/40 bg-rose-500/10 text-rose-400'
-                          : 'border-slate-800 bg-slate-900/40 text-slate-400 hover:text-white hover:border-slate-700'
+                          ? 'border-rose-500/50 bg-rose-500/15 text-rose-400'
+                          : 'border-white/10 bg-white/[0.05] text-zinc-300 hover:text-white hover:border-white/20'
                       }`}
                     >
                       <Heart className={`w-4 h-4 ${currentQuote.isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
@@ -586,20 +574,20 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
                     {/* Bookmark / Save Action */}
                     <button
                       onClick={() => handleToggleSave(currentQuote)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                      className={`min-h-[44px] px-4 rounded-xl text-xs font-heading font-semibold border transition-all flex items-center gap-2 ${
                         currentQuote.isSaved
-                          ? 'border-indigo-500/40 bg-indigo-500/10 text-indigo-400'
-                          : 'border-slate-800 bg-slate-900/40 text-slate-400 hover:text-white hover:border-slate-700'
+                          ? 'border-amber-400/50 bg-amber-400/15 text-amber-300'
+                          : 'border-white/10 bg-white/[0.05] text-zinc-300 hover:text-white hover:border-white/20'
                       }`}
                     >
-                      <Bookmark className={`w-4 h-4 ${currentQuote.isSaved ? 'fill-indigo-500 text-indigo-500' : ''}`} />
+                      <Bookmark className={`w-4 h-4 ${currentQuote.isSaved ? 'fill-amber-400 text-amber-400' : ''}`} />
                       <span>{currentQuote.savesCount || 0}</span>
                     </button>
 
                     {/* Copy to Clipboard */}
                     <button
                       onClick={() => handleCopyQuote(currentQuote)}
-                      className="p-2 rounded-xl text-xs border border-slate-800 bg-slate-900/40 text-slate-400 hover:text-white hover:border-slate-700 transition-all"
+                      className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-white/10 bg-white/[0.05] text-zinc-300 hover:text-white hover:border-white/20 transition-all flex items-center justify-center"
                       title="Copy to Clipboard"
                     >
                       <Copy className="w-4 h-4" />
@@ -608,7 +596,7 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
                     {/* Share */}
                     <button
                       onClick={() => handleShareQuote(currentQuote)}
-                      className="p-2 rounded-xl text-xs border border-slate-800 bg-slate-900/40 text-slate-400 hover:text-white hover:border-slate-700 transition-all"
+                      className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-white/10 bg-white/[0.05] text-zinc-300 hover:text-white hover:border-white/20 transition-all flex items-center justify-center"
                       title="Share Quote"
                     >
                       <Share2 className="w-4 h-4" />
@@ -617,29 +605,29 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
                     {/* Report */}
                     <button
                       onClick={() => handleReportQuote(currentQuote)}
-                      className="p-2 rounded-xl text-xs text-slate-500 hover:text-rose-400 transition-colors"
+                      className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-zinc-500 hover:text-rose-400 transition-colors flex items-center justify-center"
                       title="Report Inappropriate Content"
                     >
-                      <Flag className="w-3.5 h-3.5" />
+                      <Flag className="w-4 h-4" />
                     </button>
                   </div>
 
                   {/* Navigation controls */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <button
                       disabled={historyIndex <= 0}
                       onClick={handlePreviousQuote}
-                      className="p-2 rounded-xl border border-slate-800 bg-slate-900/40 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-white/10 bg-white/[0.05] text-zinc-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center"
                       title="Previous Quote"
                     >
-                      <ChevronLeft className="w-4 h-4" />
+                      <ChevronLeft className="w-5 h-5" />
                     </button>
 
                     <button
                       onClick={handleFetchNextQuote}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                      className="sv-btn-gold"
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isTransitioning ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`w-4 h-4 ${isTransitioning ? 'animate-spin' : ''}`} />
                       <span>Show Me Another</span>
                     </button>
                   </div>

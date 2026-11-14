@@ -81,49 +81,49 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
   };
 
   return (
-    <div className="w-full space-y-4 pb-28 max-w-xl mx-auto animate-fadeIn">
+    <div className="w-full space-y-8 pb-32 max-w-2xl mx-auto animate-fadeIn px-1 sm:px-2">
       
       {/* 1. TOP DISCOVERY BAR & VIEW MODE SWITCHER */}
-      <div className="flex items-center justify-between gap-3 px-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div>
-          <h1 className="text-lg font-black text-white font-serif tracking-tight flex items-center gap-2">
-            <Compass className="w-5 h-5 text-zinc-300" />
+          <h1 className="type-page-heading flex items-center gap-2.5">
+            <Compass className="w-6 h-6 text-amber-300" />
             <span>Discover Humans</span>
           </h1>
-          <p className="text-[11px] text-zinc-400">Ontological chemistry, shared values, and deep identity</p>
+          <p className="type-supporting mt-1">Ontological chemistry, shared values, and deep multi-world identity</p>
         </div>
 
         {/* View Mode Switcher: Swipe Stack vs Vertical Feed */}
-        <div className="flex items-center bg-white/[0.06] p-1 rounded-2xl border border-white/10 shrink-0">
+        <div className="flex items-center bg-white/[0.06] p-1 rounded-2xl border border-white/10 shrink-0 self-start sm:self-auto h-11">
           <button
             onClick={() => setViewMode('feed')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`h-9 px-4 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-2 ${
               viewMode === 'feed'
-                ? 'bg-white text-[#090A0E] shadow-md'
+                ? 'bg-white text-[#090A0E] shadow-sm'
                 : 'text-zinc-400 hover:text-white'
             }`}
             title="Vertical Explore Feed"
           >
-            <List className="w-3.5 h-3.5" />
+            <List className="w-4 h-4" />
             <span>Feed</span>
           </button>
           <button
             onClick={() => setViewMode('swipe')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`h-9 px-4 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-2 ${
               viewMode === 'swipe'
-                ? 'bg-white text-[#090A0E] shadow-md'
+                ? 'bg-white text-[#090A0E] shadow-sm'
                 : 'text-zinc-400 hover:text-white'
             }`}
             title="Stack Swiping Mode"
           >
-            <Layers className="w-3.5 h-3.5" />
+            <Layers className="w-4 h-4" />
             <span>Swipe</span>
           </button>
         </div>
       </div>
 
       {/* 2. CATEGORY HORIZONTAL FILTER PILLS */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-1">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
         {[
           { id: 'all', label: 'All Humans' },
           { id: 'dating', label: '❤️ Dating' },
@@ -139,10 +139,10 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
               setSelectedCategory(cat.id);
               setCurrentSwipeIndex(0);
             }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            className={`h-10 px-4 rounded-full text-xs font-heading font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center ${
               selectedCategory === cat.id
-                ? 'bg-white text-[#090A0E] shadow-md'
-                : 'bg-white/[0.04] text-zinc-400 hover:text-white border border-white/10'
+                ? 'bg-white text-[#090A0E] shadow-md font-bold'
+                : 'bg-white/[0.04] text-zinc-300 hover:text-white hover:bg-white/[0.08] border border-white/10'
             }`}
           >
             {cat.label}
@@ -157,61 +157,64 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
       />
 
       {/* 3. EMBEDDED DAILY HUMAN CONNECTION INTELLIGENCE CARD */}
-      <div className="rounded-3xl dark-glass border border-white/[0.12] p-4 sm:p-5 relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-rose-500/10 via-transparent to-transparent pointer-events-none" />
+      <div className="sv-card relative overflow-hidden space-y-4">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-400/10 via-rose-500/5 to-transparent pointer-events-none" />
         
-        <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.08]">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_8px_#F43F5E]" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-300">
+        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B]" />
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-300">
               Daily Connection · Intelligence Edition
             </span>
           </div>
           <button
             onClick={() => setIsDailyExpanded(!isDailyExpanded)}
-            className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            className="text-xs font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer px-2 py-1 rounded-lg"
           >
             {isDailyExpanded ? 'Compact' : 'Expand'}
           </button>
         </div>
 
         {isDailyExpanded && (
-          <div className="pt-3 space-y-3">
-            <blockquote className="text-sm sm:text-base font-serif italic text-white leading-relaxed">
+          <div className="space-y-4 pt-1">
+            <blockquote className="font-editorial italic text-xl sm:text-2xl text-white leading-relaxed">
               "Love is not only about finding someone. It's about learning how to understand someone."
             </blockquote>
 
-            <p className="text-xs text-zinc-300 leading-relaxed bg-white/[0.03] p-3 rounded-2xl border border-white/[0.06]">
-              <span className="font-bold text-white block mb-0.5">Today's Relationship Thought</span>
-              Sometimes the strongest relationships are built by people who are willing to listen, communicate and understand each other even when things become difficult.
-            </p>
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1">
+              <span className="text-xs font-heading font-bold text-amber-300 block">Today's Relationship Thought</span>
+              <p className="type-body text-zinc-300">
+                Sometimes the strongest relationships are built by people who are willing to listen, communicate and understand each other even when things become difficult.
+              </p>
+            </div>
 
             {/* Daily Introspective Question */}
-            <div className="p-3 rounded-2xl bg-white/[0.05] border border-white/10 flex items-start gap-2.5 text-xs">
-              <HelpCircle className="w-4 h-4 text-zinc-300 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-white block text-[11px] uppercase tracking-wider text-zinc-400">
+            <div className="p-4 rounded-2xl bg-white/[0.05] border border-white/10 flex items-start gap-3">
+              <HelpCircle className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="text-xs font-heading font-bold uppercase tracking-wider text-zinc-400">
                   Today's Question
                 </span>
-                <p className="text-zinc-200 mt-0.5 font-medium">
+                <p className="type-body text-white font-medium">
                   Do you listen to understand someone, or do you listen just to prepare your response?
                 </p>
               </div>
             </div>
 
             {/* Micro Tags & Actions */}
-            <div className="flex items-center justify-between pt-1 text-[11px]">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="px-2 py-0.5 rounded-lg bg-white/10 text-zinc-300">#Love</span>
-                <span className="px-2 py-0.5 rounded-lg bg-white/10 text-zinc-300">#Communication</span>
-                <span className="px-2 py-0.5 rounded-lg bg-white/10 text-zinc-300">#Psychology</span>
+            <div className="flex items-center justify-between pt-2 flex-wrap gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-zinc-300 font-medium">#Love</span>
+                <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-zinc-300 font-medium">#Communication</span>
+                <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-zinc-300 font-medium">#Psychology</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div>
                 <button 
                   onClick={() => onOpenDailyHub?.()} 
-                  className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-colors cursor-pointer"
+                  className="h-9 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-heading font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  Full Hub ›
+                  <span>Open Full Hub</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -221,7 +224,7 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
 
       {/* 4. MODE A: SWIPE STACK CARDS */}
       {viewMode === 'swipe' && currentSwipeProfile && (
-        <div className="relative w-full aspect-[3/4.4] sm:aspect-[3/4.2] max-h-[640px] rounded-3xl overflow-hidden border border-white/15 shadow-2xl bg-[#0F1117] flex flex-col justify-end p-5 select-none animate-fadeIn">
+        <div className="relative w-full aspect-[3/4.4] sm:aspect-[3/4.2] max-h-[680px] rounded-3xl overflow-hidden border border-white/15 shadow-2xl bg-[#0F1117] flex flex-col justify-end p-6 sm:p-8 select-none animate-fadeIn">
           {/* Main Photo Background */}
           <img
             src={currentSwipeProfile.photos?.[0] || currentSwipeProfile.avatar}
@@ -230,44 +233,44 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
           />
 
           {/* Gradient Scrim */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-transparent pointer-events-none" />
 
           {/* Swipe Feedback Visual Badge */}
           {swipeFeedback && (
-            <div className={`absolute top-6 ${swipeFeedback === 'pass' ? 'right-6 border-red-400 text-red-400' : swipeFeedback === 'like' ? 'left-6 border-emerald-400 text-emerald-400' : 'inset-x-0 mx-auto w-fit border-blue-400 text-blue-400'} px-5 py-2 rounded-2xl border-2 font-black text-base uppercase tracking-wider backdrop-blur-md bg-black/60 shadow-2xl animate-bounce z-20`}>
+            <div className={`absolute top-8 ${swipeFeedback === 'pass' ? 'right-8 border-red-400 text-red-400' : swipeFeedback === 'like' ? 'left-8 border-emerald-400 text-emerald-400' : 'inset-x-0 mx-auto w-fit border-amber-300 text-amber-300'} px-6 py-2.5 rounded-2xl border-2 font-black text-lg uppercase tracking-wider backdrop-blur-md bg-black/70 shadow-2xl animate-bounce z-20 font-heading`}>
               {swipeFeedback === 'pass' ? 'PASS' : swipeFeedback === 'like' ? 'LIKE' : 'SUPER LIKE'}
             </div>
           )}
 
           {/* Top Info Badges */}
-          <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-black/60 backdrop-blur-md text-white border border-white/15 flex items-center gap-1.5 shadow-md">
-              <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
+          <div className="absolute top-6 left-6 right-6 flex items-center justify-between z-10">
+            <span className="h-9 px-4 rounded-full text-xs font-heading font-bold bg-black/60 backdrop-blur-md text-white border border-white/15 flex items-center gap-2 shadow-md">
+              <Sparkles className="w-4 h-4 text-amber-300" />
               <span>{currentSwipeProfile.compatibilityScore || 89}% HCM Chemistry</span>
             </span>
 
             <button
               onClick={() => onOpenProfile(currentSwipeProfile)}
-              className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/15 hover:bg-white/20 transition-colors cursor-pointer"
+              className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/15 hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center"
               title="View Full Profile & Timeline"
             >
-              <Info className="w-4 h-4" />
+              <Info className="w-5 h-5" />
             </button>
           </div>
 
           {/* Bottom Card Content */}
-          <div className="relative z-10 space-y-3">
+          <div className="relative z-10 space-y-4">
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-black text-white font-serif tracking-tight">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading tracking-tight">
                   {currentSwipeProfile.name}, {currentSwipeProfile.age}
                 </h2>
                 <span title="Human Liveness Verified">
                   <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
                 </span>
               </div>
-              <p className="text-xs text-zinc-300 flex items-center gap-1.5 mt-0.5">
-                <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+              <p className="type-supporting text-zinc-300 flex items-center gap-2 mt-1">
+                <MapPin className="w-4 h-4 text-zinc-400" />
                 <span>{currentSwipeProfile.location}</span>
                 <span>·</span>
                 <span className="text-white font-semibold">{currentSwipeProfile.status}</span>
@@ -275,20 +278,20 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
             </div>
 
             {/* Tagline / Intro */}
-            <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed italic">
+            <p className="type-body text-zinc-200 line-clamp-2 italic leading-relaxed">
               "{currentSwipeProfile.tagline || currentSwipeProfile.aboutMeLong}"
             </p>
 
-            {/* PREVIEW OF MULTIPLE IDENTITIES (Soulverse Core Differentiation) */}
-            <div className="p-2.5 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 space-y-1.5">
-              <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider block">
+            {/* PREVIEW OF MULTIPLE IDENTITIES */}
+            <div className="p-3.5 rounded-2xl bg-black/65 backdrop-blur-md border border-white/10 space-y-2">
+              <span className="text-xs uppercase font-heading font-bold text-zinc-400 tracking-wider block">
                 {currentSwipeProfile.name}'s Identity Universes
               </span>
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                 {getProfileIdentities(currentSwipeProfile).map(id => (
                   <span
                     key={id.id}
-                    className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-white/10 text-white whitespace-nowrap border border-white/10"
+                    className="px-3 py-1 rounded-xl text-xs font-heading font-semibold bg-white/10 text-white whitespace-nowrap border border-white/10"
                   >
                     {id.type === 'real' ? '👤' : id.type === 'cinematic' ? '🎬' : '🏰'} {id.label}
                   </span>
@@ -297,38 +300,38 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
             </div>
 
             {/* Values & Intent */}
-            <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
-              <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white font-bold">
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <span className="px-3 py-1 rounded-full bg-white/20 text-white font-heading font-bold">
                 {currentSwipeProfile.intent}
               </span>
               {currentSwipeProfile.coreValues?.slice(0, 2).map(val => (
-                <span key={val} className="px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 border border-white/10">
+                <span key={val} className="px-3 py-1 rounded-full bg-white/10 text-zinc-200 border border-white/10 font-medium">
                   {val}
                 </span>
               ))}
             </div>
 
-            {/* Interaction Buttons Bar */}
+            {/* Interaction Buttons Bar with 48px+ Touch Targets */}
             <div className="flex items-center justify-around pt-2">
               <button
                 onClick={() => handleSwipeAction('pass')}
-                className="w-13 h-13 rounded-full bg-black/70 border border-white/20 text-zinc-400 hover:text-red-400 hover:border-red-400/40 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-xl"
+                className="w-14 h-14 rounded-full bg-black/75 border border-white/20 text-zinc-300 hover:text-red-400 hover:border-red-400/50 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xl"
                 title="Pass"
               >
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6 stroke-[2.5]" />
               </button>
 
               <button
                 onClick={() => handleSwipeAction('superlike')}
-                className="w-11 h-11 rounded-full bg-black/70 border border-white/20 text-blue-400 hover:border-blue-400 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-xl"
+                className="w-12 h-12 rounded-full bg-black/75 border border-white/20 text-amber-300 hover:border-amber-400 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xl"
                 title="Super Like"
               >
-                <Star className="w-5 h-5 fill-blue-400/30" />
+                <Star className="w-5 h-5 fill-amber-300/30 text-amber-300" />
               </button>
 
               <button
                 onClick={() => onInitiateChat(currentSwipeProfile)}
-                className="w-11 h-11 rounded-full bg-black/70 border border-white/20 text-emerald-400 hover:border-emerald-400 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-xl"
+                className="w-12 h-12 rounded-full bg-black/75 border border-white/20 text-emerald-400 hover:border-emerald-400 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xl"
                 title="Direct Chat"
               >
                 <MessageCircle className="w-5 h-5" />
@@ -336,10 +339,10 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
 
               <button
                 onClick={() => handleSwipeAction('like')}
-                className="w-13 h-13 rounded-full bg-white text-[#090A0E] flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-[0_0_20px_rgba(255,255,255,0.4)]"
+                className="w-14 h-14 rounded-full bg-white text-[#090A0E] flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-[0_0_24px_rgba(255,255,255,0.45)] hover:bg-zinc-200"
                 title="Like"
               >
-                <Heart className="w-6 h-6 fill-[#090A0E]" />
+                <Heart className="w-7 h-7 fill-[#090A0E]" />
               </button>
             </div>
           </div>
@@ -348,13 +351,13 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
 
       {/* 5. MODE B: VERTICAL EXPLORE FEED */}
       {viewMode === 'feed' && (
-        <div className="space-y-4">
+        <div className="space-y-8">
           {filteredProfiles.map(profile => {
             const identities = getProfileIdentities(profile);
             return (
               <div
                 key={profile.id}
-                className="rounded-3xl dark-glass border border-white/[0.10] overflow-hidden shadow-xl hover:border-white/25 transition-all group"
+                className="sv-card p-0 overflow-hidden group hover:border-white/25 transition-all"
               >
                 {/* Photo & Hero Header */}
                 <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-black/40">
@@ -363,65 +366,65 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
                     alt={profile.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#090A0E] via-transparent to-black/30 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#090A0E] via-black/20 to-black/40 pointer-events-none" />
 
                   {/* Top Badges */}
-                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/60 backdrop-blur-md text-white border border-white/15 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-zinc-300" />
+                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+                    <span className="h-8 px-3 rounded-full text-xs font-heading font-bold bg-black/60 backdrop-blur-md text-white border border-white/15 flex items-center gap-1.5 shadow-sm">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                       <span>{profile.compatibilityScore || 88}% Compatibility</span>
                     </span>
 
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/10 backdrop-blur-md text-white border border-white/15">
+                    <span className="h-8 px-3 rounded-full text-xs font-heading font-bold bg-white/15 backdrop-blur-md text-white border border-white/20 flex items-center">
                       {profile.intent}
                     </span>
                   </div>
 
                   {/* Bottom Title on Image */}
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-black text-white font-serif tracking-tight">
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="flex items-center gap-2.5">
+                      <h3 className="text-2xl sm:text-3xl font-extrabold text-white font-heading tracking-tight">
                         {profile.name}, {profile.age}
                       </h3>
-                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <ShieldCheck className="w-5 h-5 text-emerald-400" />
                     </div>
-                    <p className="text-xs text-zinc-300 mt-0.5 flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-zinc-400" />
+                    <p className="type-supporting text-zinc-300 mt-1 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-zinc-400" />
                       <span>{profile.location}</span>
                       <span>·</span>
-                      <span className="text-zinc-200">{profile.status}</span>
+                      <span className="text-zinc-200 font-medium">{profile.status}</span>
                     </p>
                   </div>
                 </div>
 
-                {/* Card Body */}
-                <div className="p-4 sm:p-5 space-y-3.5">
+                {/* Card Body with Generous Padding */}
+                <div className="p-6 sm:p-7 space-y-5">
                   {/* Tagline */}
-                  <p className="text-xs text-zinc-300 leading-relaxed italic">
+                  <p className="type-body text-zinc-200 leading-relaxed italic">
                     "{profile.tagline || profile.aboutMeLong}"
                   </p>
 
                   {/* PREVIEW OF MULTIPLE IDENTITIES */}
-                  <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] space-y-2">
-                    <div className="flex items-center justify-between text-[10px] font-bold">
+                  <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] space-y-3">
+                    <div className="flex items-center justify-between text-xs font-heading font-bold">
                       <span className="text-zinc-400 uppercase tracking-wider">Multiple Identities & Universes</span>
-                      <span className="text-zinc-500">3 Personas</span>
+                      <span className="text-amber-300">3 Personas</span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                       {identities.map(id => (
                         <div
                           key={id.id}
                           onClick={() => onOpenProfile(profile)}
-                          className="p-2 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] cursor-pointer transition-all"
+                          className="p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-amber-400/30 cursor-pointer transition-all"
                         >
-                          <span className="text-sm block">
+                          <span className="text-base block">
                             {id.type === 'real' ? '👤' : id.type === 'cinematic' ? '🎬' : '🏰'}
                           </span>
-                          <span className="text-[10px] font-bold text-white block mt-1 truncate">
+                          <span className="text-xs font-heading font-bold text-white block mt-1.5 truncate">
                             {id.label}
                           </span>
-                          <span className="text-[9px] text-zinc-400 block truncate">
+                          <span className="text-xs text-zinc-400 block truncate mt-0.5">
                             {id.role}
                           </span>
                         </div>
@@ -430,35 +433,35 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
                   </div>
 
                   {/* Core Values & Interests Chips */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {profile.coreValues?.map(val => (
-                      <span key={val} className="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold bg-white/10 text-zinc-200 border border-white/10">
+                      <span key={val} className="px-3 py-1 rounded-full text-xs font-heading font-semibold bg-white/10 text-zinc-200 border border-white/10">
                         {val}
                       </span>
                     ))}
                     {profile.interests?.slice(0, 3).map(interest => (
-                      <span key={interest} className="px-2 py-0.5 rounded-lg text-[10px] font-medium bg-black/40 text-zinc-400 border border-white/5">
+                      <span key={interest} className="px-3 py-1 rounded-full text-xs font-medium bg-black/40 text-zinc-400 border border-white/5">
                         #{interest}
                       </span>
                     ))}
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-between pt-2 border-t border-white/[0.08]">
+                  {/* Action Buttons: 44px standard CTA buttons */}
+                  <div className="flex items-center justify-between pt-3 border-t border-white/[0.08] gap-4">
                     <button
                       onClick={() => onOpenProfile(profile)}
-                      className="text-xs font-bold text-zinc-300 hover:text-white flex items-center gap-1.5 cursor-pointer transition-colors"
+                      className="min-h-[44px] px-4 rounded-xl text-sm font-heading font-bold text-zinc-300 hover:text-white flex items-center gap-2 cursor-pointer transition-colors hover:bg-white/[0.05]"
                     >
-                      <Eye className="w-3.5 h-3.5" />
+                      <Eye className="w-4 h-4" />
                       <span>Explore Personas & Bio</span>
                     </button>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <button
                         onClick={() => onInitiateChat(profile)}
-                        className="px-4 py-2 rounded-xl bg-white text-[#090A0E] text-xs font-bold flex items-center gap-1.5 hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-md"
+                        className="sv-btn-primary"
                       >
-                        <MessageCircle className="w-3.5 h-3.5" />
+                        <MessageCircle className="w-4 h-4" />
                         <span>Chat</span>
                       </button>
                     </div>

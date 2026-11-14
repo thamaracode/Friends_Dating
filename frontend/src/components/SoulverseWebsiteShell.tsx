@@ -218,26 +218,59 @@ export const SoulverseWebsiteShell: React.FC = () => {
     navigateTo('messages');
   };
 
-  const masterNavItems = [
-    { id: 'discover' as SoulverseRoute, label: 'Discover', icon: Compass, featureId: 'feat_dating' },
-    { id: 'unspoken' as SoulverseRoute, label: 'The Unspoken', icon: Sparkles, badge: 'Inner', featureId: 'feat_the_unspoken' },
-    { id: 'connect' as SoulverseRoute, label: 'Connect & Social', icon: Users, badge: 'Live', featureId: 'feat_friendships' },
-    { id: 'connections' as SoulverseRoute, label: 'Relationship Vault', icon: Heart, badge: 'Vault', featureId: 'feat_relationship_vault' },
-    { id: 'messages' as SoulverseRoute, label: 'Messages & Rooms', icon: MessageCircle, badge: '3' },
-    { id: 'profile' as SoulverseRoute, label: 'My Identities', icon: User },
-    { id: 'quotes' as SoulverseRoute, label: 'Quotes Sanctuary', icon: QuoteIcon, badge: 'Wise', featureId: 'feat_daily_quotes' },
-    { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily', featureId: 'feat_daily_quotes' },
-    { id: 'identities' as SoulverseRoute, label: 'Identity Universe', icon: Sparkles, featureId: 'feat_imaginary_identities' },
-    { id: 'worlds' as SoulverseRoute, label: 'Explore Worlds', icon: Globe2, featureId: 'feat_cinematic_profiles' },
-    { id: 'timeline' as SoulverseRoute, label: 'Life Timeline', icon: Calendar, featureId: 'feat_timeline_view' },
-    { id: 'settings' as SoulverseRoute, label: 'Settings', icon: Settings },
-    { id: 'admin' as SoulverseRoute, label: 'Admin Ops', icon: ShieldAlert, badge: 'Staff' }
+  interface ShellNavItem {
+    id: SoulverseRoute;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: string;
+    featureId?: string;
+  }
+
+  interface ShellNavCategory {
+    title: string;
+    items: ShellNavItem[];
+  }
+
+  const navCategories: ShellNavCategory[] = [
+    {
+      title: 'Discover & Wisdom',
+      items: [
+        { id: 'discover' as SoulverseRoute, label: 'Discover Humans', icon: Compass, featureId: 'feat_dating' },
+        { id: 'quotes' as SoulverseRoute, label: 'Quotes Sanctuary', icon: QuoteIcon, badge: 'Wise', featureId: 'feat_daily_quotes' },
+        { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily', featureId: 'feat_daily_quotes' },
+        { id: 'unspoken' as SoulverseRoute, label: 'The Unspoken', icon: Sparkles, badge: 'Inner', featureId: 'feat_the_unspoken' },
+      ]
+    },
+    {
+      title: 'Relationships & Chat',
+      items: [
+        { id: 'connect' as SoulverseRoute, label: 'Connect & Social', icon: Users, badge: 'Live', featureId: 'feat_friendships' },
+        { id: 'connections' as SoulverseRoute, label: 'Relationship Vault', icon: Heart, badge: 'Vault', featureId: 'feat_relationship_vault' },
+        { id: 'messages' as SoulverseRoute, label: 'Messages & Rooms', icon: MessageCircle, badge: '3' },
+      ]
+    },
+    {
+      title: 'Identities & Memories',
+      items: [
+        { id: 'profile' as SoulverseRoute, label: 'My Identities', icon: User },
+        { id: 'identities' as SoulverseRoute, label: 'Identity Universe', icon: Sparkles, featureId: 'feat_imaginary_identities' },
+        { id: 'timeline' as SoulverseRoute, label: 'Life Timeline', icon: Calendar, featureId: 'feat_timeline_view' },
+        { id: 'worlds' as SoulverseRoute, label: 'Story Worlds', icon: Globe2, featureId: 'feat_cinematic_profiles' },
+      ]
+    },
+    {
+      title: 'Control & System',
+      items: [
+        { id: 'settings' as SoulverseRoute, label: 'Settings', icon: Settings },
+        { id: 'admin' as SoulverseRoute, label: 'Admin Ops', icon: ShieldAlert, badge: 'Staff' }
+      ]
+    }
   ];
 
-  const navItems = masterNavItems.filter(item => {
-    if (!item.featureId) return true;
-    return visibleFeatures.includes(item.featureId);
-  });
+  const visibleNavCategories = navCategories.map(cat => ({
+    ...cat,
+    items: cat.items.filter(item => !item.featureId || visibleFeatures.includes(item.featureId))
+  })).filter(cat => cat.items.length > 0);
 
   const sidebarWorlds = worlds.length > 0 ? worlds.slice(0, 4) : [
     { id: 'wld_real', name: 'My Real Life', visibility: 'public', cover_image_url: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=200&q=80' },
@@ -245,7 +278,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#090A0E] text-zinc-100 flex flex-col font-sans selection:bg-white/20 selection:text-white relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#090A0E] text-zinc-100 flex flex-col font-body selection:bg-white/20 selection:text-white relative overflow-x-hidden">
       
       {/* Dark Void with Ambient Silver / Crimson Glass Background */}
       <CinematicAmbientBackground currentRoute={currentRoute} />
@@ -253,119 +286,123 @@ export const SoulverseWebsiteShell: React.FC = () => {
       {/* ===================================================================== */}
       {/* 1. TOP GLOBAL APP BAR & FROSTED GLASS HEADER                          */}
       {/* ===================================================================== */}
-      <header className="h-14 sm:h-16 dark-glass border-b border-white/[0.08] px-3 sm:px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-2xl shrink-0">
+      <header className="h-16 sm:h-20 dark-glass border-b border-white/[0.08] px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40 backdrop-blur-2xl shrink-0">
         
         {/* Left: Brand Identity & Active Route Indicator */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-1.5 rounded-xl dark-glass border border-white/[0.08] text-zinc-400 hover:text-white cursor-pointer"
+            className="lg:hidden min-h-[44px] min-w-[44px] p-2.5 rounded-xl dark-glass border border-white/[0.12] text-zinc-300 hover:text-white cursor-pointer flex items-center justify-center transition-colors"
             title="Open Menu"
+            aria-label="Toggle navigation drawer"
           >
-            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
           <div 
             onClick={() => navigateTo('discover')}
-            className="flex items-center gap-2 cursor-pointer group select-none"
+            className="flex items-center gap-3 cursor-pointer group select-none py-1"
           >
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-white/10 to-white/20 border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:border-white/50 transition-colors">
-              <Compass className="w-4 h-4 text-zinc-200" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-white/10 to-white/20 border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:border-amber-400/50 transition-colors">
+              <Compass className="w-5 h-5 text-zinc-200 group-hover:text-amber-300 transition-colors" />
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-serif font-black tracking-tight text-white text-base sm:text-lg">Soulverse</span>
-              <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_#F43F5E]" />
+            <div className="flex items-center gap-2">
+              <span className="font-heading font-extrabold tracking-tight text-white text-lg sm:text-xl">Soulverse</span>
+              <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B]" />
             </div>
           </div>
         </div>
 
         {/* Center: Spotify Ambient Anthem Pill (Quick Play/Pause) */}
-        <div className="flex items-center gap-2">
+        <div className="hidden sm:flex items-center gap-2">
           {musicTrack && (
             <div 
               onClick={togglePlay}
-              className="flex items-center gap-2 px-3 py-1 rounded-full dark-glass-card border border-white/15 hover:border-white/30 cursor-pointer shadow-sm group transition-all"
+              className="flex items-center gap-2.5 h-10 px-4 rounded-full dark-glass-card border border-white/15 hover:border-amber-400/30 cursor-pointer shadow-sm group transition-all"
               title="Toggle Spotify Ambient Audio"
             >
               <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10B981] animate-pulse" />
-              <span className="text-[11px] font-bold text-zinc-200 truncate max-w-[100px] sm:max-w-[160px]">
+              <span className="text-xs font-semibold text-zinc-200 truncate max-w-[120px] md:max-w-[180px]">
                 {musicTrack.title}
               </span>
-              <span className="text-[10px] text-zinc-400">
+              <span className="text-xs text-zinc-400 font-mono">
                 {isMusicPlaying ? '❚❚' : '▶'}
               </span>
             </div>
           )}
         </div>
 
-        {/* Right Actions: 1926 Safety, Unopened Letter, Unspoken, Device Mode Switcher & Profile Avatar */}
-        <div className="flex items-center gap-2">
+        {/* Right Actions: Clean, Spacious Action Cluster */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Unopened Letter Easter Egg Button */}
           <button
             onClick={() => setIsLetterOpen(true)}
-            className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/25 text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 relative"
+            className="h-10 px-3.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/25 text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 relative"
             title="You found an unopened letter in the universe..."
           >
-            <Mail className="w-3.5 h-3.5 text-amber-300" />
-            <span className="hidden md:inline text-[11px] font-medium">Letter</span>
-            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B] animate-pulse" />
+            <Mail className="w-4 h-4 text-amber-300" />
+            <span className="hidden md:inline">Letter</span>
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B] animate-pulse" />
           </button>
 
           {/* The Unspoken Sanctuary Quick Button */}
           <button
             onClick={() => setIsUnspokenOpen(true)}
-            className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 border border-white/10 text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5"
+            className="h-10 px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 border border-white/10 text-xs font-semibold transition-all cursor-pointer flex items-center gap-2"
             title="Open The Unspoken Sanctuary"
           >
-            <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
-            <span className="hidden md:inline text-[11px]">The Unspoken</span>
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span className="hidden md:inline">The Unspoken</span>
           </button>
 
           {/* User Control Center Quick Launcher */}
           <button
             onClick={() => setIsControlCenterOpen(true)}
-            className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 border border-white/10 text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5"
+            className="h-10 px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 border border-white/10 text-xs font-semibold transition-all cursor-pointer flex items-center gap-2"
             title="Open My App Control Center"
           >
-            <Sliders className="w-3.5 h-3.5 text-zinc-300" />
-            <span className="hidden lg:inline text-[11px]">Control Center</span>
+            <Sliders className="w-4 h-4 text-zinc-300" />
+            <span className="hidden lg:inline">Control Center</span>
           </button>
+
           {/* Desktop Only: Toggle Mobile Device Frame Preview vs Fluid Canvas */}
-          <div className="hidden md:flex items-center bg-white/[0.06] p-0.5 rounded-xl border border-white/10 text-xs">
+          <div className="hidden xl:flex items-center bg-white/[0.06] p-1 rounded-xl border border-white/10 h-10">
             <button
               onClick={() => setDevicePreviewMode('fluid')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                devicePreviewMode === 'fluid' ? 'bg-white text-[#090A0E]' : 'text-zinc-400 hover:text-white'
+              className={`h-8 px-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                devicePreviewMode === 'fluid' ? 'bg-white text-[#090A0E] shadow-sm' : 'text-zinc-400 hover:text-white'
               }`}
               title="Full Fluid Responsive Canvas"
             >
               <Monitor className="w-3.5 h-3.5" />
+              <span>Fluid</span>
             </button>
             <button
               onClick={() => setDevicePreviewMode('mobile_frame')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                devicePreviewMode === 'mobile_frame' ? 'bg-white text-[#090A0E]' : 'text-zinc-400 hover:text-white'
+              className={`h-8 px-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                devicePreviewMode === 'mobile_frame' ? 'bg-white text-[#090A0E] shadow-sm' : 'text-zinc-400 hover:text-white'
               }`}
               title="Mobile App Frame Preview (iPhone 16 Pro Style)"
             >
               <Smartphone className="w-3.5 h-3.5" />
+              <span>Mobile</span>
             </button>
           </div>
 
           {/* 1926 NIMH Mental Health Support Button */}
           <button
             onClick={() => setIsCrisisModalOpen(true)}
-            className="px-2.5 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/25 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+            className="h-10 px-3.5 sm:px-4 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/25 text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
             title="1926 Safe NIMH Crisis Support"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span>1926 Safe</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="hidden sm:inline">1926 Safe</span>
           </button>
 
           {/* User Avatar Action */}
           <div 
             onClick={() => navigateTo('profile')}
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border border-white/20 cursor-pointer hover:border-white/60 transition-all shadow-sm shrink-0"
+            className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 cursor-pointer hover:border-amber-400/80 transition-all shadow-md shrink-0 ring-2 ring-black/40"
             title="View Profile"
           >
             <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
@@ -378,58 +415,68 @@ export const SoulverseWebsiteShell: React.FC = () => {
       {/* ===================================================================== */}
       <div className={`flex-1 flex w-full mx-auto relative z-10 ${
         devicePreviewMode === 'mobile_frame'
-          ? 'py-6 px-2 justify-center items-start'
-          : 'px-3 sm:px-6 py-4 max-w-[1600px] gap-6'
+          ? 'py-8 px-3 justify-center items-start'
+          : 'px-4 sm:px-8 py-6 max-w-[1520px] gap-8'
       }`}>
         
-        {/* DESKTOP SIDEBAR (Visible only when in wide fluid desktop mode) */}
+        {/* DESKTOP SIDEBAR: SPACIOUS, CATEGORIZED NAVIGATION */}
         {devicePreviewMode === 'fluid' && (
-          <aside className="hidden lg:flex w-56 shrink-0 flex-col space-y-4 sticky top-20 h-[calc(100vh-6rem)] overflow-y-auto no-scrollbar dark-glass p-3 rounded-3xl border border-white/[0.08] shadow-2xl">
-            {/* Primary Navigation List */}
-            <nav className="space-y-1">
-              {navItems.map(item => {
-                const Icon = item.icon;
-                const isActive = currentRoute === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => navigateTo(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-medium transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-white/10 text-white font-bold border border-white/20 shadow-sm'
-                        : 'text-zinc-400 hover:bg-white/[0.04] hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-zinc-400'}`} />
-                      <span>{item.label}</span>
-                    </div>
-                    {item.badge && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-white/10 text-zinc-200 border border-white/15">
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Quick Action: Create */}
+          <aside className="hidden lg:flex w-64 shrink-0 flex-col space-y-6 sticky top-24 h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar dark-glass p-4 rounded-3xl border border-white/[0.08] shadow-2xl">
+            
+            {/* Primary Action Button */}
             <button
               onClick={() => setIsCreateSheetOpen(true)}
-              className="w-full py-2.5 rounded-2xl bg-white text-[#090A0E] text-xs font-bold cursor-pointer hover:brightness-110 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+              className="w-full h-11 rounded-xl bg-white text-[#090A0E] text-sm font-heading font-bold cursor-pointer hover:bg-zinc-200 active:scale-98 transition-all shadow-md flex items-center justify-center gap-2"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>Create New...</span>
             </button>
 
+            {/* Categorized Navigation Groups */}
+            <div className="space-y-5">
+              {visibleNavCategories.map(category => (
+                <div key={category.title} className="space-y-1">
+                  <div className="px-3 pb-1 text-[11px] font-heading font-bold uppercase tracking-wider text-zinc-400">
+                    {category.title}
+                  </div>
+                  <nav className="space-y-1">
+                    {category.items.map(item => {
+                      const Icon = item.icon;
+                      const isActive = currentRoute === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => navigateTo(item.id)}
+                          className={`w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-white/12 text-white font-semibold border border-white/20 shadow-sm'
+                              : 'text-zinc-400 hover:bg-white/[0.05] hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon className={`w-4 h-4 ${isActive ? 'text-amber-300' : 'text-zinc-400'}`} />
+                            <span className="font-heading">{item.label}</span>
+                          </div>
+                          {item.badge && (
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-zinc-200 border border-white/15">
+                              {item.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+              ))}
+            </div>
+
             {/* Sub-Section: Your Worlds */}
-            <div className="space-y-1.5 pt-2 border-t border-white/[0.08]">
-              <div className="flex items-center justify-between px-2 text-[11px] font-bold">
+            <div className="space-y-2 pt-4 border-t border-white/[0.08]">
+              <div className="flex items-center justify-between px-3 text-xs font-heading font-bold">
                 <span className="text-white">Your Worlds</span>
                 <button 
                   onClick={() => navigateTo('worlds')}
-                  className="text-[10px] text-zinc-400 hover:text-white cursor-pointer"
+                  className="text-xs text-zinc-400 hover:text-amber-300 cursor-pointer transition-colors"
                 >
                   Explore ›
                 </button>
@@ -439,59 +486,75 @@ export const SoulverseWebsiteShell: React.FC = () => {
                 <div
                   key={w.id}
                   onClick={() => handleOpenWorld(w.id)}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-xl text-xs text-zinc-400 hover:bg-white/[0.04] hover:text-white cursor-pointer transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-zinc-300 hover:bg-white/[0.05] hover:text-white cursor-pointer transition-colors"
                 >
-                  <div className="w-5 h-5 rounded-md overflow-hidden shrink-0 border border-white/10">
+                  <div className="w-6 h-6 rounded-lg overflow-hidden shrink-0 border border-white/10">
                     <img src={w.cover_image_url || profile.avatar} alt={w.name} className="w-full h-full object-cover" />
                   </div>
-                  <span className="truncate text-[11px]">{w.name}</span>
+                  <span className="truncate text-xs font-medium">{w.name}</span>
                 </div>
               ))}
             </div>
 
             {/* Bottom Footer Shortcuts */}
-            <div className="flex items-center justify-around pt-2 border-t border-white/[0.08] text-zinc-400 mt-auto">
-              <button onClick={() => navigateTo('settings')} className="p-1.5 hover:text-white" title="Settings"><Settings className="w-3.5 h-3.5" /></button>
-              <button onClick={() => navigateTo('timeline')} className="p-1.5 hover:text-white" title="Timeline"><Calendar className="w-3.5 h-3.5" /></button>
-              <button onClick={() => navigateTo('admin')} className="p-1.5 hover:text-emerald-400" title="Admin Ops"><ShieldAlert className="w-3.5 h-3.5" /></button>
+            <div className="flex items-center justify-around pt-3 border-t border-white/[0.08] text-zinc-400 mt-auto">
+              <button onClick={() => navigateTo('settings')} className="p-2 hover:text-white rounded-lg hover:bg-white/5 transition-colors" title="Settings"><Settings className="w-4 h-4" /></button>
+              <button onClick={() => navigateTo('timeline')} className="p-2 hover:text-white rounded-lg hover:bg-white/5 transition-colors" title="Timeline"><Calendar className="w-4 h-4" /></button>
+              <button onClick={() => navigateTo('admin')} className="p-2 hover:text-emerald-400 rounded-lg hover:bg-white/5 transition-colors" title="Admin Ops"><ShieldAlert className="w-4 h-4" /></button>
             </div>
           </aside>
         )}
 
-        {/* MOBILE DRAWER (Slide-over when hamburger is tapped) */}
+        {/* MOBILE DRAWER: CATEGORIZED & ROOMY */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md lg:hidden flex">
-            <div className="w-72 bg-[#10121A] border-r border-white/10 h-full p-5 space-y-4 overflow-y-auto no-scrollbar animate-fadeIn">
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <span className="font-bold text-sm text-white font-serif">Soulverse Navigation</span>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="text-zinc-400 p-1 hover:text-white">
+          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md lg:hidden flex">
+            <div className="w-80 max-w-[85vw] bg-[#10121A] border-r border-white/10 h-full p-6 space-y-6 overflow-y-auto no-scrollbar animate-fadeIn">
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <span className="font-heading font-extrabold text-lg text-white">Soulverse</span>
+                  <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B]" />
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="text-zinc-400 p-2 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="space-y-1">
-                {navItems.map(item => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => navigateTo(item.id)}
-                      className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-medium ${
-                        currentRoute === item.id ? 'bg-white/15 text-white font-bold border border-white/20' : 'text-zinc-400'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Icon className="w-4 h-4" />
-                        <span>{item.label}</span>
-                      </div>
-                      {item.badge && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-white/10 text-zinc-200">
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+              {/* Mobile Drawer Categorized Navigation */}
+              <div className="space-y-5">
+                {visibleNavCategories.map(category => (
+                  <div key={category.title} className="space-y-1">
+                    <div className="px-3 pb-1 text-[11px] font-heading font-bold uppercase tracking-wider text-zinc-400">
+                      {category.title}
+                    </div>
+                    <div className="space-y-1">
+                      {category.items.map(item => {
+                        const Icon = item.icon;
+                        const isActive = currentRoute === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => navigateTo(item.id)}
+                            className={`w-full min-h-[48px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                              isActive
+                                ? 'bg-white/15 text-white font-semibold border border-white/20 shadow-sm'
+                                : 'text-zinc-300 hover:bg-white/[0.05] hover:text-white'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Icon className={`w-4 h-4 ${isActive ? 'text-amber-300' : 'text-zinc-400'}`} />
+                              <span className="font-heading">{item.label}</span>
+                            </div>
+                            {item.badge && (
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-zinc-200">
+                                {item.badge}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
             <div className="flex-1" onClick={() => setIsMobileMenuOpen(false)} />

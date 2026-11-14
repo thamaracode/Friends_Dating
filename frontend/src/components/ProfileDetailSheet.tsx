@@ -174,10 +174,10 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-[#090A0E] overflow-y-auto no-scrollbar pb-24 animate-fadeIn">
       {/* Top Floating Sticky Header */}
-      <div className="fixed top-0 inset-x-0 z-40 max-w-md mx-auto px-4 py-3 flex items-center justify-between pointer-events-none">
+      <div className="fixed top-0 inset-x-0 z-40 max-w-lg mx-auto px-5 py-4 flex items-center justify-between pointer-events-none">
         <button
           onClick={onClose}
-          className="w-10 h-10 rounded-full dark-glass flex items-center justify-center text-zinc-100 hover:text-white border border-white/20 shadow-xl pointer-events-auto cursor-pointer active:scale-95 transition-all"
+          className="w-11 h-11 rounded-full dark-glass flex items-center justify-center text-zinc-100 hover:text-white border border-white/20 shadow-xl pointer-events-auto cursor-pointer active:scale-95 transition-all"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -185,16 +185,16 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
         <div className="flex items-center gap-2 pointer-events-auto">
           <button
             onClick={() => alert("Profile shared!")}
-            className="w-10 h-10 rounded-full dark-glass flex items-center justify-center text-zinc-100 hover:text-white border border-white/20 shadow-xl cursor-pointer active:scale-95 transition-all"
+            className="w-11 h-11 rounded-full dark-glass flex items-center justify-center text-zinc-100 hover:text-white border border-white/20 shadow-xl cursor-pointer active:scale-95 transition-all"
           >
             <Share2 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto space-y-5">
+      <div className="max-w-lg mx-auto space-y-6">
         {/* Top Hero Photo Gallery */}
-        <div className="relative w-full aspect-[4/5] overflow-hidden bg-[#12141B]">
+        <div className="relative w-full aspect-[4/5] overflow-hidden bg-[#12141B] rounded-b-3xl">
           <img 
             src={photos[activePhotoIdx] || profile.avatar} 
             alt={profile.name} 
@@ -204,15 +204,15 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
 
           {/* Dots Indicator */}
           {photos.length > 1 && (
-            <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-1.5 z-20">
+            <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-2 z-20">
               {photos.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActivePhotoIdx(idx)}
-                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                  className={`h-2 rounded-full transition-all cursor-pointer ${
                     activePhotoIdx === idx 
-                      ? 'w-6 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]' 
-                      : 'w-1.5 bg-white/40 hover:bg-white/60'
+                      ? 'w-7 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]' 
+                      : 'w-2 bg-white/40 hover:bg-white/60'
                   }`}
                 />
               ))}
@@ -221,20 +221,20 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
         </div>
 
         {/* Identity Overview Bar */}
-        <div className="px-5 space-y-4">
+        <div className="px-5 sm:px-6 space-y-5">
           <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black text-white font-serif">{profile.name}</h1>
-                <span className="text-2xl font-semibold text-zinc-300 tabular-nums">{profile.age}</span>
+              <div className="flex items-center gap-2.5">
+                <h1 className="type-page-heading text-white">{profile.name}</h1>
+                <span className="type-page-heading font-normal text-zinc-300 tabular-nums">{profile.age}</span>
                 {profile.verifications?.photoVerified && (
                   <ShieldCheck className="w-5 h-5 text-emerald-400" />
                 )}
               </div>
               
-              <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">
+              <div className="flex items-center gap-2 type-supporting text-zinc-400 mt-1">
                 <span className="flex items-center gap-1 text-zinc-200">
-                  <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                  <MapPin className="w-4 h-4 text-zinc-400" />
                   <span>{profile.location}</span>
                 </span>
                 <span>•</span>
@@ -244,43 +244,43 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
 
             {/* Compatibility Score */}
             {profile.compatibilityScore && (
-              <div className="text-right px-3 py-1.5 rounded-2xl dark-glass border border-white/15">
-                <div className="text-base font-black text-white font-mono tabular-nums">
+              <div className="text-right px-3.5 py-2 rounded-2xl dark-glass border border-white/15">
+                <div className="text-lg font-black text-white font-mono tabular-nums">
                   {profile.compatibilityScore}%
                 </div>
-                <span className="text-[10px] text-zinc-400 font-medium">HCM Score</span>
+                <span className="type-metadata text-zinc-400 font-medium">HCM Score</span>
               </div>
             )}
           </div>
 
           {/* Bio Tagline */}
-          <div className="p-4 rounded-3xl dark-glass border border-white/10 space-y-2">
-            <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider block">About me</span>
-            <p className="text-xs text-zinc-200 leading-relaxed italic border-l-2 border-white/30 pl-3">
+          <div className="sv-card p-5 space-y-2">
+            <span className="type-metadata uppercase font-bold text-zinc-400 tracking-wider block">About me</span>
+            <p className="font-editorial italic text-sm sm:text-base text-zinc-100 leading-relaxed border-l-2 border-gold-500/50 pl-3.5">
               "{profile.tagline || profile.aboutMeLong}"
             </p>
           </div>
 
           {/* 1. Tinder-Inspired "Looking For" Card (Image 11) */}
-          <div className="p-4 rounded-3xl dark-glass border border-white/10 space-y-1.5 shadow-lg">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+          <div className="sv-card p-5 space-y-2 shadow-lg">
+            <span className="type-metadata font-bold text-zinc-400 uppercase tracking-wider block">
               Looking for
             </span>
             <div className="flex items-center gap-3 pt-1">
               <span className="text-2xl filter drop-shadow">
                 {isSelf ? userAttributes.lifestyle.lookingForEmoji : '🧐'}
               </span>
-              <span className="text-sm font-bold text-white tracking-tight">
+              <span className="type-card-heading text-white tracking-tight">
                 {isSelf ? userAttributes.lifestyle.lookingFor : (profile.intent === 'Dating' ? 'Long-term relationship' : 'Meaningful connections & deep talks')}
               </span>
             </div>
           </div>
 
           {/* Layer Navigation Tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#12141B] border border-white/10 text-xs overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#12141B] border border-white/10 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveLayer('public')}
-              className={`flex-1 py-1.5 px-3 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer text-center ${
+              className={`flex-1 h-10 px-3 rounded-xl font-heading font-semibold text-xs whitespace-nowrap transition-all cursor-pointer text-center ${
                 activeLayer === 'public' ? 'bg-white text-[#090A0E] shadow-sm' : 'text-zinc-400 hover:text-white'
               }`}
             >
@@ -288,7 +288,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
             </button>
             <button
               onClick={() => setActiveLayer('worlds')}
-              className={`flex-1 py-1.5 px-3 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer text-center ${
+              className={`flex-1 h-10 px-3 rounded-xl font-heading font-semibold text-xs whitespace-nowrap transition-all cursor-pointer text-center ${
                 activeLayer === 'worlds' ? 'bg-white text-[#090A0E] shadow-sm' : 'text-zinc-400 hover:text-white'
               }`}
             >
@@ -296,7 +296,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
             </button>
             <button
               onClick={() => setActiveLayer('readme')}
-              className={`flex-1 py-1.5 px-3 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer text-center ${
+              className={`flex-1 h-10 px-3 rounded-xl font-heading font-semibold text-xs whitespace-nowrap transition-all cursor-pointer text-center ${
                 activeLayer === 'readme' ? 'bg-white text-[#090A0E] shadow-sm' : 'text-zinc-400 hover:text-white'
               }`}
             >
@@ -304,7 +304,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
             </button>
             <button
               onClick={() => setActiveLayer('dating')}
-              className={`flex-1 py-1.5 px-3 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer text-center ${
+              className={`flex-1 h-10 px-3 rounded-xl font-heading font-semibold text-xs whitespace-nowrap transition-all cursor-pointer text-center ${
                 activeLayer === 'dating' ? 'bg-white text-[#090A0E] shadow-sm' : 'text-zinc-400 hover:text-white'
               }`}
             >
@@ -312,7 +312,7 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
             </button>
             <button
               onClick={() => setActiveLayer('private')}
-              className={`flex-1 py-1.5 px-3 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer text-center ${
+              className={`flex-1 h-10 px-3 rounded-xl font-heading font-semibold text-xs whitespace-nowrap transition-all cursor-pointer text-center ${
                 activeLayer === 'private' ? 'bg-white text-[#090A0E] shadow-sm' : 'text-zinc-400 hover:text-white'
               }`}
             >

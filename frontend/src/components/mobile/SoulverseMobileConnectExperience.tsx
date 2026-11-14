@@ -67,29 +67,29 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
   ];
 
   return (
-    <div className="w-full space-y-5 pb-28 max-w-xl mx-auto animate-fadeIn">
+    <div className="w-full space-y-8 pb-32 max-w-2xl mx-auto animate-fadeIn px-1 sm:px-2">
       
       {/* 1. TOP HEADER BANNER */}
-      <div className="flex items-center justify-between px-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         <div>
-          <h1 className="text-lg font-black text-white font-serif tracking-tight flex items-center gap-2">
-            <Users className="w-5 h-5 text-zinc-300" />
-            <span>Connect & Socialize</span>
+          <h1 className="type-page-heading flex items-center gap-2.5">
+            <Users className="w-6 h-6 text-amber-300" />
+            <span>Connect &amp; Socialize</span>
           </h1>
-          <p className="text-[11px] text-zinc-400">Events, communities, watch-parties and introspective spaces</p>
+          <p className="type-supporting mt-1">Events, communities, watch-parties and introspective spaces</p>
         </div>
       </div>
 
       {/* 2. FILTER PILLS */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-1">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
         {filterTabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            className={`h-10 px-4 rounded-full text-xs font-heading font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center ${
               activeTab === tab.id
-                ? 'bg-white text-[#090A0E] shadow-md'
-                : 'bg-white/[0.04] text-zinc-400 hover:text-white border border-white/10'
+                ? 'bg-white text-[#090A0E] shadow-md font-bold'
+                : 'bg-white/[0.04] text-zinc-300 hover:text-white hover:bg-white/[0.08] border border-white/10'
             }`}
           >
             {tab.label}
@@ -107,34 +107,34 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
       {/* SECTION 0: PERSONAL RELATIONSHIP MANAGEMENT (RELATIONSHIP VAULT)      */}
       {/* ===================================================================== */}
       {(activeTab === 'all' || activeTab === 'vault') && (
-        <div className="p-4 sm:p-5 rounded-3xl dark-glass border border-white/15 shadow-xl relative overflow-hidden bg-gradient-to-r from-rose-950/20 via-white/[0.02] to-transparent space-y-3">
+        <div className="sv-card relative overflow-hidden bg-gradient-to-r from-amber-500/10 via-white/[0.02] to-transparent space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_8px_#F43F5E]" />
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-300">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B]" />
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-300">
                 Core Pillar · Private Memory
               </span>
             </div>
             <button
               onClick={onOpenVault}
-              className="text-[11px] font-bold text-white hover:text-rose-300 flex items-center gap-1 cursor-pointer transition-colors"
+              className="text-xs font-heading font-bold text-amber-300 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
             >
               <span>Open Vault</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
-          <div>
-            <h3 className="text-sm font-bold text-white tracking-tight">
-              Relationship Vault & Connection Memory
+          <div className="space-y-1.5">
+            <h3 className="type-card-heading text-white font-bold">
+              Relationship Vault &amp; Connection Memory
             </h3>
-            <p className="text-xs text-zinc-300 mt-1 leading-relaxed">
+            <p className="type-body text-zinc-300 leading-relaxed">
               Never lose touch with what matters. Access "Before You Talk" instant briefings, promise tracking, and personal memories for your partners and friends.
             </p>
           </div>
 
-          <div className="flex items-center justify-between pt-1 border-t border-white/[0.08] text-xs">
-            <div className="flex items-center gap-2 text-zinc-400 text-[11px]">
+          <div className="flex items-center justify-between pt-3 border-t border-white/[0.08] flex-wrap gap-3">
+            <div className="flex items-center gap-3 text-zinc-400 text-xs font-medium">
               <span>🔒 100% Private</span>
               <span>·</span>
               <span>⚡ Prospective Memory</span>
@@ -144,7 +144,7 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
 
             <button
               onClick={onOpenVault}
-              className="px-3 py-1.5 rounded-xl bg-white text-[#090A0E] text-xs font-bold hover:brightness-110 shadow-md cursor-pointer transition-all"
+              className="sv-btn-gold"
             >
               Launch Vault
             </button>
@@ -156,19 +156,19 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
       {/* SECTION 1: SYNCHRONIZED WATCH PARTIES (Studio Ghibli & Lo-Fi Lounge)   */}
       {/* ===================================================================== */}
       {(activeTab === 'all' || activeTab === 'watch_parties') && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1 text-xs">
-            <span className="font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Tv className="w-4 h-4 text-rose-400" />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <span className="type-card-heading font-bold text-white flex items-center gap-2">
+              <Tv className="w-5 h-5 text-amber-300" />
               <span>Synchronized Watch Parties</span>
             </span>
-            <span className="text-[11px] font-bold text-rose-400 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
+            <span className="text-xs font-heading font-bold text-amber-300 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
               <span>Live This Weekend</span>
             </span>
           </div>
 
-          <div className="rounded-3xl dark-glass border border-white/15 overflow-hidden shadow-2xl relative group">
+          <div className="sv-card p-0 overflow-hidden relative group">
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/60">
               <img
                 src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=800&q=80"
@@ -177,21 +177,21 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#090A0E] via-black/40 to-black/20 pointer-events-none" />
 
-              <div className="absolute top-3 left-3 flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/80 backdrop-blur-md text-white border border-rose-400/30 flex items-center gap-1.5">
-                  <Play className="w-3 h-3 fill-white" />
+              <div className="absolute top-4 left-4 flex items-center gap-2">
+                <span className="h-8 px-3 rounded-full text-xs font-heading font-bold bg-rose-500/80 backdrop-blur-md text-white border border-rose-400/30 flex items-center gap-1.5">
+                  <Play className="w-3.5 h-3.5 fill-white" />
                   <span>Synchronized Video Room</span>
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/60 text-zinc-300 border border-white/10">
+                <span className="h-8 px-3 rounded-full text-xs font-heading font-semibold bg-black/70 text-zinc-200 border border-white/10 flex items-center">
                   29 Attending
                 </span>
               </div>
 
-              <div className="absolute bottom-3 left-4 right-4">
-                <h3 className="text-base sm:text-lg font-black text-white font-serif tracking-tight">
-                  Synchronized Movie Night: Studio Ghibli & Lo-Fi Lounge
+              <div className="absolute bottom-4 left-5 right-5">
+                <h3 className="text-xl sm:text-2xl font-bold text-white font-heading tracking-tight">
+                  Synchronized Movie Night: Studio Ghibli &amp; Lo-Fi Lounge
                 </h3>
-                <p className="text-xs text-zinc-300 mt-0.5 flex items-center gap-2">
+                <p className="type-supporting text-zinc-300 mt-1 flex items-center gap-2">
                   <span>Saturday, Nov 15 · 8:30 PM sharp</span>
                   <span>·</span>
                   <span className="text-white font-semibold">Virtual Cinema Sanctuary</span>
@@ -199,28 +199,24 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
               </div>
             </div>
 
-            <div className="p-4 space-y-3">
-              <p className="text-xs text-zinc-300 leading-relaxed">
+            <div className="p-6 space-y-4">
+              <p className="type-body text-zinc-300 leading-relaxed">
                 Watch together with synchronized playback and cozy live chat. Bring your tea and popcorn while we break down frame composition and nostalgia.
               </p>
 
-              <div className="flex items-center justify-between pt-1 border-t border-white/[0.08] text-xs">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between pt-3 border-t border-white/[0.08] flex-wrap gap-4">
+                <div className="flex items-center gap-3">
                   <img
                     src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80"
                     alt="Host"
-                    className="w-6 h-6 rounded-full object-cover border border-white/20"
+                    className="w-8 h-8 rounded-full object-cover border border-white/20"
                   />
-                  <span className="text-zinc-400 text-[11px]">Hosted by <strong className="text-white">Tara Perera</strong></span>
+                  <span className="type-supporting text-zinc-400">Hosted by <strong className="text-white">Tara Perera</strong></span>
                 </div>
 
                 <button
                   onClick={() => toggleRsvp('evt_2')}
-                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    rsvpStates['evt_2']
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      : 'bg-white text-[#090A0E] hover:brightness-110 shadow-md'
-                  }`}
+                  className={rsvpStates['evt_2'] ? 'sv-btn-secondary border-emerald-500/40 text-emerald-300' : 'sv-btn-primary'}
                 >
                   {rsvpStates['evt_2'] ? 'RSVP Confirmed ✓' : 'Join Watch Room'}
                 </button>
@@ -234,72 +230,68 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
       {/* SECTION 2: PHYSICAL & LOCAL SOCIAL MEETUPS                             */}
       {/* ===================================================================== */}
       {(activeTab === 'all' || activeTab === 'events') && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1 text-xs">
-            <span className="font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-zinc-300" />
-              <span>Curated Gatherings & Meetups</span>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <span className="type-card-heading font-bold text-white flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-amber-300" />
+              <span>Curated Gatherings &amp; Meetups</span>
             </span>
-            <span className="text-[11px] text-zinc-400">Strictly No-Harassment Guarantee</span>
+            <span className="type-supporting text-zinc-400">Strictly No-Harassment Guarantee</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {MOCK_EVENTS.filter(e => e.id !== 'evt_2').map(event => (
               <div
                 key={event.id}
-                className="p-4 rounded-3xl dark-glass border border-white/[0.08] shadow-lg hover:border-white/20 transition-all space-y-3"
+                className="sv-card hover:border-white/20 transition-all space-y-4"
               >
-                <div className="flex gap-3.5">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 border border-white/10 relative">
+                <div className="flex gap-4">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shrink-0 border border-white/10 relative">
                     <img src={event.coverImage} alt={event.title} className="w-full h-full object-cover" />
-                    <span className="absolute bottom-1 right-1 px-1.5 py-0.2 rounded-md bg-black/70 backdrop-blur-md text-[9px] font-bold text-white border border-white/10">
+                    <span className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[10px] font-bold text-white border border-white/10">
                       {event.format === 'physical' ? 'Offline' : 'Online'}
                     </span>
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-heading font-bold text-amber-300 uppercase tracking-wider">
                         {event.category}
                       </span>
                       <span>·</span>
-                      <span className="text-[10px] font-semibold text-zinc-300">{event.date}</span>
+                      <span className="font-medium text-zinc-300">{event.date}</span>
                     </div>
 
-                    <h4 className="text-sm font-bold text-white tracking-tight mt-0.5 line-clamp-2">
+                    <h4 className="type-card-heading font-bold text-white tracking-tight line-clamp-2">
                       {event.title}
                     </h4>
 
-                    <p className="text-[11px] text-zinc-400 mt-1 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                    <p className="type-supporting text-zinc-400 flex items-center gap-1.5 pt-0.5">
+                      <MapPin className="w-4 h-4 text-zinc-500 shrink-0" />
                       <span className="truncate">{event.locationName}</span>
                     </p>
                   </div>
                 </div>
 
-                <p className="text-xs text-zinc-300 leading-relaxed line-clamp-2">
+                <p className="type-body text-zinc-300 leading-relaxed line-clamp-2">
                   {event.description}
                 </p>
 
                 {/* Safety & Introvert friendly tag */}
-                <div className="flex items-center justify-between pt-2 border-t border-white/[0.08] text-xs">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-bold flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
+                <div className="flex items-center justify-between pt-3 border-t border-white/[0.08] flex-wrap gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5" />
                       <span>Introvert Friendly</span>
                     </span>
-                    <span className="text-[10px] text-zinc-400">
+                    <span className="type-supporting text-zinc-400">
                       {event.attendeesCount} / {event.capacity} spots filled
                     </span>
                   </div>
 
                   <button
                     onClick={() => toggleRsvp(event.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      rsvpStates[event.id]
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-white/[0.08] hover:bg-white/15 text-white border border-white/15'
-                    }`}
+                    className={rsvpStates[event.id] ? 'sv-btn-secondary border-emerald-500/40 text-emerald-300' : 'sv-btn-secondary'}
                   >
                     {rsvpStates[event.id] ? 'Attending ✓' : 'RSVP Free'}
                   </button>

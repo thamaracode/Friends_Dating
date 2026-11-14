@@ -247,44 +247,44 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 pb-12 animate-fadeIn">
+    <div className="w-full max-w-5xl mx-auto space-y-8 pb-16 animate-fadeIn px-2 sm:px-4">
       
       {/* ===================================================================== */}
       {/* 1. TOP HEADER & STREAK BANNER                                         */}
       {/* ===================================================================== */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-6 pb-6 border-b border-white/[0.08]">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-3">
             {onBackToHome && (
               <button 
                 onClick={onBackToHome}
-                className="p-1.5 rounded-xl dark-glass border border-white/[0.08] text-zinc-400 hover:text-white cursor-pointer"
+                className="h-10 w-10 rounded-xl dark-glass border border-white/[0.08] text-zinc-300 hover:text-white cursor-pointer flex items-center justify-center transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            <h1 className="text-xl sm:text-2xl font-black text-white font-serif flex items-center gap-2">
+            <h1 className="type-page-heading flex items-center gap-2.5">
               <span>Daily Connection</span>
-              <span className="text-zinc-400 text-sm">✧</span>
+              <span className="text-amber-400 font-normal">✧</span>
             </h1>
           </div>
-          <p className="text-xs text-zinc-400">
-            Personalized Relationship & Human Connection Intelligence • Helping you love, understand and connect.
+          <p className="type-supporting">
+            Personalized Relationship &amp; Human Connection Intelligence • Helping you love, understand and connect.
           </p>
         </div>
 
         {/* Streaks & Personalization Controls */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
           {streak && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full dark-glass border border-white/20 text-white text-xs font-bold shadow-md bg-white/5">
-              <Flame className="w-4 h-4 text-white fill-white" />
+            <div className="flex items-center gap-2 h-10 px-4 rounded-full dark-glass border border-amber-400/25 text-amber-300 text-xs font-heading font-bold shadow-md bg-amber-400/10">
+              <Flame className="w-4 h-4 text-amber-300 fill-amber-300" />
               <span>{streak.current_streak} Day Streak</span>
             </div>
           )}
 
           <button
             onClick={() => setIsPersonalizeOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-white transition-colors cursor-pointer"
+            className="flex items-center gap-2 h-10 px-4 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.12] text-xs font-heading font-semibold text-white transition-colors cursor-pointer"
             title="Personalize your daily track"
           >
             <Sliders className="w-3.5 h-3.5 text-zinc-400" />
@@ -293,15 +293,15 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
 
           <button
             onClick={handleOpenSaved}
-            className="p-2 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            className="h-10 w-10 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.12] text-zinc-300 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
             title="Saved Wisdom"
           >
-            <Bookmark className="w-4 h-4" />
+            <Bookmark className="w-4 h-4 text-amber-300" />
           </button>
 
           <button
             onClick={handleOpenHistory}
-            className="p-2 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.08] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            className="h-10 w-10 rounded-full dark-glass hover:bg-white/[0.08] border border-white/[0.12] text-zinc-300 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
             title="Past Reflections"
           >
             <Calendar className="w-4 h-4" />
@@ -309,10 +309,10 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
 
           <a
             href="#quotes"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full dark-glass bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-colors cursor-pointer"
+            className="flex items-center gap-2 h-10 px-4 rounded-full dark-glass bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/30 text-xs font-heading font-bold text-amber-300 transition-colors cursor-pointer"
             title="Infinite Quotes Sanctuary"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <Sparkles className="w-4 h-4 text-amber-300" />
             <span className="hidden sm:inline">Quotes Sanctuary</span>
           </a>
         </div>
@@ -321,7 +321,7 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
       {/* ===================================================================== */}
       {/* 2. THE 4 PERMANENT TABS                                               */}
       {/* ===================================================================== */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
         {tabsConfig.map(t => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
@@ -329,33 +329,33 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`p-3.5 rounded-2xl flex flex-col text-left transition-all cursor-pointer relative overflow-hidden group ${
+              className={`p-4 sm:p-5 rounded-2xl flex flex-col text-left transition-all cursor-pointer relative overflow-hidden group ${
                 isActive
-                  ? 'dark-glass border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.06)]'
+                  ? 'dark-glass border border-amber-400/40 shadow-[0_0_20px_rgba(246,193,56,0.12)]'
                   : 'dark-glass-card hover:border-white/20'
               }`}
             >
               {isActive && (
                 <div 
-                  className="absolute inset-x-0 top-0 h-1 bg-white/80"
+                  className="absolute inset-x-0 top-0 h-1 bg-amber-400"
                 />
               )}
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center justify-between mb-2">
                 <div 
-                  className={`w-7 h-7 rounded-xl flex items-center justify-center ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-white/[0.05] text-zinc-400'
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                    isActive ? 'bg-amber-400/20 text-amber-300' : 'bg-white/[0.05] text-zinc-400'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
                 </div>
                 {editions && editions[t.id]?.is_saved && (
-                  <Bookmark className="w-3.5 h-3.5 text-white fill-white" />
+                  <Bookmark className="w-4 h-4 text-amber-400 fill-amber-400" />
                 )}
               </div>
-              <span className={`text-xs font-bold ${isActive ? 'text-white' : 'text-zinc-400'}`}>
+              <span className={`text-sm font-heading font-bold ${isActive ? 'text-white' : 'text-zinc-300'}`}>
                 {t.label}
               </span>
-              <span className="text-[10px] text-zinc-400 line-clamp-1">
+              <span className="text-xs text-zinc-400 line-clamp-1 mt-0.5">
                 {t.sublabel}
               </span>
             </button>
@@ -367,10 +367,10 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
       {/* 3. TODAY'S PRIMARY EDITION CARD (Frosted Dark Glass)                  */}
       {/* ===================================================================== */}
       {currentItem ? (
-        <div className="rounded-3xl dark-glass border border-white/[0.08] overflow-hidden shadow-2xl relative">
+        <div className="sv-card p-0 overflow-hidden relative shadow-2xl">
           
           {/* Banner Artwork & Category Badges */}
-          <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-black/40">
+          <div className="relative h-56 sm:h-64 w-full overflow-hidden bg-black/40">
             <img 
               src={currentItem.cover_image_url || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80'}
               alt={currentItem.title}
@@ -380,21 +380,21 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
             <div className="absolute inset-0 bg-gradient-to-t from-[#090A0E] via-[#090A0E]/60 to-transparent" />
             
             {/* Edition & Category Metadata Pill */}
-            <div className="absolute top-4 left-4 sm:left-6 flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold dark-glass border border-white/10 text-white backdrop-blur-md flex items-center gap-1.5">
+            <div className="absolute top-5 left-5 sm:left-8 flex flex-wrap items-center gap-2.5">
+              <span className="h-8 px-3.5 rounded-full text-xs font-heading font-bold dark-glass border border-white/15 text-white backdrop-blur-md flex items-center gap-2">
                 <span>{currentItem.category_icon}</span>
                 <span>{currentItem.category_name}</span>
               </span>
-              <span className="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider dark-glass border border-white/20 text-zinc-200 backdrop-blur-md">
+              <span className="h-8 px-3.5 rounded-full text-xs font-heading font-semibold uppercase tracking-wider dark-glass border border-white/20 text-zinc-200 backdrop-blur-md flex items-center">
                 Today's {currentItem.format_type.replace('_', ' ')}
               </span>
             </div>
 
             {/* Quick Share Pill */}
-            <div className="absolute top-4 right-4 sm:right-6">
+            <div className="absolute top-5 right-5 sm:right-8">
               <button
                 onClick={() => setIsShareModalOpen(true)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium dark-glass hover:bg-white/[0.08] border border-white/10 text-white backdrop-blur-md flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="h-9 px-4 rounded-full text-xs font-heading font-semibold dark-glass hover:bg-white/[0.12] border border-white/15 text-white backdrop-blur-md flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Share2 className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Share Card</span>
@@ -403,28 +403,28 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
           </div>
 
           {/* Main Content Area */}
-          <div className="p-6 sm:p-8 space-y-6 -mt-10 relative z-10">
+          <div className="p-8 sm:p-10 space-y-8 -mt-12 relative z-10">
             
-            {/* The Core Quote / One-Liner */}
-            <div className="space-y-3">
-              <h2 className="text-xl sm:text-2xl font-black text-white font-serif leading-snug">
+            {/* The Core Quote in Playfair Editorial Type */}
+            <div className="space-y-4">
+              <h2 className="font-editorial italic text-2xl sm:text-3xl md:text-4xl text-white leading-relaxed font-normal">
                 "{currentItem.quote_one_liner}"
               </h2>
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <span className="uppercase tracking-wider font-bold text-[10px] text-zinc-300">
+              <div className="flex items-center gap-2.5 text-xs text-zinc-400">
+                <span className="uppercase tracking-wider font-heading font-bold text-amber-300">
                   {currentItem.title}
                 </span>
                 <span>•</span>
-                <span>{currentItem.author_or_source}</span>
+                <span className="text-zinc-300 font-medium">{currentItem.author_or_source}</span>
               </div>
             </div>
 
             {/* Deep In-Depth Thought Insight */}
-            <div className="p-4 sm:p-5 rounded-2xl dark-glass border border-white/[0.07] space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
-                Today's Insight & Context
+            <div className="p-6 sm:p-7 rounded-2xl dark-glass border border-white/[0.08] space-y-2.5">
+              <span className="text-xs font-heading font-bold uppercase tracking-wider text-amber-300 block">
+                Today's Insight &amp; Context
               </span>
-              <p className="text-sm text-zinc-200 leading-relaxed">
+              <p className="type-body text-zinc-200 leading-relaxed font-body">
                 {currentItem.body_insight}
               </p>
             </div>
