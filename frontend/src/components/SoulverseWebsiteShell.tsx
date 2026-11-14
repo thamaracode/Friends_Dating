@@ -353,24 +353,8 @@ export const SoulverseWebsiteShell: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: Spotify Ambient Anthem Pill (Quick Play/Pause) */}
-        <div className="hidden sm:flex items-center gap-2">
-          {musicTrack && (
-            <div 
-              onClick={togglePlay}
-              className="flex items-center gap-2.5 h-10 px-4 rounded-full dark-glass-card border border-white/15 hover:border-amber-400/30 cursor-pointer shadow-sm group transition-all"
-              title="Toggle Spotify Ambient Audio"
-            >
-              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10B981] animate-pulse" />
-              <span className="text-xs font-semibold text-zinc-200 truncate max-w-[120px] md:max-w-[180px]">
-                {musicTrack.title}
-              </span>
-              <span className="text-xs text-zinc-400 font-mono">
-                {isMusicPlaying ? '❚❚' : '▶'}
-              </span>
-            </div>
-          )}
-        </div>
+        {/* Center: Dedicated Clean Spacing (Persistent ambient audio docks & floating players removed) */}
+        <div className="hidden sm:flex items-center gap-2" />
 
         {/* Right Actions: Clean, Spacious Action Cluster */}
         <div className="flex items-center gap-1.5 sm:gap-3">
