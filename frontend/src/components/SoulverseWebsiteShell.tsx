@@ -42,7 +42,8 @@ import {
   Quote as QuoteIcon,
   Gamepad2,
   Brain,
-  Layers
+  Layers,
+  HelpCircle
 } from 'lucide-react';
 import { SearchBar, PulseBadge } from './klyven';
 
@@ -94,6 +95,8 @@ import { PersonalitySanctuaryView } from './personality/PersonalitySanctuaryView
 import { SocialDiscoveryEngineView } from './discovery/SocialDiscoveryEngineView';
 import { DynamicContentEngineView } from './content/DynamicContentEngineView';
 import { DesignSystemShowcase } from './ui/DesignSystemShowcase';
+import { SocialFeedView } from './social/SocialFeedView';
+import { QuestionSanctuaryView } from './social/QuestionSanctuaryView';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -268,6 +271,8 @@ export const SoulverseWebsiteShell: React.FC = () => {
     {
       title: 'Discover & Wisdom',
       items: [
+        { id: 'social_feed' as SoulverseRoute, label: 'Social Stream & Feed', icon: Flame, badge: 'Stream' },
+        { id: 'questions_sanctuary' as SoulverseRoute, label: 'Questions Sanctuary', icon: HelpCircle, badge: 'Wisdom' },
         { id: 'discover' as SoulverseRoute, label: 'Discover Humans', icon: Compass, featureId: 'feat_dating' },
         { id: 'personality' as SoulverseRoute, label: 'Personality & EI Sanctuary', icon: Brain, badge: 'EI', featureId: 'feat_personality_exploration' },
         { id: 'content_engine' as SoulverseRoute, label: 'Connection Inquiries', icon: Compass, badge: 'Prompt', featureId: 'feat_daily_quotes' },
@@ -751,6 +756,20 @@ export const SoulverseWebsiteShell: React.FC = () => {
             {currentRoute === 'design_system' && (
               <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass p-2 sm:p-6 animate-fadeIn">
                 <DesignSystemShowcase />
+              </div>
+            )}
+
+            {/* SUB-VIEW: SOCIAL STREAM & POSTS ECOSYSTEM (Master Prompt 02) */}
+            {currentRoute === 'social_feed' && (
+              <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass p-3 sm:p-6 animate-fadeIn">
+                <SocialFeedView />
+              </div>
+            )}
+
+            {/* SUB-VIEW: QUESTION DISCOVERY & REFLECTION SANCTUARY (Master Prompt 02) */}
+            {currentRoute === 'questions_sanctuary' && (
+              <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass p-3 sm:p-6 animate-fadeIn">
+                <QuestionSanctuaryView />
               </div>
             )}
 

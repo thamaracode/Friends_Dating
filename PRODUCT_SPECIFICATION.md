@@ -259,6 +259,109 @@ $$\text{DISCOVER} \longrightarrow \text{SPECIFY} \longrightarrow \text{DESIGN} \
 - **Implementation Status**: **VERIFIED**
 - **Verification Evidence**: 9 tests passing in `soul-prompts.test.ts`.
 
+#### Feature `QUESTION-001`: Multidimensional Question Discovery & Non-Repeating Refresh
+- **Purpose**: Provide a deep question discovery engine spanning 8 core domains and 60+ subcategories with a true, non-repeating refresh mechanism powered by local IndexedDB and server-side view logs.
+- **Requirements**:
+  1. Extensive taxonomy covering: Self-Discovery, Love & Romance, Friendship, Emotional Intelligence, Life Experiences, Creativity, Fun & Social, and Deep Conversations.
+  2. Question metadata: depth level, difficulty, sensitivity, audience suitability, context tips, follow-ups, and tags.
+  3. True Refresh button: excludes recently viewed IDs and skipped items (`question_views`, `question_skips`); gracefully handles cycle resets.
+  4. Timezone-aware deterministic daily questions based on date key.
+  5. Personal history tracking: answered, saved, skipped, and my answers.
+- **Dependencies**: `offlineContentDb.ts`, `users`.
+- **Database Tables**: `questions_ecosystem`, `question_views`, `question_skips`.
+- **API Endpoints**:
+  - `GET /api/v1/social/questions`
+  - `GET /api/v1/social/questions/random`
+  - `GET /api/v1/social/questions/daily`
+  - `GET /api/v1/social/questions/:id`
+  - `POST /api/v1/social/questions/:id/skip`
+  - `GET /api/v1/social/questions/history`
+- **Frontend Components**: `QuestionSanctuaryView.tsx`.
+- **Permissions**: Public read; authenticated interaction.
+- **Validation Rules**: Category in allowed enum; depth level in allowed enum.
+- **Error Scenarios**: 404 on missing question; graceful cycle reset when category fully consumed.
+- **Automated Tests**: `backend/src/social-feed-master.test.ts` (Suite 1).
+- **Implementation Status**: **VERIFIED**
+- **Verification Evidence**: 14 tests passing in `social-feed-master.test.ts`.
+
+#### Feature `QUESTION-002`: Question Answering, Community Perspectives & ABAC Privacy
+- **Purpose**: Empower users to author candid reflections, answers, and media responses with strict backend ABAC privacy controls and community perspectives.
+- **Requirements**:
+  1. Support diverse answer formats: short text, long text, single/multiple choice, poll response, image, structured reflection.
+  2. Privacy controls: `private` (secure personal journal), `connections`, `friends`, `selected`, `public`.
+  3. Strict server-side ABAC authorization (private answers never leak to unauthorized callers).
+  4. Discussion thread separation: comments on questions distinct from profile answers.
+  5. One-click conversion from question answer to shared social post.
+- **Dependencies**: `QUESTION-001`, `social_posts`.
+- **Database Tables**: `question_answers`, `social_comments`.
+- **API Endpoints**:
+  - `POST /api/v1/social/questions/:id/answers`
+  - `GET /api/v1/social/questions/:id/answers`
+  - `DELETE /api/v1/social/answers/:id`
+- **Frontend Components**: `QuestionSanctuaryView.tsx`.
+- **Permissions**: Author verified on mutate; ABAC evaluated on query.
+- **Validation Rules**: Answer text required; visibility in allowed enum.
+- **Error Scenarios**: 403 on inspecting private answer; 404 on invalid question.
+- **Automated Tests**: `backend/src/social-feed-master.test.ts` (Suite 1).
+- **Implementation Status**: **VERIFIED**
+- **Verification Evidence**: ABAC leakage protection and CRUD assertions passing.
+
+#### Feature `FEED-001`: Multimodal Social Post & Publishing Engine
+- **Purpose**: Enable rich, intentional social publishing across 17 distinct post formats with persistent client-side drafts, automatic hashtag indexing, mention tracking, and immutable edit history.
+- **Requirements**:
+  1. 17 supported post formats: text, image, video, audio, question, poll, story, experience, thought, reflection, quote, link, multi-image, carousel, shared answer, event, challenge.
+  2. Local-first auto-save draft persistence via Dexie.js (`offlineContentDb.ts`) preventing loss of user writing.
+  3. Automatic hashtag extraction (`#hashtag`) with usage indexing in `social_hashtags`.
+  4. User mention parsing (`@username`) with dispatch into `social_mentions`.
+  5. Immutable versioned edit history in `social_post_edits` and controlled soft deletion.
+  6. Multi-tier visibility: `public`, `connections`, `friends`, `selected`, `private`, `custom`.
+- **Dependencies**: `offlineContentDb.ts`, `users`.
+- **Database Tables**: `social_posts`, `social_post_edits`, `social_post_drafts`, `social_hashtags`, `social_mentions`.
+- **API Endpoints**:
+  - `POST /api/v1/social/posts`
+  - `GET /api/v1/social/posts/:id`
+  - `PATCH /api/v1/social/posts/:id`
+  - `DELETE /api/v1/social/posts/:id`
+  - `GET /api/v1/social/posts/:id/edits`
+  - `POST /api/v1/social/drafts`
+  - `GET /api/v1/social/drafts`
+- **Frontend Components**: `PostComposerModal.tsx`, `SocialFeedView.tsx`.
+- **Permissions**: Ownership required on edit/delete; ABAC enforced on read.
+- **Validation Rules**: Content or media required; post_type in allowed enum.
+- **Error Scenarios**: 403 on unauthorized mutation; 404 on deleted post.
+- **Automated Tests**: `backend/src/social-feed-master.test.ts` (Suite 2).
+- **Implementation Status**: **VERIFIED**
+- **Verification Evidence**: Multimodal post creation, hashtag extraction, and edit history verified.
+
+#### Feature `FEED-002`: Transparent Recommendation & Algorithmic Social Feed
+- **Purpose**: Deliver an engaging, emotionally mature social feed experience with transparent ranking signals, monotonic cursor pagination, nested threaded comments, and emotional reactions.
+- **Requirements**:
+  1. Multiple feed modes: For You, Following, Friends, Questions, Trending, Latest, Saved.
+  2. Transparent ranking factoring in user category affinities, author relationship strength, recency decay, and depth signals.
+  3. Deterministic cursor pagination (`cursor = timestamp_id`) preventing missing or duplicate items across page boundaries.
+  4. Nested threaded comments supporting parent-child replies up to depth level 3 with soft-deletion preservation.
+  5. 6 emotion-aligned reactions: like, love, laugh, thoughtful, support, celebrate with atomic toggle and accurate count aggregation.
+  6. Bookmarks and custom collections organization.
+  7. Content moderation reporting workflow with admin queue.
+- **Dependencies**: `FEED-001`, `social_comments`, `social_reactions`.
+- **Database Tables**: `social_posts`, `social_comments`, `social_reactions`, `social_bookmarks`, `social_collections`, `content_moderation_reports`.
+- **API Endpoints**:
+  - `GET /api/v1/social/posts`
+  - `GET /api/v1/social/comments`
+  - `POST /api/v1/social/comments`
+  - `DELETE /api/v1/social/comments/:id`
+  - `POST /api/v1/social/reactions`
+  - `POST /api/v1/social/bookmarks`
+  - `GET /api/v1/social/collections`
+  - `POST /api/v1/social/reports`
+- **Frontend Components**: `SocialFeedView.tsx`.
+- **Permissions**: Public feed reads; authenticated reactions and comments.
+- **Validation Rules**: Reaction type in allowed enum; comment content non-empty; depth level <= 3.
+- **Error Scenarios**: 400 on empty comment; 403 on private post comments.
+- **Automated Tests**: `backend/src/social-feed-master.test.ts` (Suites 3, 4, 5, 6).
+- **Implementation Status**: **VERIFIED**
+- **Verification Evidence**: Cursor pagination, comment nesting, and reaction toggling verified.
+
 ---
 
 ### Domain F: Personal AI Intelligence & Multi-Provider Architecture (BYOAI)

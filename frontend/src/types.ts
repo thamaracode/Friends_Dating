@@ -23,7 +23,9 @@ export type SoulverseRoute =
   | 'discovery_engine'
   | 'content_engine'
   | 'design_system'
-  | 'spotify';
+  | 'spotify'
+  | 'social_feed'
+  | 'questions_sanctuary';
 
 export type MobilePrimaryTab = 'discover' | 'connect' | 'create' | 'inbox' | 'profile';
 

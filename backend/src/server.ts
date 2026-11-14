@@ -57,10 +57,15 @@ import { initArchitectureSchema } from './architecture/schema';
 import { architectureRouter } from './architecture/router';
 import { BackgroundJobManager } from './architecture/backgroundJobs';
 import { DataProtectionService } from './architecture/dataProtection';
+import { initSocialSchema } from './social/schema';
+import { socialRouter } from './social/router';
+import { QuestionsService } from './social/questionsService';
 
 initDatabase();
 initCommunicationSchema();
 initArchitectureSchema();
+initSocialSchema();
+QuestionsService.ensureSeeded();
 SoulPromptsService.initTables();
 ContentEngineService.ensureTables();
 BackgroundJobManager.start();
@@ -74,6 +79,10 @@ app.use(cors({
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(createRateLimiter({ windowMs: 60 * 1000, maxRequests: 500 }));
+
+// Production Social Feed, Questions & Content Discovery Router (Master Prompt 02)
+app.use('/api/v1/social', socialRouter);
+app.use('/api/social', socialRouter);
 
 // Production Architecture & Security Router (Master Prompt 11)
 app.use('/api/v1', architectureRouter);
