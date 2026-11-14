@@ -363,6 +363,11 @@ export interface UserProfile {
   headline: string;
   intent: 'Friendship' | 'Dating' | 'Talk & Support' | 'Self Discovery';
   status: string;
+  customEmojiStatus?: {
+    id: string;
+    fallback: string;
+    name?: string;
+  };
   languages: string[];
   website?: string;
   aboutMeLong: string;

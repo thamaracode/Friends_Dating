@@ -133,6 +133,11 @@ export const CURRENT_USER: UserProfile = {
   tagline: 'Coding human connection spaces. Seeking genuine conversation over small talk.',
   headline: 'Trying to experience more of life, build meaningful things, and have conversations that do not end after three messages.',
   status: 'Undergraduate & Indie Dev',
+  customEmojiStatus: {
+    id: '5172484558305625218',
+    fallback: '⭐',
+    name: 'Telegram Stars VIP'
+  },
   languages: ['English', 'Sinhala', 'Basic Japanese'],
   website: 'https://kavindu.dev',
   aboutMeLong: `I spend my days architecting systems, drinking endless cups of spiced black tea, and wondering why modern social software makes everyone feel lonelier instead of more connected. 

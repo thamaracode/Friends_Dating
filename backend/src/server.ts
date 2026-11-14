@@ -1,5 +1,6 @@
 import http from 'http';
 import path from 'path';
+import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -6093,6 +6094,82 @@ app.post('/api/admin/quotes/daily', requireAdminPermission('features', 'write'),
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to assign daily quote', details: error.message });
   }
+});
+
+// =========================================================================
+// SECTION 22: TELEGRAM PREMIUM EMOJIS (Zulut30/premium-telegram-emoji)
+// =========================================================================
+let telegramCuratedEmojis: any[] = [];
+let telegramEmojiStyleProfile: any = null;
+
+try {
+  const curatedPath = path.resolve(__dirname, 'data/telegramEmojiCurated.json');
+  if (fs.existsSync(curatedPath)) {
+    telegramCuratedEmojis = JSON.parse(fs.readFileSync(curatedPath, 'utf-8'));
+  }
+  const stylePath = path.resolve(__dirname, 'data/emoji-style.json');
+  if (fs.existsSync(stylePath)) {
+    telegramEmojiStyleProfile = JSON.parse(fs.readFileSync(stylePath, 'utf-8'));
+  }
+} catch (err) {
+  console.warn('Failed to load local Telegram emoji data:', err);
+}
+
+app.get('/api/telegram-emojis/style', (_req, res) => {
+  res.json({
+    success: true,
+    profile: telegramEmojiStyleProfile || {
+      schema_version: 1,
+      style: 'minimal',
+      primary_pack: 'sfsymbols',
+      secondary_packs: ['Animated News Emoji', 'Animated App Icons', 'CuteEmoji', 'TopicIcons', 'NeonEmoji'],
+      roles: {}
+    }
+  });
+});
+
+app.get('/api/telegram-emojis/curated', (req, res) => {
+  const { group, style } = req.query;
+  let items = telegramCuratedEmojis;
+  if (group && group !== 'all') {
+    items = items.filter(i => i.group === group);
+  }
+  if (style && style !== 'all') {
+    items = items.filter(i => i.style === style);
+  }
+  res.json({ success: true, total: items.length, items });
+});
+
+app.get('/api/telegram-emojis/search', (req, res) => {
+  const q = ((req.query.q as string) || '').trim().toLowerCase();
+  const style = req.query.style as string | undefined;
+  const group = req.query.group as string | undefined;
+  const limit = Math.min(100, parseInt((req.query.limit as string) || '50', 10));
+
+  let pool = telegramCuratedEmojis;
+  const results = [];
+
+  for (const item of pool) {
+    if (style && style !== 'all' && item.style !== style) continue;
+    if (group && group !== 'all' && item.group !== group) continue;
+    if (q) {
+      const searchTokens = (item.search || `${item.name} ${item.key}`).toLowerCase();
+      if (!searchTokens.includes(q)) continue;
+    }
+    results.push(item);
+    if (results.length >= limit) break;
+  }
+
+  res.json({ success: true, count: results.length, results });
+});
+
+app.get('/api/telegram-emojis/:id', (req, res) => {
+  const { id } = req.params;
+  const found = telegramCuratedEmojis.find(e => e.id === id);
+  if (!found) {
+    return res.status(404).json({ error: 'Emoji not found in catalog' });
+  }
+  res.json({ success: true, emoji: found });
 });
 
 

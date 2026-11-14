@@ -53,6 +53,9 @@ import {
 import { MOCK_PROFILES, CURRENT_USER } from '../mockData';
 import { VoiceWaveformPlayer } from './VoiceWaveformPlayer';
 import { TelegramLuckEmoji } from './TelegramLuckEmoji';
+import { TgEmoji, renderWithTelegramEmojis } from './common/TgEmoji';
+import { TelegramPremiumEmojiPicker } from './chat/TelegramPremiumEmojiPicker';
+import type { TelegramPremiumEmoji } from '../types/telegramEmoji';
 import { chatClient } from '../services/chatApiClient';
 import { BeforeYouTalkSheet } from './vault/BeforeYouTalkSheet';
 import { RelationshipVaultService } from '../services/relationshipVaultService';
@@ -828,8 +831,9 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 <div className="flex items-center gap-1">
                   <h3 className="text-xs font-bold text-[#F3F4F6]">{currentConv.title}</h3>
                   {currentConv.isVerified && (
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <TgEmoji id="5206607081334906820" fallback="✅" size={14} title="Verified Telegram Identity" />
                   )}
+                  <TgEmoji id="5172484558305625218" fallback="⭐" size={14} title="Telegram Premium Stars VIP" />
                 </div>
                 <span className="text-[10px] text-[#9CA3AF]">
                   {typingPartnerText ? (
@@ -1039,7 +1043,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                     {msg.replyTo && (
                       <div className="text-[10px] text-[#FFB8D2] mb-1 px-3 py-1 rounded-xl bg-black/50 border-l-2 border-[#FFFFFF] max-w-[75%] backdrop-blur-md">
                         <span className="font-bold">Replied to {msg.replyTo.senderName}:</span>
-                        <p className="truncate italic">{msg.replyTo.textSnippet}</p>
+                        <p className="truncate italic">{renderWithTelegramEmojis(msg.replyTo.textSnippet, 14)}</p>
                       </div>
                     )}
 
@@ -1113,7 +1117,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                           isOutgoing={msg.isOutgoing}
                         />
                       ) : (
-                        <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                        <div className="leading-relaxed whitespace-pre-wrap">{renderWithTelegramEmojis(msg.text, 20)}</div>
                       )}
 
                       {/* Metadata: Time, Status, Edited */}
@@ -1133,7 +1137,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                           key={i}
                           className="px-2 py-0.5 rounded-full bg-[#12141B] border border-[rgba(255,255,255,0.20)]/30 text-[10px] font-bold text-[#F3F4F6] flex items-center gap-1 shadow-sm"
                         >
-                          <span>{r.emoji}</span>
+                          <span className="flex items-center gap-1">{renderWithTelegramEmojis(r.emoji, 16)}</span>
                           {r.count > 1 && <span className="text-[9px] text-[#E5E7EB]">{r.count}</span>}
                         </span>
                       ))}
@@ -1182,30 +1186,43 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
         {/* Emoji / Sticker / Luck Drawer (Telegram Benchmark) */}
         {isEmojiPickerOpen && (
-          <div className="h-56 bg-[#12141B] border-t border-[rgba(255,255,255,0.20)]/20 flex flex-col animate-fadeIn select-none">
+          <div className={`${pickerTab === 'emoji' ? 'h-96' : 'h-56'} bg-[#12141B] border-t border-[rgba(255,255,255,0.20)]/20 flex flex-col animate-fadeIn select-none transition-all duration-200`}>
             {/* Header Tabs */}
             <div className="flex items-center justify-around border-b border-[rgba(255,255,255,0.20)]/10 py-1.5 text-xs font-bold">
               <button 
+                onClick={() => setPickerTab('emoji')} 
+                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'emoji' ? 'bg-[#FFFFFF] text-[#090A0E] shadow-md font-bold' : 'text-[#9CA3AF] hover:text-white'}`}
+              >
+                <span>✨ Telegram Premium Emojis</span>
+              </button>
+              <button 
                 onClick={() => setPickerTab('luck')} 
-                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'luck' ? 'bg-[#FFFFFF] text-white shadow-md' : 'text-[#9CA3AF] hover:text-white'}`}
+                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'luck' ? 'bg-[#FFFFFF] text-[#090A0E] shadow-md font-bold' : 'text-[#9CA3AF] hover:text-white'}`}
               >
                 <span>🎰 Telegram Luck</span>
               </button>
               <button 
-                onClick={() => setPickerTab('emoji')} 
-                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'emoji' ? 'bg-[#FFFFFF] text-white shadow-md' : 'text-[#9CA3AF] hover:text-white'}`}
-              >
-                <span>😀 Emojis</span>
-              </button>
-              <button 
                 onClick={() => setPickerTab('stickers')} 
-                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'stickers' ? 'bg-[#FFFFFF] text-white shadow-md' : 'text-[#9CA3AF] hover:text-white'}`}
+                className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'stickers' ? 'bg-[#FFFFFF] text-[#090A0E] shadow-md font-bold' : 'text-[#9CA3AF] hover:text-white'}`}
               >
                 <span>🌟 Stickers</span>
               </button>
             </div>
 
-            {/* TAB 1: TELEGRAM LUCK EMOJIS (🎰, 🎲, 🪙) */}
+            {/* TAB 1: TELEGRAM PREMIUM EMOJIS (7,092 CATALOG BY ZULUT30) */}
+            {pickerTab === 'emoji' && (
+              <div className="flex-1 overflow-hidden p-1">
+                <TelegramPremiumEmojiPicker
+                  onSelectEmoji={(_emoji, html) => {
+                    setInputMessage(prev => (prev ? `${prev} ${html}` : html));
+                    if (composerInputRef.current) composerInputRef.current.focus();
+                  }}
+                  onClose={() => setIsEmojiPickerOpen(false)}
+                />
+              </div>
+            )}
+
+            {/* TAB 2: TELEGRAM LUCK EMOJIS (🎰, 🎲, 🪙) */}
             {pickerTab === 'luck' && (
               <div className="flex-1 p-3 flex items-center justify-around overflow-x-auto no-scrollbar">
                 {/* 1. Slot Machine */}
@@ -1237,21 +1254,6 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                   <span className="text-[10px] font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB]">Coin Toss</span>
                   <span className="text-[8px] text-[#6B7280]">Heads or Tails</span>
                 </button>
-              </div>
-            )}
-
-            {/* TAB 2: UNICODE EMOJIS */}
-            {pickerTab === 'emoji' && (
-              <div className="flex-1 overflow-y-auto p-3 grid grid-cols-8 gap-2 text-2xl no-scrollbar">
-                {['❤️', '🔥', '✨', '🌹', '😂', '😍', '😘', '🥺', '🎉', '🌟', '🧁', '🥂', '💌', '🌸', '💖', '🥰', '🌙', '💫', '🎶', '🎀', '💎', '🍓', '🍰', '🕊️'].map(e => (
-                  <button 
-                    key={e} 
-                    onClick={() => handleSendMessage(e, 'text')} 
-                    className="hover:scale-125 transition-transform cursor-pointer"
-                  >
-                    {e}
-                  </button>
-                ))}
               </div>
             )}
 
@@ -1449,15 +1451,26 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-sm rounded-3xl glass-panel-elevated p-4 border border-[rgba(255,255,255,0.20)]/30 space-y-3 glass-panel"
           >
-            {/* Emoji Reaction Bar */}
-            <div className="flex items-center justify-around py-2 border-b border-[rgba(255,255,255,0.20)]/15 text-2xl">
-              {['❤️', '🔥', '✨', '🌹', '😂', '😮'].map(emoji => (
+            {/* Telegram Premium Emoji Reaction Bar */}
+            <div className="flex items-center justify-around py-2 border-b border-[rgba(255,255,255,0.20)]/15">
+              {[
+                { id: '4996980495100150380', fallback: '❤️', label: 'Heart' },
+                { id: '5424972470023104089', fallback: '🔥', label: 'Fire' },
+                { id: '5172484558305625218', fallback: '⭐', label: 'Star' },
+                { id: '5337080053119336309', fallback: '👍', label: 'Like' },
+                { id: '5345813826166078217', fallback: '😂', label: 'Laugh' },
+                { id: '5206607081334906820', fallback: '✅', label: 'Check' }
+              ].map(item => (
                 <button
-                  key={emoji}
-                  onClick={() => handleToggleReaction(selectedMessageForMenu.id, emoji)}
-                  className="hover:scale-125 transition-transform cursor-pointer"
+                  key={item.id}
+                  onClick={() => {
+                    handleToggleReaction(selectedMessageForMenu.id, `<tg-emoji emoji-id="${item.id}">${item.fallback}</tg-emoji>`);
+                    setSelectedMessageForMenu(null);
+                  }}
+                  className="p-1 rounded-xl hover:bg-white/10 hover:scale-125 transition-all cursor-pointer"
+                  title={item.label}
                 >
-                  {emoji}
+                  <TgEmoji id={item.id} fallback={item.fallback} size={28} />
                 </button>
               ))}
             </div>

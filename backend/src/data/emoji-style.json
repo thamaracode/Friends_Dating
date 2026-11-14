@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "style": "minimal",
+  "primary_pack": "sfsymbols",
+  "secondary_packs": [
+    "Animated News Emoji",
+    "Animated App Icons",
+    "CuteEmoji",
+    "TopicIcons",
+    "NeonEmoji",
+    "Minimalist B&W Icons"
+  ],
+  "roles": {
+    "settings": {
+      "id": "5341715473882955310",
+      "key": "settings",
+      "name": "Настройки",
+      "pack": "Animated News Emoji",
+      "html_fallback": "⚙️",
+      "query": "settings"
+    },
+    "search": {
+      "id": "6021547791141050785",
+      "key": "sfsymbols_lupa",
+      "name": "Лупа",
+      "pack": "sfsymbols",
+      "html_fallback": "🔍",
+      "query": "search"
+    },
+    "notifications_on": {
+      "id": "6021536113108196448",
+      "key": "sfsymbols_kolokolchik",
+      "name": "Колокольчик",
+      "pack": "sfsymbols",
+      "html_fallback": "🔔",
+      "query": "включить уведомления"
+    },
+    "notifications_muted": {
+      "id": "6021440013214948027",
+      "key": "sfsymbols_kolokolchik_bez_zvuka",
+      "name": "Колокольчик без звука",
+      "pack": "sfsymbols",
+      "html_fallback": "🔕",
+      "query": "колокольчик без звука"
+    },
+    "access_open": {
+      "id": "6019251723082668416",
+      "key": "sfsymbols_otkrytyy_zamok",
+      "name": "Открытый замок",
+      "pack": "sfsymbols",
+      "html_fallback": "🔓",
+      "query": "открытый замок"
+    },
+    "access_locked": {
+      "id": "6019568309417023812",
+      "key": "sfsymbols_zakrytyy_zamok",
+      "name": "Закрытый замок",
+      "pack": "sfsymbols",
+      "html_fallback": "🔒",
+      "query": "закрытый замок"
+    },
+    "editor_button": {
+      "id": "6025951481222403788",
+      "key": "sfsymbols_karandash_v_kruge",
+      "name": "Карандаш в круге",
+      "pack": "sfsymbols",
+      "html_fallback": "✏️",
+      "query": "edit"
+    },
+    "heart": {
+      "id": "4996980495100150380",
+      "key": "heart_anim",
+      "name": "Сердечко",
+      "pack": "Animated App Icons",
+      "html_fallback": "❤️",
+      "query": "heart"
+    },
+    "fire": {
+      "id": "5424972470023104089",
+      "key": "fire",
+      "name": "Огонь",
+      "pack": "Animated News Emoji",
+      "html_fallback": "🔥",
+      "query": "fire"
+    },
+    "star": {
+      "id": "5172484558305625218",
+      "key": "tg_stars",
+      "name": "Звёзды (валюта Telegram)",
+      "pack": "Animated App Icons",
+      "html_fallback": "⭐",
+      "query": "star"
+    },
+    "verified": {
+      "id": "5206607081334906820",
+      "key": "checkmark",
+      "name": "Галочка",
+      "pack": "Animated News Emoji",
+      "html_fallback": "✅",
+      "query": "verified"
+    },
+    "chat": {
+      "id": "5443038326535759644",
+      "key": "chat",
+      "name": "Чат",
+      "pack": "Animated News Emoji",
+      "html_fallback": "💬",
+      "query": "chat"
+    },
+    "quote": {
+      "id": "5467538555158943525",
+      "key": "cloud_text",
+      "name": "Облако с текстом",
+      "pack": "Animated News Emoji",
+      "html_fallback": "💬",
+      "query": "quote"
+    },
+    "pin": {
+      "id": "5397782960512444700",
+      "key": "pin",
+      "name": "Булавка",
+      "pack": "Animated News Emoji",
+      "html_fallback": "📌",
+      "query": "pin"
+    }
+  },
+  "constraints": {
+    "animation": "any",
+    "color": "any",
+    "repainting": "optional"
+  }
+}
