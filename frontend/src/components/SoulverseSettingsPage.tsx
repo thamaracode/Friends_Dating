@@ -80,7 +80,10 @@ export const SoulverseSettingsPage: React.FC = () => {
   const handlePermanentAccountDelete = async () => {
     setIsDeletingAccount(true);
     try {
-      const res = await fetch('/api/v1/users/usr_me', { method: 'DELETE' });
+      const res = await fetch('/api/v1/users/usr_me', { 
+        method: 'DELETE',
+        headers: { 'x-user-id': 'usr_me' }
+      });
       if (!res.ok) throw new Error('Account deletion failed on server');
       localStorage.clear();
       showToast('🗑️ Account permanently deleted. Resetting session...');
@@ -100,6 +103,18 @@ export const SoulverseSettingsPage: React.FC = () => {
     saveDiscoverySettings(discovery);
     saveVisibilitySettings(visibility);
     saveAccountPreferences(account);
+    fetch('/api/v1/users/usr_me/settings', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': 'usr_me'
+      },
+      body: JSON.stringify({
+        emailNotifications: account.emailNotifications,
+        pushNotifications: account.pushNotifications,
+        theme: account.theme || 'obsidian'
+      })
+    }).catch(err => console.warn('Could not sync settings to backend:', err));
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 2500);
   };

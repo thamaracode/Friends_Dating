@@ -85,6 +85,15 @@ architectureRouter.put('/users/:userId/settings', (req: Request, res: Response) 
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
+    AccessControlEngine.logSecurityAudit({
+      userId: callerId,
+      action: 'idor_access_denied',
+      domain: 'authorization',
+      resourceType: 'user_settings',
+      resourceId: targetUserId,
+      severity: 'high',
+      details: { path: req.path, method: req.method, callerId, targetUserId }
+    });
     return sendError(res, 'IDOR_VIOLATION', 'Unauthorized to modify user settings', 403);
   }
 
@@ -560,6 +569,25 @@ architectureRouter.get('/users/:userId/exports', (req: Request, res: Response) =
   `).all(targetUserId);
 
   return sendSuccess(res, exports);
+});
+
+architectureRouter.get('/users/:userId/exports/:exportId/download', (req: Request, res: Response) => {
+  const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
+  const targetUserId = req.params.userId;
+  const adminId = (req.headers['x-admin-id'] as string) || undefined;
+
+  if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
+    return sendError(res, 'IDOR_VIOLATION', 'Unauthorized to download data export', 403);
+  }
+
+  const record = db.prepare('SELECT file_path, status FROM user_data_exports WHERE id = ? AND user_id = ?').get(req.params.exportId, targetUserId) as any;
+  if (!record || !record.file_path) {
+    return sendError(res, 'NOT_FOUND', 'Export record not found', 404);
+  }
+  if (!fs.existsSync(record.file_path)) {
+    return sendError(res, 'NOT_FOUND', 'Export file has expired or was removed', 404);
+  }
+  return res.download(record.file_path, `soulverse_data_export_${targetUserId}.json`);
 });
 
 architectureRouter.delete('/users/:userId/gdpr-erasure', (req: Request, res: Response) => {

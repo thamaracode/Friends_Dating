@@ -518,6 +518,7 @@ app.post('/api/v1/conversations/:id/messages', (req, res) => {
     id: messageId,
     clientMessageId,
     conversationId: id,
+    sequenceNumber: seq,
     senderId,
     type,
     text,
