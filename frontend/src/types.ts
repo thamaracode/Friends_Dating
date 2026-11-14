@@ -18,7 +18,8 @@ export type SoulverseRoute =
   | 'unspoken'
   | 'quotes'
   | 'admin'
-  | 'mini_games';
+  | 'mini_games'
+  | 'spotify';
 
 export type MobilePrimaryTab = 'discover' | 'connect' | 'create' | 'inbox' | 'profile';
 

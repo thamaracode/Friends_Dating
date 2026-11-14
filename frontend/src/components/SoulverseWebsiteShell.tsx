@@ -88,6 +88,7 @@ import { CreateConfessionModal } from './confessions/CreateConfessionModal';
 import { HeartLogoVariant, SoulverseBrandLogo } from './brand/SoulverseHeartLogos';
 import { HeartLogoShowcaseModal } from './brand/HeartLogoShowcaseModal';
 import { SoulJournalSanctuary } from './journal/SoulJournalSanctuary';
+import { SpotifyEmbedHubView } from './spotify/SpotifyEmbedHubView';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -169,7 +170,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       const hash = window.location.hash.replace('#', '') as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
         'home', 'daily', 'discover', 'connect', 'connections', 'messages', 'inbox', 'profile', 
-        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes'
+        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games'
       ];
       if (validRoutes.includes(hash)) {
         setCurrentRoute(hash);
@@ -273,6 +274,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       title: 'Relationships & Chat',
       items: [
         { id: 'connect' as SoulverseRoute, label: 'Connect & Social', icon: Users, badge: 'Live', featureId: 'feat_friendships' },
+        { id: 'spotify' as SoulverseRoute, label: 'Spotify Embed Sanctuary', icon: Music, badge: 'IFrame', featureId: 'feat_spotify_ambient' },
         { id: 'mini_games' as SoulverseRoute, label: 'CouplePlayHub Games', icon: Gamepad2, badge: 'Hot' },
         { id: 'connections' as SoulverseRoute, label: 'Relationship Vault', icon: Heart, badge: 'Vault', featureId: 'feat_relationship_vault' },
         { id: 'messages' as SoulverseRoute, label: 'Messages & Rooms', icon: MessageCircle, badge: '3' },
@@ -715,6 +717,13 @@ export const SoulverseWebsiteShell: React.FC = () => {
                   }}
                   onClose={() => navigateTo('discover')}
                 />
+              </div>
+            )}
+
+            {/* SUB-VIEW: SPOTIFY EMBED & INTERACTIVE CONTROLLER SANCTUARY (atomjoy/spotify-embed pattern) */}
+            {currentRoute === 'spotify' && (
+              <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass">
+                <SpotifyEmbedHubView />
               </div>
             )}
 

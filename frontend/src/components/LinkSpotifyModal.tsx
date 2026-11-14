@@ -282,6 +282,22 @@ export const LinkSpotifyModal: React.FC = () => {
           </a>
         </div>
 
+        {/* Dedicated Spotify Sanctuary Link (atomjoy/spotify-embed) */}
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              setIsLinkModalOpen(false);
+              window.location.hash = '#spotify';
+            }}
+            className="w-full py-2.5 rounded-xl text-xs font-bold bg-[#1DB954]/15 hover:bg-[#1DB954]/25 text-[#1DB954] border border-[#1DB954]/30 transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#1DB954]/10"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Open Interactive Spotify Embed Sanctuary (IFrame API & Telemetry)</span>
+            <ExternalLink className="w-3 h-3" />
+          </button>
+        </div>
+
       </div>
     </GlassModal>
   );

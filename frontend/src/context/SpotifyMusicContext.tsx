@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 
-export type SpotifyItemType = 'track' | 'playlist' | 'album' | 'episode';
+export type SpotifyItemType = 'track' | 'playlist' | 'album' | 'episode' | 'show' | 'artist';
 
 export interface SpotifyTrackInfo {
   id: string;
@@ -82,15 +82,70 @@ export const CURATED_SPOTIFY_PRESETS: SpotifyPreset[] = [
     spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ',
     embedUrl: 'https://open.spotify.com/embed/playlist/37i9dQZF1DWZeKCadgRdKQ?utm_source=generator&theme=0',
     description: 'Isochronic tones and soothing brown noise to encourage deep mental flow.'
+  },
+  {
+    id: '37i9dQZEVXbMZ5PAcNTDXd',
+    type: 'playlist',
+    title: 'Top 50 - Global Anthems',
+    artist: 'Spotify Global Charts',
+    category: 'Trending Global',
+    coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80',
+    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZEVXbMZ5PAcNTDXd',
+    embedUrl: 'https://open.spotify.com/embed/playlist/37i9dQZEVXbMZ5PAcNTDXd?utm_source=generator&theme=0',
+    description: 'The most played tracks across the world right now.'
+  },
+  {
+    id: '7makk4oTQel546B0PZlDM5',
+    type: 'episode',
+    title: 'Podcast 1: Exploring Human Consciousness',
+    artist: 'Joe Rogan & Guests',
+    category: 'Podcasts',
+    coverUrl: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=300&auto=format&fit=crop&q=80',
+    spotifyUrl: 'https://open.spotify.com/episode/7makk4oTQel546B0PZlDM5',
+    embedUrl: 'https://open.spotify.com/embed/episode/7makk4oTQel546B0PZlDM5?utm_source=generator&theme=0',
+    description: 'Deep discussions on human curiosity, science, and perspective.'
+  },
+  {
+    id: '43cbJh4ccRD7lzM2730YK3',
+    type: 'episode',
+    title: 'Podcast 2: Psychology & Modern Relationships',
+    artist: 'Relationship Intelligence',
+    category: 'Podcasts',
+    coverUrl: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=300&auto=format&fit=crop&q=80',
+    spotifyUrl: 'https://open.spotify.com/episode/43cbJh4ccRD7lzM2730YK3',
+    embedUrl: 'https://open.spotify.com/embed/episode/43cbJh4ccRD7lzM2730YK3?utm_source=generator&theme=0',
+    description: 'Unpacking vulnerability, attachment styles, and honest connection.'
+  },
+  {
+    id: '6I3ZzCxRhRkNqnQNo8AZPV',
+    type: 'episode',
+    title: 'Podcast 3: Midnight Philosophy & Love',
+    artist: 'Soul Conversations',
+    category: 'Podcasts',
+    coverUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300&auto=format&fit=crop&q=80',
+    spotifyUrl: 'https://open.spotify.com/episode/6I3ZzCxRhRkNqnQNo8AZPV',
+    embedUrl: 'https://open.spotify.com/embed/episode/6I3ZzCxRhRkNqnQNo8AZPV?utm_source=generator&theme=0',
+    description: 'Late night reflections on emotional safety, fear of rejection, and self-acceptance.'
+  },
+  {
+    id: '37i9dQZF1DX7zqr9q1MPG7',
+    type: 'playlist',
+    title: 'Acoustic Date Night',
+    artist: 'Soulverse Editorial',
+    category: 'Acoustic Romance',
+    coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX7zqr9q1MPG7',
+    embedUrl: 'https://open.spotify.com/embed/playlist/37i9dQZF1DX7zqr9q1MPG7?utm_source=generator&theme=0',
+    description: 'Warm acoustic melodies, soulful strings, and intimate coffeehouse sounds.'
   }
 ];
 
-export function parseSpotifyUrl(input: string): { type: SpotifyItemType; id: string; embedUrl: string; spotifyUrl: string } | null {
+export function parseSpotifyUrl(input: string): { type: SpotifyItemType; id: string; embedUrl: string; spotifyUrl: string; spotifyUri: string } | null {
   if (!input || typeof input !== 'string') return null;
   const trimmed = input.trim();
 
-  // 1. Spotify URI: spotify:track:xxx or spotify:playlist:xxx
-  const uriMatch = trimmed.match(/^spotify:(track|playlist|album|episode):([a-zA-Z0-9]{15,30})$/i);
+  // 1. Spotify URI: spotify:track:xxx, spotify:playlist:xxx, spotify:episode:xxx, spotify:show:xxx, spotify:artist:xxx
+  const uriMatch = trimmed.match(/^spotify:(track|playlist|album|episode|show|artist):([a-zA-Z0-9]{15,30})$/i);
   if (uriMatch) {
     const type = uriMatch[1].toLowerCase() as SpotifyItemType;
     const id = uriMatch[2];
@@ -98,12 +153,13 @@ export function parseSpotifyUrl(input: string): { type: SpotifyItemType; id: str
       type,
       id,
       embedUrl: `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`,
-      spotifyUrl: `https://open.spotify.com/${type}/${id}`
+      spotifyUrl: `https://open.spotify.com/${type}/${id}`,
+      spotifyUri: `spotify:${type}:${id}`
     };
   }
 
-  // 2. Spotify Web URL: https://open.spotify.com/(intl-[a-z]+/)?(track|playlist|album|episode)/[a-zA-Z0-9]+
-  const webMatch = trimmed.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|playlist|album|episode)\/([a-zA-Z0-9]+)/i);
+  // 2. Spotify Web URL: https://open.spotify.com/(intl-[a-z]+/)?(track|playlist|album|episode|show|artist)/[a-zA-Z0-9]+
+  const webMatch = trimmed.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|playlist|album|episode|show|artist)\/([a-zA-Z0-9]+)/i);
   if (webMatch) {
     const type = webMatch[1].toLowerCase() as SpotifyItemType;
     const id = webMatch[2];
@@ -111,7 +167,8 @@ export function parseSpotifyUrl(input: string): { type: SpotifyItemType; id: str
       type,
       id,
       embedUrl: `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`,
-      spotifyUrl: `https://open.spotify.com/${type}/${id}`
+      spotifyUrl: `https://open.spotify.com/${type}/${id}`,
+      spotifyUri: `spotify:${type}:${id}`
     };
   }
 
@@ -121,11 +178,17 @@ export function parseSpotifyUrl(input: string): { type: SpotifyItemType; id: str
       type: 'track',
       id: trimmed,
       embedUrl: `https://open.spotify.com/embed/track/${trimmed}?utm_source=generator&theme=0`,
-      spotifyUrl: `https://open.spotify.com/track/${trimmed}`
+      spotifyUrl: `https://open.spotify.com/track/${trimmed}`,
+      spotifyUri: `spotify:track:${trimmed}`
     };
   }
 
   return null;
+}
+
+export function toSpotifyUri(input: string): string | null {
+  const parsed = parseSpotifyUrl(input);
+  return parsed ? parsed.spotifyUri : null;
 }
 
 const STORAGE_KEY = 'soulverse_spotify_linked_music';

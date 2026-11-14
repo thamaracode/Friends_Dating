@@ -171,7 +171,16 @@ export const SpotifyPlayerWidget: React.FC<SpotifyPlayerWidgetProps> = ({
             className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-white transition-colors cursor-pointer"
           >
             {showEmbedInCard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            <span>{showEmbedInCard ? 'Hide Spotify Player' : 'Show Spotify Embed'}</span>
+            <span>{showEmbedInCard ? 'Hide Embed' : 'Embed'}</span>
+          </button>
+
+          <button
+            onClick={() => { window.location.hash = '#spotify'; }}
+            className="inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 font-medium transition-colors cursor-pointer"
+            title="Open Spotify Embed Hub & Interactive Controller"
+          >
+            <Sparkles className="w-2.5 h-2.5 text-[#1DB954]" />
+            <span>Embed Hub</span>
           </button>
 
           <a
@@ -180,7 +189,7 @@ export const SpotifyPlayerWidget: React.FC<SpotifyPlayerWidgetProps> = ({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-white transition-colors"
           >
-            <span>Open Spotify</span>
+            <span>Open</span>
             <ExternalLink className="w-2.5 h-2.5" />
           </a>
         </div>
