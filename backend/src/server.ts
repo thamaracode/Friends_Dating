@@ -803,22 +803,21 @@ app.post('/api/v1/scheduled-messages', (req, res) => {
   res.json({ success: true, id, scheduledFor });
 });
 
-// 13. Privacy & Safety: Block and Unblock User
-app.post('/api/v1/users/:id/block', (req, res) => {
+// 13. Privacy & Safety: Block and Unblock User with Boundary Reasons & Parting Words
+app.post(['/api/v1/users/:id/block', '/api/users/:id/block'], (req, res) => {
   const { id: blockedId } = req.params;
-  const { blockerId = 'usr_me' } = req.body;
+  const { blockerId = 'usr_me', reason, partingMessage } = req.body;
 
   try {
-    db.prepare('INSERT OR IGNORE INTO user_blocks (blocker_id, blocked_id, created_at) VALUES (?, ?, ?)')
-      .run(blockerId, blockedId, Date.now());
+    SafetyService.blockUser(blockerId, blockedId, reason, partingMessage);
     res.json({ success: true, blocked: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 });
 
-app.post('/api/v1/blocks', (req, res) => {
-  const { blockerId = 'usr_me', blockedId } = req.body;
+app.post(['/api/v1/blocks', '/api/blocks'], (req, res) => {
+  const { blockerId = 'usr_me', blockedId, reason, partingMessage } = req.body;
   if (!blockedId) return res.status(400).json({ error: 'blockedId is required' });
 
   if (blockerId === blockedId) {
@@ -826,19 +825,18 @@ app.post('/api/v1/blocks', (req, res) => {
   }
 
   try {
-    db.prepare('INSERT OR IGNORE INTO user_blocks (blocker_id, blocked_id, created_at) VALUES (?, ?, ?)')
-      .run(blockerId, blockedId, Date.now());
+    SafetyService.blockUser(blockerId, blockedId, reason, partingMessage);
     res.json({ success: true, blocked: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 });
 
-app.delete('/api/v1/users/:id/block', (req, res) => {
+app.delete(['/api/v1/users/:id/block', '/api/users/:id/block'], (req, res) => {
   const { id: blockedId } = req.params;
-  const { blockerId = 'usr_me' } = req.body;
+  const blockerId = (req.headers['x-user-id'] as string) || req.body?.blockerId || (req.query.blockerId as string) || 'usr_me';
 
-  db.prepare('DELETE FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?').run(blockerId, blockedId);
+  SafetyService.unblockUser(blockerId, blockedId);
   res.json({ success: true, blocked: false });
 });
 
@@ -9278,22 +9276,22 @@ app.post('/api/v1/communication/safety/validate-attachment', (req, res) => {
   }
 });
 
-app.post('/api/v1/communication/safety/block', (req, res) => {
+app.post(['/api/v1/communication/safety/block', '/api/communication/safety/block'], (req, res) => {
   try {
     const blockerId = (req.headers['x-user-id'] as string) || req.body.blockerId || 'usr_me';
-    const { blockedId, reason } = req.body;
+    const { blockedId, reason, partingMessage } = req.body;
     if (!blockedId) return res.status(400).json({ error: 'blockedId is required' });
-    SafetyService.blockUser(blockerId, blockedId, reason);
+    SafetyService.blockUser(blockerId, blockedId, reason, partingMessage);
     res.json({ success: true, blocked: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Block failed' });
   }
 });
 
-app.delete('/api/v1/communication/safety/block', (req, res) => {
+app.delete(['/api/v1/communication/safety/block', '/api/communication/safety/block'], (req, res) => {
   try {
-    const blockerId = (req.headers['x-user-id'] as string) || req.body.blockerId || 'usr_me';
-    const { blockedId } = req.body;
+    const blockerId = (req.headers['x-user-id'] as string) || req.body?.blockerId || (req.query.blockerId as string) || 'usr_me';
+    const blockedId = req.body?.blockedId || (req.query.blockedId as string);
     if (!blockedId) return res.status(400).json({ error: 'blockedId is required' });
     SafetyService.unblockUser(blockerId, blockedId);
     res.json({ success: true, unblocked: true });

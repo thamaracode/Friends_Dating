@@ -64,6 +64,7 @@ import { RelationshipVaultService } from '../services/relationshipVaultService';
 import { TwoPersonQuestionModal } from './emotional/TwoPersonQuestionModal';
 import { UnifiedAiAssistantDrawer } from './ai/UnifiedAiAssistantDrawer';
 import { UserAiControlCenter } from './control/UserAiControlCenter';
+import { BlockClosureModal } from './messaging/BlockClosureModal';
 import type { UserProfile } from '../types';
 import type { 
   ChatMessage, 
@@ -97,6 +98,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   const [isTwoPersonOpen, setIsTwoPersonOpen] = useState(false);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
 
   // Desktop vs Mobile responsive state
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
@@ -715,17 +717,38 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     setSelectedMessageForMenu(null);
   };
 
-  const handleBlockUser = async () => {
+  const handleOpenBlockModal = () => {
+    setIsBlockModalOpen(true);
+    setIsChatSettingsOpen(false);
+    setSelectedMessageForMenu(null);
+  };
+
+  const handleConfirmBlock = async ({
+    reason,
+    partingMessage,
+    sendPartingMessage
+  }: {
+    reason: string;
+    partingMessage?: string;
+    sendPartingMessage: boolean;
+  }) => {
     if (!currentConv?.participantId) return;
     try {
-      await chatClient.blockUser(currentConv.participantId);
-      showToast(`${currentConv.title} has been blocked.`);
+      if (sendPartingMessage && partingMessage && partingMessage.trim()) {
+        await handleSendMessage(partingMessage.trim());
+      }
+      await chatClient.blockUser(currentConv.participantId, reason, partingMessage);
+      showToast(
+        sendPartingMessage
+          ? `Parting message sent and ${currentConv.title} blocked.`
+          : `${currentConv.title} has been blocked.`
+      );
       setActiveConversationId(null);
-    } catch (e) {
+      setIsBlockModalOpen(false);
+    } catch (e: any) {
       console.error(e);
-      showToast('Failed to block user.');
+      showToast(e.message || 'Failed to block user.');
     }
-    setSelectedMessageForMenu(null);
   };
 
   const currentConv = conversations.find(c => c.id === activeConversationId);
@@ -1107,8 +1130,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
             <button
               onClick={() => {
-                handleBlockUser();
-                setIsChatSettingsOpen(false);
+                handleOpenBlockModal();
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-950/20 cursor-pointer"
             >
@@ -1765,7 +1787,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               </button>
 
               <button
-                onClick={handleBlockUser}
+                onClick={handleOpenBlockModal}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-950/20 cursor-pointer"
               >
                 <Lock className="w-4 h-4" />
@@ -2246,6 +2268,20 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             <UserAiControlCenter onClose={() => setIsAiSettingsOpen(false)} />
           </div>
         </div>
+      )}
+
+      {/* Block & Closure Modal */}
+      {currentConv && (
+        <BlockClosureModal
+          isOpen={isBlockModalOpen}
+          onClose={() => setIsBlockModalOpen(false)}
+          targetUser={{
+            id: currentConv.participantId || '',
+            name: currentConv.title,
+            avatarUrl: currentConv.avatar
+          }}
+          onConfirmBlock={handleConfirmBlock}
+        />
       )}
     </div>
   );

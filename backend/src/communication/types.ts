@@ -298,6 +298,7 @@ export interface UserBlock {
   blockerId: string;
   blockedId: string;
   reason?: string;
+  partingMessage?: string;
   createdAt: number;
 }
 

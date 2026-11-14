@@ -103,6 +103,10 @@ export function initCommunicationSchema() {
   addColumnIfNotExists('messages', 'expires_at', 'INTEGER');
   addColumnIfNotExists('messages', 'scheduled_at', 'INTEGER');
 
+  // 3b. Ensure metadata columns on user_blocks for boundary closure & parting words
+  addColumnIfNotExists('user_blocks', 'reason', 'TEXT');
+  addColumnIfNotExists('user_blocks', 'parting_message', 'TEXT');
+
   // Migrate messages table if restrictive CHECK constraint exists on message_type
   try {
     const msgSql = (db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='messages'").get() as any)?.sql || '';

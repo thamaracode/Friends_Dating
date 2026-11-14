@@ -385,6 +385,24 @@ describe('Master Prompt 08: Real-Time Communication & Social Interaction System'
       expect(SafetyService.isBlocked(TEST_USER_A, TEST_USER_C)).toBe(false);
     });
 
+    it('persists boundary reason and parting words when blocking a user', () => {
+      const partingWords = "I'm stepping away to protect my emotional boundaries. Wishing you peace.";
+      const blockReason = "boundary_crossed";
+
+      SafetyService.blockUser(TEST_USER_A, TEST_USER_C, blockReason, partingWords);
+      expect(SafetyService.isBlocked(TEST_USER_A, TEST_USER_C)).toBe(true);
+
+      const blockedList = SafetyService.getBlockedUsers(TEST_USER_A);
+      const record = blockedList.find(b => b.blockedId === TEST_USER_C);
+      expect(record).toBeDefined();
+      expect(record?.reason).toBe(blockReason);
+      expect(record?.partingMessage).toBe(partingWords);
+
+      // Clean up for other tests
+      SafetyService.unblockUser(TEST_USER_A, TEST_USER_C);
+      expect(SafetyService.isBlocked(TEST_USER_A, TEST_USER_C)).toBe(false);
+    });
+
     it('submits safety and moderation reports', () => {
       const report = SafetyService.submitReport({
         reporterId: TEST_USER_A,

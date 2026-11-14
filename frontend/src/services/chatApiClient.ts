@@ -459,11 +459,15 @@ export class ChatApiClient {
     return data.draftText || '';
   }
 
-  public async blockUser(targetUserId: string) {
+  public async blockUser(targetUserId: string, reason?: string, partingMessage?: string) {
     const res = await fetch(`${API_BASE}/users/${targetUserId}/block`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ blockerId: this.currentUserId })
+      body: JSON.stringify({
+        blockerId: this.currentUserId,
+        reason,
+        partingMessage
+      })
     });
     return await res.json();
   }

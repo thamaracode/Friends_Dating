@@ -99,18 +99,25 @@ export class SafetyService {
   }
 
   /**
-   * Blocks a user bi-directionally
+   * Blocks a user bi-directionally with boundary closure reason & parting message
    */
-  public static blockUser(blockerId: string, blockedId: string, reason?: string): boolean {
+  public static blockUser(blockerId: string, blockedId: string, reason?: string, partingMessage?: string): boolean {
     if (blockerId === blockedId) {
       throw new Error('Cannot block yourself');
     }
 
     const now = Date.now();
-    db.prepare(`
-      INSERT OR REPLACE INTO user_blocks (blocker_id, blocked_id, created_at)
-      VALUES (?, ?, ?)
-    `).run(blockerId, blockedId, now);
+    try {
+      db.prepare(`
+        INSERT OR REPLACE INTO user_blocks (blocker_id, blocked_id, reason, parting_message, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(blockerId, blockedId, reason || null, partingMessage || null, now);
+    } catch {
+      db.prepare(`
+        INSERT OR REPLACE INTO user_blocks (blocker_id, blocked_id, created_at)
+        VALUES (?, ?, ?)
+      `).run(blockerId, blockedId, now);
+    }
 
     return true;
   }
@@ -139,17 +146,26 @@ export class SafetyService {
   }
 
   /**
-   * Retrieves list of blocked users for a user
+   * Retrieves list of blocked users for a user with reason & parting message
    */
   public static getBlockedUsers(userId: string): UserBlock[] {
-    const rows = db.prepare(`
-      SELECT blocker_id as blockerId, blocked_id as blockedId, created_at as createdAt
-      FROM user_blocks
-      WHERE blocker_id = ?
-      ORDER BY created_at DESC
-    `).all(userId) as UserBlock[];
-
-    return rows;
+    try {
+      const rows = db.prepare(`
+        SELECT blocker_id as blockerId, blocked_id as blockedId, reason, parting_message as partingMessage, created_at as createdAt
+        FROM user_blocks
+        WHERE blocker_id = ?
+        ORDER BY created_at DESC
+      `).all(userId) as UserBlock[];
+      return rows;
+    } catch {
+      const rows = db.prepare(`
+        SELECT blocker_id as blockerId, blocked_id as blockedId, created_at as createdAt
+        FROM user_blocks
+        WHERE blocker_id = ?
+        ORDER BY created_at DESC
+      `).all(userId) as UserBlock[];
+      return rows;
+    }
   }
 
   /**
