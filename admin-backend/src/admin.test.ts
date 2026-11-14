@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { app } from './server';
+import { adminDb } from './db';
 import { AdminCrypto } from './auth/crypto';
 
 describe('Soulverse Admin Management API Architecture', () => {
@@ -8,6 +9,9 @@ describe('Soulverse Admin Management API Architecture', () => {
   let moderatorToken: string;
 
   beforeAll(async () => {
+    // Reset any temporary lockouts from prior test runs
+    adminDb.prepare('UPDATE admin_users SET locked_until = NULL, failed_login_attempts = 0').run();
+
     // 1. Authenticate as Super Admin with MFA
     const loginRes = await request(app)
       .post('/api/v1/admin/auth/login')

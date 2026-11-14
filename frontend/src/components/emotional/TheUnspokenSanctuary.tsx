@@ -25,6 +25,7 @@ import {
   MIDNIGHT_THOUGHTS_COLLECTION, 
   UNOPENED_LETTERS_POOL 
 } from '../../services/emotionalContentEngine';
+import { ConfessionsStreamView } from '../confessions/ConfessionsStreamView';
 
 interface TheUnspokenSanctuaryProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
   isOpen,
   onClose
 }) => {
-  const [activeTab, setActiveTab] = useState<'inner_room' | 'unspoken' | 'midnight' | 'letters' | 'unsent' | 'mirror'>('inner_room');
+  const [activeTab, setActiveTab] = useState<'inner_room' | 'unspoken' | 'midnight' | 'letters' | 'unsent' | 'mirror' | 'confessions'>('inner_room');
 
   // Mood selector in The Inner Room
   const [selectedMood, setSelectedMood] = useState<ContentMood>('vulnerable');
@@ -122,6 +123,7 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
             { id: 'unspoken' as const, label: '✨ The Unspoken' },
             { id: 'midnight' as const, label: '🌙 Midnight Thoughts' },
             { id: 'letters' as const, label: '✉️ Unopened Letters' },
+            { id: 'confessions' as const, label: '🤫 Secret Confessions' },
             { id: 'unsent' as const, label: '📝 Unsent Words' },
             { id: 'mirror' as const, label: '🪞 The Mirror' }
           ].map(tab => (
@@ -464,6 +466,15 @@ export const TheUnspokenSanctuary: React.FC<TheUnspokenSanctuaryProps> = ({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB 7: SECRET CONFESSIONS (ANONYMOUS, PUBLIC & PRIVATE STORIES)   */}
+        {/* ================================================================= */}
+        {activeTab === 'confessions' && (
+          <div className="pt-2 animate-fadeIn">
+            <ConfessionsStreamView />
           </div>
         )}
 

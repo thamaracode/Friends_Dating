@@ -84,6 +84,7 @@ import { UserControlCenterModal } from './control/UserControlCenterModal';
 import { FeatureControlService } from '../services/featureControlService';
 import { QuoteDiscoveryView } from './quotes/QuoteDiscoveryView';
 import { CouplePlayHubView } from './games/CouplePlayHubView';
+import { CreateConfessionModal } from './confessions/CreateConfessionModal';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -120,6 +121,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUnspokenOpen, setIsUnspokenOpen] = useState(false);
   const [isLetterOpen, setIsLetterOpen] = useState(false);
+  const [isConfessionModalOpen, setIsConfessionModalOpen] = useState(false);
   const [isControlCenterOpen, setIsControlCenterOpen] = useState(false);
   const [targetWorldId, setTargetWorldId] = useState<string | null>(null);
 
@@ -197,7 +199,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
     else if (tab === 'create') setIsCreateSheetOpen(true);
   };
 
-  const handleCreateActionSelect = (actionType: 'identity' | 'timeline' | 'journal' | 'story' | 'post' | 'event' | 'community' | 'question') => {
+  const handleCreateActionSelect = (actionType: 'identity' | 'timeline' | 'journal' | 'story' | 'post' | 'event' | 'community' | 'question' | 'confession') => {
     if (actionType === 'identity') {
       navigateTo('identities');
     } else if (actionType === 'timeline') {
@@ -206,6 +208,8 @@ export const SoulverseWebsiteShell: React.FC = () => {
       setIsReadmeModalOpen(true);
     } else if (actionType === 'story') {
       setIsEditProfileModalOpen(true);
+    } else if (actionType === 'confession') {
+      setIsConfessionModalOpen(true);
     } else if (actionType === 'post') {
       navigateTo('connect');
     } else if (actionType === 'event') {
@@ -860,6 +864,16 @@ export const SoulverseWebsiteShell: React.FC = () => {
       <UserControlCenterModal
         isOpen={isControlCenterOpen}
         onClose={() => setIsControlCenterOpen(false)}
+      />
+
+      {/* Secret Confession Creation Modal */}
+      <CreateConfessionModal
+        isOpen={isConfessionModalOpen}
+        onClose={() => setIsConfessionModalOpen(false)}
+        onConfessionCreated={(c) => {
+          setShellToast(`✨ Published ${c.visibility.toUpperCase()} confession: "${c.title}"`);
+          setTimeout(() => setShellToast(null), 4000);
+        }}
       />
 
       {/* ===================================================================== */}

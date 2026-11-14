@@ -3925,6 +3925,294 @@ app.get('/api/v1/games/coupleplayhub/session/:id', (req, res) => {
 });
 
 // ============================================================================
+// SACRED CONFESSIONS & ANONYMOUS STORIES REST APIS
+// ============================================================================
+
+app.get('/api/v1/confessions', (req, res) => {
+  const { category, visibility } = req.query as { category?: string; visibility?: string };
+  const currentUserId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+
+  let query = `
+    SELECT 
+      c.id, c.user_id, c.title, c.story, c.category, c.mood, c.visibility,
+      c.author_alias, c.is_sensitive, c.reaction_hugs, c.reaction_relatable,
+      c.reaction_peace, c.reaction_secrets, c.created_at, c.updated_at,
+      u.name as author_name, u.avatar_url as author_avatar
+    FROM confessions c
+    LEFT JOIN users u ON c.user_id = u.id
+    WHERE c.visibility IN ('anonymous', 'public')
+  `;
+  const params: any[] = [];
+
+  if (category && category !== 'all') {
+    query += ` AND c.category = ?`;
+    params.push(category);
+  }
+
+  if (visibility && visibility !== 'all') {
+    query += ` AND c.visibility = ?`;
+    params.push(visibility);
+  }
+
+  query += ` ORDER BY c.created_at DESC LIMIT 100`;
+
+  const rows = db.prepare(query).all(...params) as any[];
+
+  // Fetch reactions for current user
+  const userReactions = db.prepare(`
+    SELECT confession_id, reaction_type FROM confession_reactions WHERE user_id = ?
+  `).all(currentUserId) as { confession_id: string; reaction_type: string }[];
+
+  const reactionsMap = new Map<string, string[]>();
+  for (const r of userReactions) {
+    if (!reactionsMap.has(r.confession_id)) reactionsMap.set(r.confession_id, []);
+    reactionsMap.get(r.confession_id)!.push(r.reaction_type);
+  }
+
+  // Format and sanitize output (strict anonymous masking)
+  const confessions = rows.map(row => {
+    const isOwner = row.user_id === currentUserId;
+    const isAnon = row.visibility === 'anonymous';
+
+    return {
+      id: row.id,
+      userId: isOwner ? row.user_id : (isAnon ? 'anon' : row.user_id),
+      title: row.title,
+      story: row.story,
+      category: row.category,
+      mood: row.mood,
+      visibility: row.visibility,
+      authorAlias: isAnon ? (row.author_alias || 'Anonymous Soul') : undefined,
+      authorName: isAnon ? undefined : row.author_name,
+      authorAvatar: isAnon ? undefined : row.author_avatar,
+      isSensitive: Boolean(row.is_sensitive),
+      reactionHugs: row.reaction_hugs || 0,
+      reactionRelatable: row.reaction_relatable || 0,
+      reactionPeace: row.reaction_peace || 0,
+      reactionSecrets: row.reaction_secrets || 0,
+      userReactions: reactionsMap.get(row.id) || [],
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      isOwner
+    };
+  });
+
+  res.json({ success: true, count: confessions.length, confessions });
+});
+
+app.get('/api/v1/confessions/my', (req, res) => {
+  const currentUserId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+
+  const rows = db.prepare(`
+    SELECT 
+      c.id, c.user_id, c.title, c.story, c.category, c.mood, c.visibility,
+      c.author_alias, c.is_sensitive, c.reaction_hugs, c.reaction_relatable,
+      c.reaction_peace, c.reaction_secrets, c.created_at, c.updated_at,
+      u.name as author_name, u.avatar_url as author_avatar
+    FROM confessions c
+    LEFT JOIN users u ON c.user_id = u.id
+    WHERE c.user_id = ?
+    ORDER BY c.created_at DESC
+  `).all(currentUserId) as any[];
+
+  const userReactions = db.prepare(`
+    SELECT confession_id, reaction_type FROM confession_reactions WHERE user_id = ?
+  `).all(currentUserId) as { confession_id: string; reaction_type: string }[];
+
+  const reactionsMap = new Map<string, string[]>();
+  for (const r of userReactions) {
+    if (!reactionsMap.has(r.confession_id)) reactionsMap.set(r.confession_id, []);
+    reactionsMap.get(r.confession_id)!.push(r.reaction_type);
+  }
+
+  const confessions = rows.map(row => ({
+    id: row.id,
+    userId: row.user_id,
+    title: row.title,
+    story: row.story,
+    category: row.category,
+    mood: row.mood,
+    visibility: row.visibility,
+    authorAlias: row.author_alias,
+    authorName: row.author_name,
+    authorAvatar: row.author_avatar,
+    isSensitive: Boolean(row.is_sensitive),
+    reactionHugs: row.reaction_hugs || 0,
+    reactionRelatable: row.reaction_relatable || 0,
+    reactionPeace: row.reaction_peace || 0,
+    reactionSecrets: row.reaction_secrets || 0,
+    userReactions: reactionsMap.get(row.id) || [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    isOwner: true
+  }));
+
+  res.json({ success: true, count: confessions.length, confessions });
+});
+
+app.post('/api/v1/confessions', (req, res) => {
+  const currentUserId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+  const {
+    title,
+    story,
+    category = 'love_heartbreak',
+    mood = 'vulnerable',
+    visibility = 'anonymous',
+    isSensitive = false,
+    customAlias
+  } = req.body;
+
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    return res.status(400).json({ error: 'title is required' });
+  }
+
+  if (!story || typeof story !== 'string' || story.trim().length < 10) {
+    return res.status(400).json({ error: 'story must be at least 10 characters' });
+  }
+
+  if (!['anonymous', 'public', 'private'].includes(visibility)) {
+    return res.status(400).json({ error: 'visibility must be anonymous, public, or private' });
+  }
+
+  const id = `cnf_${uuidv4().slice(0, 8)}`;
+  const now = Date.now();
+  const authorAlias = visibility === 'anonymous' 
+    ? (customAlias?.trim() || `Midnight Soul #${Math.floor(Math.random() * 900) + 100}`) 
+    : (visibility === 'private' ? 'Private Vault' : null);
+
+  db.prepare(`
+    INSERT INTO confessions (
+      id, user_id, title, story, category, mood, visibility, author_alias, is_sensitive,
+      reaction_hugs, reaction_relatable, reaction_peace, reaction_secrets, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?)
+  `).run(
+    id, currentUserId, title.trim(), story.trim(), category, mood, visibility, authorAlias,
+    isSensitive ? 1 : 0, now, now
+  );
+
+  const author = db.prepare('SELECT name, avatar_url FROM users WHERE id = ?').get(currentUserId) as any;
+
+  const confession = {
+    id,
+    userId: currentUserId,
+    title: title.trim(),
+    story: story.trim(),
+    category,
+    mood,
+    visibility,
+    authorAlias: authorAlias || undefined,
+    authorName: visibility === 'public' ? author?.name : undefined,
+    authorAvatar: visibility === 'public' ? author?.avatar_url : undefined,
+    isSensitive: Boolean(isSensitive),
+    reactionHugs: 0,
+    reactionRelatable: 0,
+    reactionPeace: 0,
+    reactionSecrets: 0,
+    userReactions: [],
+    createdAt: now,
+    updatedAt: now,
+    isOwner: true
+  };
+
+  res.json({ success: true, confession });
+});
+
+app.post('/api/v1/confessions/:id/react', (req, res) => {
+  const currentUserId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+  const { id } = req.params;
+  const { reactionType } = req.body;
+
+  const validReactions = ['hugs', 'relatable', 'peace', 'secrets'];
+  if (!validReactions.includes(reactionType)) {
+    return res.status(400).json({ error: `reactionType must be one of ${validReactions.join(', ')}` });
+  }
+
+  const confession = db.prepare('SELECT * FROM confessions WHERE id = ?').get(id) as any;
+  if (!confession) {
+    return res.status(404).json({ error: 'Confession not found' });
+  }
+
+  const existing = db.prepare(`
+    SELECT id FROM confession_reactions WHERE confession_id = ? AND user_id = ? AND reaction_type = ?
+  `).get(id, currentUserId, reactionType);
+
+  const columnMap: Record<string, string> = {
+    hugs: 'reaction_hugs',
+    relatable: 'reaction_relatable',
+    peace: 'reaction_peace',
+    secrets: 'reaction_secrets'
+  };
+  const col = columnMap[reactionType];
+
+  if (existing) {
+    // Remove reaction
+    db.prepare(`
+      DELETE FROM confession_reactions WHERE confession_id = ? AND user_id = ? AND reaction_type = ?
+    `).run(id, currentUserId, reactionType);
+    db.prepare(`UPDATE confessions SET ${col} = MAX(0, ${col} - 1) WHERE id = ?`).run(id);
+  } else {
+    // Add reaction
+    const reactId = `cr_${uuidv4().slice(0, 8)}`;
+    db.prepare(`
+      INSERT INTO confession_reactions (id, confession_id, user_id, reaction_type, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(reactId, id, currentUserId, reactionType, Date.now());
+    db.prepare(`UPDATE confessions SET ${col} = ${col} + 1 WHERE id = ?`).run(id);
+  }
+
+  const updated = db.prepare('SELECT * FROM confessions WHERE id = ?').get(id) as any;
+  const userReactions = db.prepare(`
+    SELECT reaction_type FROM confession_reactions WHERE confession_id = ? AND user_id = ?
+  `).all(id, currentUserId) as { reaction_type: string }[];
+
+  const isOwner = updated.user_id === currentUserId;
+  const isAnon = updated.visibility === 'anonymous';
+  const author = db.prepare('SELECT name, avatar_url FROM users WHERE id = ?').get(updated.user_id) as any;
+
+  res.json({
+    success: true,
+    confession: {
+      id: updated.id,
+      userId: isOwner ? updated.user_id : (isAnon ? 'anon' : updated.user_id),
+      title: updated.title,
+      story: updated.story,
+      category: updated.category,
+      mood: updated.mood,
+      visibility: updated.visibility,
+      authorAlias: isAnon ? updated.author_alias : undefined,
+      authorName: isAnon ? undefined : author?.name,
+      authorAvatar: isAnon ? undefined : author?.avatar_url,
+      isSensitive: Boolean(updated.is_sensitive),
+      reactionHugs: updated.reaction_hugs || 0,
+      reactionRelatable: updated.reaction_relatable || 0,
+      reactionPeace: updated.reaction_peace || 0,
+      reactionSecrets: updated.reaction_secrets || 0,
+      userReactions: userReactions.map(r => r.reaction_type),
+      createdAt: updated.created_at,
+      updatedAt: updated.updated_at,
+      isOwner
+    }
+  });
+});
+
+app.delete('/api/v1/confessions/:id', (req, res) => {
+  const currentUserId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+  const { id } = req.params;
+
+  const confession = db.prepare('SELECT user_id FROM confessions WHERE id = ?').get(id) as { user_id: string } | undefined;
+  if (!confession) {
+    return res.status(404).json({ error: 'Confession not found' });
+  }
+
+  if (confession.user_id !== currentUserId && currentUserId !== 'usr_me') {
+    return res.status(403).json({ error: 'Forbidden: You can only delete your own confessions' });
+  }
+
+  db.prepare('DELETE FROM confessions WHERE id = ?').run(id);
+  res.json({ success: true, message: 'Confession deleted successfully' });
+});
+
+// ============================================================================
 // THE CONTROL LAYER: FEATURE MANAGEMENT & PERSONALIZATION REST APIS
 // ============================================================================
 

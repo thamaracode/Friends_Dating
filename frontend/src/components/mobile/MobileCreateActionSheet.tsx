@@ -9,14 +9,15 @@ import {
   Users, 
   HelpCircle,
   X,
-  ChevronRight
+  ChevronRight,
+  MessageSquareQuote
 } from 'lucide-react';
 import { DraggableBottomSheet } from '../klyven';
 
 interface MobileCreateActionSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  onActionSelect: (actionType: 'identity' | 'timeline' | 'journal' | 'story' | 'post' | 'event' | 'community' | 'question') => void;
+  onActionSelect: (actionType: 'identity' | 'timeline' | 'journal' | 'story' | 'post' | 'event' | 'community' | 'question' | 'confession') => void;
 }
 
 /**
@@ -60,6 +61,14 @@ export const MobileCreateActionSheet: React.FC<MobileCreateActionSheetProps> = (
       icon: BookOpen,
       color: 'from-purple-500/20 to-violet-500/10 border-purple-500/20 text-purple-300',
       badge: null
+    },
+    {
+      id: 'confession' as const,
+      title: 'Secret Confession Story',
+      description: 'Share a raw story anonymously, publicly, or into your private vault',
+      icon: MessageSquareQuote,
+      color: 'from-rose-500/20 to-purple-500/10 border-rose-500/30 text-rose-300',
+      badge: 'Anonymous'
     },
     {
       id: 'post' as const,

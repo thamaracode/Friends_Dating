@@ -802,4 +802,143 @@ describe('Soulverse Complete Product Expansion & Feature Engineering Directive -
     expect(dataUpdate.session.current_turn).toBe('partner2');
     expect(dataUpdate.session.chemistry_score).toBe(85);
   });
+
+  // --------------------------------------------------------------------------
+  // Scenario 29: Sacred Confessions (Anonymous, Public, Private) & Empathy Reactions
+  // --------------------------------------------------------------------------
+  it('Scenario 29: Sacred Confessions (Anonymous, Public, Private) & Empathy Reactions', async () => {
+    // 1. Post an Anonymous Confession Story
+    const anonRes = await fetch(`${API_URL}/confessions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': 'usr_me'
+      },
+      body: JSON.stringify({
+        title: 'I secretly wrote an entire album about you',
+        story: 'Nine acoustic songs about someone who only thinks of me as their weekend gym buddy. Every chord progression is a memory.',
+        category: 'love_heartbreak',
+        mood: 'vulnerable',
+        visibility: 'anonymous',
+        customAlias: 'Acoustic Shadow #77'
+      })
+    });
+    expect(anonRes.status).toBe(200);
+    const anonData = await anonRes.json();
+    expect(anonData.success).toBe(true);
+    expect(anonData.confession.visibility).toBe('anonymous');
+    expect(anonData.confession.authorAlias).toBe('Acoustic Shadow #77');
+    const anonConfessionId = anonData.confession.id;
+
+    // 2. Post a Public Confession Story
+    const pubRes = await fetch(`${API_URL}/confessions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': 'usr_me'
+      },
+      body: JSON.stringify({
+        title: 'Finally letting go of a dream that was not mine',
+        story: 'Spent five years studying corporate finance to please my family before I realized I was suffocating my creative soul.',
+        category: 'healing_recovery',
+        mood: 'liberated',
+        visibility: 'public'
+      })
+    });
+    expect(pubRes.status).toBe(200);
+    const pubData = await pubRes.json();
+    expect(pubData.success).toBe(true);
+    expect(pubData.confession.visibility).toBe('public');
+    expect(pubData.confession.authorName).toBe('Kavindu Senanayake');
+    const pubConfessionId = pubData.confession.id;
+
+    // 3. Post a Private Vault Confession Story
+    const privRes = await fetch(`${API_URL}/confessions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': 'usr_me'
+      },
+      body: JSON.stringify({
+        title: 'My unspoken fear about tomorrow',
+        story: 'Strictly private note: I am afraid of failing the upcoming architectural critique, but I will prepare thoroughly anyway.',
+        category: 'vulnerability_fear',
+        mood: 'vulnerable',
+        visibility: 'private'
+      })
+    });
+    expect(privRes.status).toBe(200);
+    const privData = await privRes.json();
+    expect(privData.success).toBe(true);
+    expect(privData.confession.visibility).toBe('private');
+    const privConfessionId = privData.confession.id;
+
+    // 4. Query Public Feed as another user ('usr_alex')
+    const feedRes = await fetch(`${API_URL}/confessions?userId=usr_alex`);
+    expect(feedRes.status).toBe(200);
+    const feedData = await feedRes.json();
+    expect(feedData.success).toBe(true);
+
+    const feedIds = feedData.confessions.map((c: any) => c.id);
+    expect(feedIds).toContain(anonConfessionId);
+    expect(feedIds).toContain(pubConfessionId);
+    // CRITICAL: The private confession MUST NEVER be in the public feed!
+    expect(feedIds).not.toContain(privConfessionId);
+
+    // Verify Anonymous Identity Masking for other users
+    const anonInFeed = feedData.confessions.find((c: any) => c.id === anonConfessionId);
+    expect(anonInFeed.userId).toBe('anon');
+    expect(anonInFeed.authorName).toBeUndefined();
+    expect(anonInFeed.authorAvatar).toBeUndefined();
+    expect(anonInFeed.authorAlias).toBe('Acoustic Shadow #77');
+
+    // 5. Query User's Own Confessions Vault ('usr_me')
+    const myRes = await fetch(`${API_URL}/confessions/my`, {
+      headers: { 'x-user-id': 'usr_me' }
+    });
+    expect(myRes.status).toBe(200);
+    const myData = await myRes.json();
+    expect(myData.success).toBe(true);
+    const myIds = myData.confessions.map((c: any) => c.id);
+    // User CAN see their own private vault confessions
+    expect(myIds).toContain(privConfessionId);
+    expect(myIds).toContain(anonConfessionId);
+    expect(myIds).toContain(pubConfessionId);
+
+    // 6. Test Empathy Reactions
+    const reactRes = await fetch(`${API_URL}/confessions/${anonConfessionId}/react`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': 'usr_alex'
+      },
+      body: JSON.stringify({ reactionType: 'hugs' })
+    });
+    expect(reactRes.status).toBe(200);
+    const reactData = await reactRes.json();
+    expect(reactData.success).toBe(true);
+    expect(reactData.confession.reactionHugs).toBe(1);
+
+    // Second click toggles/removes reaction
+    const unreactRes = await fetch(`${API_URL}/confessions/${anonConfessionId}/react`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': 'usr_alex'
+      },
+      body: JSON.stringify({ reactionType: 'hugs' })
+    });
+    expect(unreactRes.status).toBe(200);
+    const unreactData = await unreactRes.json();
+    expect(unreactData.confession.reactionHugs).toBe(0);
+
+    // 7. Delete Confession
+    const delRes = await fetch(`${API_URL}/confessions/${privConfessionId}`, {
+      method: 'DELETE',
+      headers: { 'x-user-id': 'usr_me' }
+    });
+    expect(delRes.status).toBe(200);
+    const delData = await delRes.json();
+    expect(delData.success).toBe(true);
+  });
 });

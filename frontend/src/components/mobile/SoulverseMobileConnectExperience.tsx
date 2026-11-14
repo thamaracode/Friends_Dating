@@ -22,6 +22,7 @@ import {
 import { MOCK_EVENTS, MOCK_CIRCLES } from '../../mockData';
 import type { FriendsEvent, SocialCircle } from '../../types';
 import { ContextualEmotionalBanner } from '../emotional/ContextualEmotionalBanner';
+import { ConfessionsStreamView } from '../confessions/ConfessionsStreamView';
 
 interface SoulverseMobileConnectExperienceProps {
   onOpenEventDetail?: (event: FriendsEvent) => void;
@@ -40,7 +41,7 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
   onOpenVault,
   onOpenUnspoken
 }) => {
-  const [activeTab, setActiveTab] = useState<'all' | 'vault' | 'events' | 'communities' | 'watch_parties' | 'solo' | 'worlds'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'confessions' | 'vault' | 'events' | 'communities' | 'watch_parties' | 'solo' | 'worlds'>('all');
   const [rsvpStates, setRsvpStates] = useState<Record<string, boolean>>({
     'evt_1': true
   });
@@ -58,6 +59,7 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
 
   const filterTabs = [
     { id: 'all' as const, label: 'All Experiences' },
+    { id: 'confessions' as const, label: '🤫 Secret Confessions' },
     { id: 'vault' as const, label: '🔐 Relationship Vault' },
     { id: 'events' as const, label: '🎪 Events & Meetups' },
     { id: 'communities' as const, label: '👥 Communities' },
@@ -479,6 +481,15 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* SECTION 6: SECRET CONFESSIONS STREAM                                  */}
+      {/* ===================================================================== */}
+      {(activeTab === 'all' || activeTab === 'confessions') && (
+        <div className="space-y-4 pt-4 border-t border-white/[0.08]">
+          <ConfessionsStreamView />
         </div>
       )}
 

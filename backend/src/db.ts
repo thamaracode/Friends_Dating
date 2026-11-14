@@ -890,6 +890,39 @@ export function initDatabase() {
       updated_at INTEGER NOT NULL
     );
 
+    -- Sacred Confessions & Anonymous Stories Table
+    CREATE TABLE IF NOT EXISTS confessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      story TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'love_heartbreak',
+      mood TEXT NOT NULL DEFAULT 'vulnerable',
+      visibility TEXT NOT NULL CHECK(visibility IN ('anonymous', 'public', 'private')) DEFAULT 'anonymous',
+      author_alias TEXT,
+      is_sensitive INTEGER DEFAULT 0,
+      reaction_hugs INTEGER DEFAULT 0,
+      reaction_relatable INTEGER DEFAULT 0,
+      reaction_peace INTEGER DEFAULT 0,
+      reaction_secrets INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS confession_reactions (
+      id TEXT PRIMARY KEY,
+      confession_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      reaction_type TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      UNIQUE(confession_id, user_id, reaction_type),
+      FOREIGN KEY (confession_id) REFERENCES confessions(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_confessions_vis_cat ON confessions(visibility, category, created_at);
+    CREATE INDEX IF NOT EXISTS idx_confessions_user ON confessions(user_id, visibility);
+
     -- Universal Indexes for sub-millisecond queries
     CREATE INDEX IF NOT EXISTS idx_identities_user_vis ON user_identities(user_id, visibility, status);
     CREATE INDEX IF NOT EXISTS idx_universes_creator_vis ON fictional_universes(creator_id, visibility, status);
@@ -1043,6 +1076,7 @@ export function initDatabase() {
   seedSoulverseExpansionData();
   seedFeatureControlLayer();
   seedCouplePlayHubGames();
+  seedConfessions();
 }
 
 function seedInitialData() {
@@ -2519,6 +2553,71 @@ function seedCouplePlayHubGames() {
       now
     );
   }
+}
+
+function seedConfessions() {
+  const count = db.prepare('SELECT COUNT(*) as count FROM confessions').get() as { count: number };
+  if (count.count > 0) return;
+
+  const now = Date.now();
+  const insertConfession = db.prepare(`
+    INSERT OR IGNORE INTO confessions (
+      id, user_id, title, story, category, mood, visibility, author_alias, is_sensitive,
+      reaction_hugs, reaction_relatable, reaction_peace, reaction_secrets, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertConfession.run(
+    'cnf_seed_1',
+    'usr_tara',
+    'I still drive past the café where we said goodbye',
+    'It has been three years since you moved to Berlin. Every Sunday evening on my way back from the studio, I take the longer boulevard route just to see the warm yellow streetlights through the windows of that corner table. I never stop. I never go inside. I just want to remember that for two hours on a rainy October night, we were completely honest with each other.',
+    'love_heartbreak',
+    'nostalgic',
+    'anonymous',
+    'Rainy Boulevard #482',
+    0, 42, 87, 19, 31,
+    now - 3600000 * 5, now - 3600000 * 5
+  );
+
+  insertConfession.run(
+    'cnf_seed_2',
+    'usr_me',
+    'Behind the confident persona, I feel like an impostor every day',
+    'Everyone around me treats me like the calm, collected problem solver who always knows what to do next. When I close my apartment door at night, the silence feels overwhelming. I am terrified that one day people will realize I am just guessing and doing my best not to fall apart.',
+    'secret_identity',
+    'vulnerable',
+    'anonymous',
+    'Quiet Thinker #109',
+    0, 114, 156, 34, 62,
+    now - 3600000 * 18, now - 3600000 * 18
+  );
+
+  insertConfession.run(
+    'cnf_seed_3',
+    'usr_alex',
+    'I never told you why I left the party early',
+    'You were laughing with someone else under the string lights by the balcony, and you looked so effortlessly happy. I realized in that split second that the future I had been imagining for months only existed inside my head. Leaving without saying goodbye was cowardice, but watching you forget me in real time would have broken whatever composure I had left.',
+    'unsent_feelings',
+    'heartbroken',
+    'public',
+    null,
+    0, 67, 93, 12, 45,
+    now - 3600000 * 32, now - 3600000 * 32
+  );
+
+  insertConfession.run(
+    'cnf_seed_4',
+    'usr_me',
+    'The unwritten letter to my younger self',
+    'You thought being alone meant you were unlovable. It didn’t. It just meant the people around you at nineteen hadn’t learned how to see beyond the surface yet. Stop apologizing for the depth of your feelings.',
+    'healing_recovery',
+    'liberated',
+    'private',
+    'Private Vault',
+    0, 0, 0, 0, 0,
+    now - 3600000 * 72, now - 3600000 * 72
+  );
 }
 
 function seedFeatureControlLayer() {
