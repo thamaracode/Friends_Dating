@@ -1223,6 +1223,7 @@ export function initDatabase() {
   seedPsychologyFramework();
   seedSocialDiscoveryEngine();
   seedRelationshipVault();
+  seedContentEngine();
 }
 
 function seedInitialData() {
@@ -3875,5 +3876,14 @@ function seedRelationshipVault() {
     RelationshipVaultService.seedVaultData();
   } catch (err) {
     console.warn('Could not seed relationship vault:', err);
+  }
+}
+
+function seedContentEngine() {
+  try {
+    const { ContentEngineService } = require('./content-engine/service');
+    ContentEngineService.ensureTables();
+  } catch (err) {
+    console.warn('Could not seed content engine:', err);
   }
 }

@@ -21,6 +21,7 @@ export type SoulverseRoute =
   | 'mini_games'
   | 'personality'
   | 'discovery_engine'
+  | 'content_engine'
   | 'spotify';
 
 export type MobilePrimaryTab = 'discover' | 'connect' | 'create' | 'inbox' | 'profile';

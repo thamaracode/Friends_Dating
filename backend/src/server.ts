@@ -37,6 +37,7 @@ import { SocialDiscoveryService } from './discovery/service';
 import { MATCHING_TERMINOLOGY_REGISTRY, CONNECTION_TYPES_METADATA } from './discovery/types';
 import { RelationshipVaultService } from './relationship-vault/service';
 import { RELATIONSHIP_LIFECYCLE_METADATA } from './relationship-vault/types';
+import { ContentEngineService } from './content-engine/service';
 import {
   createRateLimiter,
   isUserSuspended,
@@ -48,6 +49,7 @@ import {
 
 initDatabase();
 SoulPromptsService.initTables();
+ContentEngineService.ensureTables();
 
 const app = express();
 app.use(cors({
@@ -8352,6 +8354,235 @@ app.get('/api/v1/vault/export-all', (req, res) => {
     res.json({ success: true, count: dossiers.length, dossiers, exportedAt: Date.now() });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to export vault' });
+  }
+});
+
+// ===========================================================================
+// MASTER PROMPT 06: DYNAMIC HUMAN CONNECTION CONTENT ENGINE ENDPOINTS
+// ===========================================================================
+
+// 1. Get Daily Content Bundle
+app.get('/api/v1/content/daily', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const dateStr = (req.query.date as string) || undefined;
+    const bundle = ContentEngineService.getDailyBundle(dateStr, userId);
+    res.json({ success: true, bundle });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get daily content' });
+  }
+});
+
+// 2. Get Previous Daily Bundles
+app.get('/api/v1/content/daily/history', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const limit = parseInt(req.query.limit as string, 10) || 7;
+    const offset = parseInt(req.query.offset as string, 10) || 0;
+    const bundles = ContentEngineService.getPreviousDailyBundles(limit, offset, userId);
+    res.json({ success: true, count: bundles.length, bundles });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get daily history' });
+  }
+});
+
+// 3. Query Content Catalog with Filters
+app.get('/api/v1/content/items', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const filters = {
+      category: req.query.category as any,
+      subcategory: req.query.subcategory as any,
+      content_type: req.query.content_type as any,
+      depth_level: req.query.depth_level as any,
+      intended_context: req.query.intended_context as any,
+      search: req.query.search as string,
+      exclude_seen: req.query.exclude_seen === 'true',
+      exclude_skipped: req.query.exclude_skipped === 'true',
+      limit: parseInt(req.query.limit as string, 10) || 20,
+      offset: parseInt(req.query.offset as string, 10) || 0
+    };
+    const result = ContentEngineService.queryContent(filters, userId);
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to query content' });
+  }
+});
+
+// 4. Random Content Item
+app.get('/api/v1/content/items/random', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const filters = {
+      category: req.query.category as any,
+      subcategory: req.query.subcategory as any,
+      content_type: req.query.content_type as any,
+      depth_level: req.query.depth_level as any,
+      intended_context: req.query.intended_context as any
+    };
+    const item = ContentEngineService.getRandomItem(filters, userId);
+    res.json({ success: true, item });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get random item' });
+  }
+});
+
+// 5. Refresh Content Item (Fresh Replacement)
+app.get('/api/v1/content/items/refresh', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const currentId = req.query.currentId as string;
+    const filters = {
+      category: req.query.category as any,
+      subcategory: req.query.subcategory as any,
+      content_type: req.query.content_type as any,
+      depth_level: req.query.depth_level as any,
+      intended_context: req.query.intended_context as any
+    };
+    const item = ContentEngineService.refreshItem(filters, currentId, userId);
+    res.json({ success: true, item });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to refresh item' });
+  }
+});
+
+// 6. Personalized Content Items
+app.get('/api/v1/content/items/personalized', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const limit = parseInt(req.query.limit as string, 10) || 5;
+    const items = ContentEngineService.getPersonalizedItems(userId, limit);
+    res.json({ success: true, items });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get personalized items' });
+  }
+});
+
+// 7. Get Single Content Item
+app.get('/api/v1/content/items/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const item = ContentEngineService.getContentItem(req.params.id, userId);
+    if (!item) {
+      return res.status(404).json({ error: 'Content item not found' });
+    }
+    ContentEngineService.recordView(userId, item.id, 'item_detail');
+    res.json({ success: true, item });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get content item' });
+  }
+});
+
+// 8. Toggle Favorite
+app.post('/api/v1/content/items/:id/favorite', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const result = ContentEngineService.toggleFavorite(userId, req.params.id);
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to toggle favorite' });
+  }
+});
+
+// 9. Get User Favorites
+app.get('/api/v1/content/favorites', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const limit = parseInt(req.query.limit as string, 10) || 20;
+    const offset = parseInt(req.query.offset as string, 10) || 0;
+    const favorites = ContentEngineService.getUserFavorites(userId, limit, offset);
+    res.json({ success: true, favorites });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get favorites' });
+  }
+});
+
+// 10. Record Private Answer to Question
+app.post('/api/v1/content/items/:id/answer', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { answerText, moodState, tags } = req.body;
+    if (!answerText || !answerText.trim()) {
+      return res.status(400).json({ error: 'answerText is required' });
+    }
+    const answer = ContentEngineService.recordAnswer(userId, req.params.id, answerText, moodState, tags);
+    res.status(201).json({ success: true, answer });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to record answer' });
+  }
+});
+
+// 11. Get User Answers
+app.get('/api/v1/content/answers', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const contentId = req.query.contentId as string | undefined;
+    const answers = ContentEngineService.getUserAnswers(userId, contentId);
+    res.json({ success: true, answers });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get answers' });
+  }
+});
+
+// 12. Delete User Answer
+app.delete('/api/v1/content/answers/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const deleted = ContentEngineService.deleteAnswer(userId, req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Answer not found or not owned by user' });
+    }
+    res.json({ success: true, message: 'Answer deleted' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to delete answer' });
+  }
+});
+
+// 13. Skip Content Item
+app.post('/api/v1/content/items/:id/skip', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { reason } = req.body;
+    ContentEngineService.skipItem(userId, req.params.id, reason);
+    res.json({ success: true, message: 'Item skipped' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to skip item' });
+  }
+});
+
+// 14. Report Inappropriate Content
+app.post('/api/v1/content/items/:id/report', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { reason, details } = req.body;
+    if (!reason) {
+      return res.status(400).json({ error: 'reason is required' });
+    }
+    const report = ContentEngineService.reportContent(userId, req.params.id, reason, details);
+    res.status(201).json({ success: true, report });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to report content' });
+  }
+});
+
+// 15. Content Categories & Taxonomy Metadata
+app.get('/api/v1/content/categories', (_req, res) => {
+  try {
+    const taxonomyData = ContentEngineService.getCategoryTaxonomy();
+    res.json({ success: true, ...taxonomyData });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get taxonomy' });
+  }
+});
+
+// 16. Export User Content Responses & Favorites
+app.get('/api/v1/content/export', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const exportData = ContentEngineService.exportUserData(userId);
+    res.json({ success: true, export: exportData });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to export content data' });
   }
 });
 

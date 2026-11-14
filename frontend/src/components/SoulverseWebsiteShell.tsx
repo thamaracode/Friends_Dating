@@ -91,6 +91,7 @@ import { SoulJournalSanctuary } from './journal/SoulJournalSanctuary';
 import { SpotifyEmbedHubView } from './spotify/SpotifyEmbedHubView';
 import { PersonalitySanctuaryView } from './personality/PersonalitySanctuaryView';
 import { SocialDiscoveryEngineView } from './discovery/SocialDiscoveryEngineView';
+import { DynamicContentEngineView } from './content/DynamicContentEngineView';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -267,6 +268,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       items: [
         { id: 'discover' as SoulverseRoute, label: 'Discover Humans', icon: Compass, featureId: 'feat_dating' },
         { id: 'personality' as SoulverseRoute, label: 'Personality & EI Sanctuary', icon: Brain, badge: 'EI', featureId: 'feat_personality_exploration' },
+        { id: 'content_engine' as SoulverseRoute, label: 'Connection Inquiries', icon: Compass, badge: 'Prompt', featureId: 'feat_daily_quotes' },
         { id: 'quotes' as SoulverseRoute, label: 'Quotes Sanctuary', icon: QuoteIcon, badge: 'Wise', featureId: 'feat_daily_quotes' },
         { id: 'journal' as SoulverseRoute, label: 'Soul Prompts & Journal', icon: BookOpen, badge: 'Soul', featureId: 'feat_daily_quotes' },
         { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily', featureId: 'feat_daily_quotes' },
@@ -741,6 +743,13 @@ export const SoulverseWebsiteShell: React.FC = () => {
                   onInitiateChat={handleInitiateChat}
                   onOpenProfileDetail={(p) => setInspectedProfile(p)}
                 />
+              </div>
+            )}
+
+            {/* SUB-VIEW: DYNAMIC HUMAN CONNECTION CONTENT ENGINE */}
+            {currentRoute === 'content_engine' && (
+              <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass p-4 sm:p-6">
+                <DynamicContentEngineView />
               </div>
             )}
 
