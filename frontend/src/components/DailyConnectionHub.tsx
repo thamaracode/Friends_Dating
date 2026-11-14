@@ -306,6 +306,15 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
           >
             <Calendar className="w-4 h-4" />
           </button>
+
+          <a
+            href="#quotes"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full dark-glass bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-colors cursor-pointer"
+            title="Infinite Quotes Sanctuary"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span className="hidden sm:inline">Quotes Sanctuary</span>
+          </a>
         </div>
       </div>
 

@@ -27,6 +27,9 @@ import {
   AISpendingLimits,
   AIMessage
 } from './ai/types';
+import { QuoteDiscoveryService } from './quotes/service';
+import { QuoteProviderRegistry } from './quotes/registry';
+import { QUOTE_CATEGORIES, QuoteCategoryKey } from './quotes/types';
 
 initDatabase();
 
@@ -5790,6 +5793,305 @@ app.put('/api/admin/ai/providers/:providerId', requireAdminPermission('system', 
     res.json({ success: true, providerId });
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to update admin AI provider', details: error.message });
+  }
+});
+
+// ============================================================================
+// 21. QUOTE DISCOVERY & INFINITE QUOTE EXPERIENCE
+// ============================================================================
+
+// --- 21.1 Discover Next Quote (Filtered & Unseen) ---
+app.get('/api/quotes/discover', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const quote = await QuoteDiscoveryService.discoverNextQuote(userId);
+    res.json({ success: true, quote });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to discover quote' });
+  }
+});
+
+// --- 21.2 Infinite-Scroll Feed ---
+app.get('/api/quotes/feed', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = Math.min(50, parseInt(req.query.limit as string, 10) || 12);
+    const category = req.query.category as QuoteCategoryKey | undefined;
+
+    const result = QuoteDiscoveryService.getFeed(userId, page, limit, category);
+    res.json({ success: true, ...result, page, limit });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch quote feed', details: error.message });
+  }
+});
+
+// --- 21.3 Quote Categories Catalog ---
+app.get('/api/quotes/categories', (_req, res) => {
+  try {
+    const categoryCounts = db.prepare(`
+      SELECT category, COUNT(*) as count FROM quotes
+      WHERE is_verified = 1 AND is_moderated = 1
+      GROUP BY category
+    `).all() as Array<{ category: string; count: number }>;
+
+    const countMap = new Map(categoryCounts.map(c => [c.category, c.count]));
+
+    const categories = Object.values(QUOTE_CATEGORIES).map(cat => ({
+      ...cat,
+      quoteCount: countMap.get(cat.key) || 0
+    }));
+
+    res.json({ success: true, categories });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to retrieve categories', details: error.message });
+  }
+});
+
+// --- 21.4 Daily Featured Quote ---
+app.get('/api/quotes/daily', (req, res) => {
+  try {
+    const dateStr = req.query.date as string | undefined;
+    const daily = QuoteDiscoveryService.getDailyQuote(dateStr);
+    res.json({ success: true, daily });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to retrieve daily quote' });
+  }
+});
+
+// --- 21.5 Daily Quotes History Archive ---
+app.get('/api/quotes/daily/history', (req, res) => {
+  try {
+    const limit = Math.min(30, parseInt(req.query.limit as string, 10) || 14);
+    const rows = db.prepare(`
+      SELECT dq.date_string, dq.reflection_question, q.id, q.text, q.author, q.category, q.attribution
+      FROM daily_quotes dq
+      JOIN quotes q ON dq.quote_id = q.id
+      ORDER BY dq.date_string DESC
+      LIMIT ?
+    `).all(limit) as any[];
+
+    const history = rows.map(r => ({
+      date: r.date_string,
+      reflectionQuestion: r.reflection_question,
+      quote: {
+        id: r.id,
+        text: r.text,
+        author: r.author,
+        category: r.category,
+        attribution: r.attribution
+      }
+    }));
+
+    res.json({ success: true, history });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch daily history', details: error.message });
+  }
+});
+
+// --- 21.6 Quote Interactions: Like, Save, Skip ---
+app.post('/api/quotes/:id/interact', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { id } = req.params;
+    const { type } = req.body;
+
+    if (!type || !['like', 'save', 'skip'].includes(type)) {
+      return res.status(400).json({ error: 'Valid interaction type (like, save, skip) is required' });
+    }
+
+    const result = QuoteDiscoveryService.toggleInteraction(userId, id, type);
+    res.json({ success: true, ...result, quoteId: id, type });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to record interaction', details: error.message });
+  }
+});
+
+// --- 21.7 User Saved Quotes Collection ---
+app.get('/api/quotes/saved', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const quotes = QuoteDiscoveryService.getSavedQuotes(userId);
+    res.json({ success: true, quotes });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch saved quotes', details: error.message });
+  }
+});
+
+// --- 21.8 User Personalization Preferences ---
+app.get('/api/quotes/preferences', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const preferences = QuoteDiscoveryService.getUserPreferences(userId);
+    res.json({ success: true, preferences });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch quote preferences', details: error.message });
+  }
+});
+
+app.put('/api/quotes/preferences', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const preferences = QuoteDiscoveryService.updateUserPreferences(userId, req.body);
+    res.json({ success: true, preferences });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update preferences', details: error.message });
+  }
+});
+
+// --- 21.9 Clear User History ---
+app.post('/api/quotes/history/clear', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    QuoteDiscoveryService.clearHistory(userId);
+    res.json({ success: true, message: 'Quote history cleared successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to clear history', details: error.message });
+  }
+});
+
+// --- 21.10 Report Quote ---
+app.post('/api/quotes/:id/report', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason = 'Unspecified' } = req.body;
+    QuoteDiscoveryService.reportQuote(id, reason);
+    res.json({ success: true, message: 'Quote reported for review' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to report quote', details: error.message });
+  }
+});
+
+// --- 21.11 Admin Quote Management ---
+app.get('/api/admin/quotes', requireAdminPermission('features', 'read'), (req, res) => {
+  try {
+    const { category, search, provider, isVerified, isModerated, page, limit } = req.query;
+    const result = QuoteDiscoveryService.adminGetQuotes({
+      category: category as string,
+      search: search as string,
+      provider: provider as string,
+      isVerified: isVerified !== undefined ? isVerified === 'true' : undefined,
+      isModerated: isModerated !== undefined ? isModerated === 'true' : undefined,
+      page: page ? parseInt(page as string, 10) : undefined,
+      limit: limit ? parseInt(limit as string, 10) : undefined
+    });
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to query admin quotes', details: error.message });
+  }
+});
+
+app.post('/api/admin/quotes', requireAdminPermission('features', 'write'), (req, res) => {
+  try {
+    const { text, author, category, tags, attribution, sourceUrl } = req.body;
+    if (!text || !author || !category) {
+      return res.status(400).json({ error: 'text, author, and category are required' });
+    }
+    const created = QuoteDiscoveryService.adminCreateQuote({ text, author, category, tags, attribution, sourceUrl });
+    res.json({ success: true, quote: created });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to create quote', details: error.message });
+  }
+});
+
+app.put('/api/admin/quotes/:id', requireAdminPermission('features', 'write'), (req, res) => {
+  try {
+    const { id } = req.params;
+    QuoteDiscoveryService.adminUpdateQuote(id, req.body);
+    res.json({ success: true, id });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update quote', details: error.message });
+  }
+});
+
+app.delete('/api/admin/quotes/:id', requireAdminPermission('features', 'write'), (req, res) => {
+  try {
+    const { id } = req.params;
+    QuoteDiscoveryService.adminDeleteQuote(id);
+    res.json({ success: true, message: 'Quote permanently deleted' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to delete quote', details: error.message });
+  }
+});
+
+app.get('/api/admin/quotes/providers', requireAdminPermission('system', 'read'), (_req, res) => {
+  try {
+    const providers = db.prepare('SELECT * FROM admin_quote_providers ORDER BY provider_id ASC').all() as any[];
+    res.json({
+      success: true,
+      providers: providers.map(p => ({
+        providerId: p.provider_id,
+        name: p.name,
+        baseUrl: p.base_url,
+        isEnabled: Boolean(p.is_enabled),
+        rateLimitRpm: p.rate_limit_rpm,
+        lastFetchedAt: p.last_fetched_at,
+        healthStatus: p.health_status,
+        totalFetched: p.total_fetched,
+        failureCount: p.failure_count,
+        updatedAt: p.updated_at
+      }))
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch quote providers', details: error.message });
+  }
+});
+
+app.put('/api/admin/quotes/providers/:id', requireAdminPermission('system', 'write'), (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isEnabled, rateLimitRpm } = req.body;
+    const now = Date.now();
+
+    db.prepare(`
+      UPDATE admin_quote_providers SET
+        is_enabled = COALESCE(?, is_enabled),
+        rate_limit_rpm = COALESCE(?, rate_limit_rpm),
+        updated_at = ?
+      WHERE provider_id = ?
+    `).run(
+      isEnabled !== undefined ? (isEnabled ? 1 : 0) : null,
+      rateLimitRpm !== undefined ? Number(rateLimitRpm) : null,
+      now,
+      id
+    );
+
+    res.json({ success: true, providerId: id });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update quote provider', details: error.message });
+  }
+});
+
+app.post('/api/admin/quotes/providers/:id/fetch', requireAdminPermission('system', 'write'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const limit = parseInt(req.body.limit, 10) || 30;
+    const inserted = await QuoteProviderRegistry.fetchAndIngestBatch(id, limit);
+    res.json({ success: true, providerId: id, inserted });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Manual batch ingestion failed', details: error.message });
+  }
+});
+
+app.post('/api/admin/quotes/deduplicate', requireAdminPermission('system', 'write'), (_req, res) => {
+  try {
+    const result = QuoteDiscoveryService.adminDeduplicate();
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Deduplication failed', details: error.message });
+  }
+});
+
+app.post('/api/admin/quotes/daily', requireAdminPermission('features', 'write'), (req, res) => {
+  try {
+    const { dateStr, quoteId, reflectionQuestion } = req.body;
+    if (!dateStr || !quoteId) {
+      return res.status(400).json({ error: 'dateStr and quoteId are required' });
+    }
+    const daily = QuoteDiscoveryService.adminSetDailyQuote(dateStr, quoteId, reflectionQuestion);
+    res.json({ success: true, daily });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to assign daily quote', details: error.message });
   }
 });
 

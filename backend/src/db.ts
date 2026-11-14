@@ -3013,4 +3013,141 @@ function seedFeatureControlLayer() {
   for (const p of defaultProviders) {
     insertAdminProvider.run(p.id, p.name, now);
   }
+
+  // ==========================================================================
+  // QUOTE DISCOVERY & INFINITE QUOTE EXPERIENCE TABLES
+  // ==========================================================================
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS quotes (
+      id TEXT PRIMARY KEY,
+      text TEXT NOT NULL,
+      normalized_text TEXT NOT NULL,
+      author TEXT NOT NULL,
+      normalized_author TEXT NOT NULL,
+      category TEXT NOT NULL,
+      tags_json TEXT DEFAULT '[]',
+      language TEXT DEFAULT 'en',
+      provider TEXT NOT NULL,
+      source_url TEXT,
+      attribution TEXT,
+      license TEXT,
+      imported_at INTEGER NOT NULL,
+      is_verified INTEGER DEFAULT 1,
+      is_moderated INTEGER DEFAULT 1,
+      is_featured INTEGER DEFAULT 0,
+      report_count INTEGER DEFAULT 0,
+      likes_count INTEGER DEFAULT 0,
+      saves_count INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_quotes_category ON quotes(category);
+    CREATE INDEX IF NOT EXISTS idx_quotes_norm ON quotes(normalized_text, normalized_author);
+    CREATE INDEX IF NOT EXISTS idx_quotes_verified ON quotes(is_verified, is_moderated);
+    CREATE INDEX IF NOT EXISTS idx_quotes_featured ON quotes(is_featured);
+
+    CREATE TABLE IF NOT EXISTS quote_user_history (
+      user_id TEXT NOT NULL,
+      quote_id TEXT NOT NULL,
+      seen_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, quote_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_quote_user_history ON quote_user_history(user_id, seen_at);
+
+    CREATE TABLE IF NOT EXISTS quote_user_interactions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      quote_id TEXT NOT NULL,
+      interaction_type TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      UNIQUE (user_id, quote_id, interaction_type)
+    );
+    CREATE INDEX IF NOT EXISTS idx_quote_interactions ON quote_user_interactions(user_id, interaction_type);
+
+    CREATE TABLE IF NOT EXISTS quote_user_preferences (
+      user_id TEXT PRIMARY KEY,
+      included_categories_json TEXT DEFAULT '[]',
+      excluded_categories_json TEXT DEFAULT '[]',
+      length_preference TEXT DEFAULT 'any',
+      author_type TEXT DEFAULT 'any',
+      style TEXT DEFAULT 'any',
+      language TEXT DEFAULT 'en',
+      mode TEXT DEFAULT 'personalized',
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS daily_quotes (
+      id TEXT PRIMARY KEY,
+      date_string TEXT UNIQUE NOT NULL,
+      quote_id TEXT NOT NULL,
+      reflection_question TEXT NOT NULL,
+      secondary_quote_id TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_daily_quotes_date ON daily_quotes(date_string);
+
+    CREATE TABLE IF NOT EXISTS admin_quote_providers (
+      provider_id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      base_url TEXT NOT NULL,
+      is_enabled INTEGER DEFAULT 1,
+      rate_limit_rpm INTEGER DEFAULT 60,
+      last_fetched_at INTEGER,
+      health_status TEXT DEFAULT 'healthy',
+      total_fetched INTEGER DEFAULT 0,
+      failure_count INTEGER DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+  `);
+
+  // Seed default admin quote providers
+  const insertQuoteProvider = db.prepare(`
+    INSERT OR IGNORE INTO admin_quote_providers (provider_id, name, base_url, is_enabled, rate_limit_rpm, last_fetched_at, health_status, total_fetched, failure_count, updated_at)
+    VALUES (?, ?, ?, 1, 60, NULL, 'healthy', 0, 0, ?)
+  `);
+
+  const defaultQuoteProviders = [
+    { id: 'dummyjson', name: 'DummyJSON Quotes API', url: 'https://dummyjson.com/quotes' },
+    { id: 'zenquotes', name: 'ZenQuotes API', url: 'https://zenquotes.io/api/quotes' },
+    { id: 'curated_sanctuary', name: 'Curated Sanctuary Archive', url: 'internal://curated' }
+  ];
+
+  for (const qp of defaultQuoteProviders) {
+    insertQuoteProvider.run(qp.id, qp.name, qp.url, now);
+  }
+
+  // Seed initial curated quotes if table is empty
+  const quoteCount = (db.prepare('SELECT COUNT(*) as c FROM quotes').get() as any)?.c || 0;
+  if (quoteCount === 0) {
+    try {
+      const { INITIAL_CURATED_QUOTES } = require('./quotes/seedData');
+      const { normalizeQuoteText, normalizeAuthor } = require('./quotes/registry');
+      const insertQuote = db.prepare(`
+        INSERT INTO quotes (
+          id, text, normalized_text, author, normalized_author, category, tags_json,
+          language, provider, source_url, attribution, license, imported_at,
+          is_verified, is_moderated, is_featured, report_count, likes_count, saves_count, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'en', 'curated_sanctuary', 'https://soulverse.app/sanctuary', ?, 'Public Domain / Free Attribution', ?, 1, 1, 0, 0, 0, 0, ?)
+      `);
+
+      for (let i = 0; i < INITIAL_CURATED_QUOTES.length; i++) {
+        const q = INITIAL_CURATED_QUOTES[i];
+        const qId = `qt_seed_${String(i + 1).padStart(3, '0')}`;
+        insertQuote.run(
+          qId,
+          q.text,
+          normalizeQuoteText(q.text),
+          q.author,
+          normalizeAuthor(q.author),
+          q.category,
+          JSON.stringify(q.tags),
+          q.attribution,
+          now,
+          now
+        );
+      }
+    } catch (err) {
+      console.warn('Could not seed initial curated quotes:', err);
+    }
+  }
 }

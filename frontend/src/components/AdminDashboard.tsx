@@ -38,7 +38,8 @@ import {
   FileJson,
   DollarSign,
   History,
-  Cpu
+  Cpu,
+  Quote as QuoteIcon
 } from 'lucide-react';
 import { MOCK_PROFILES } from '../mockData';
 import { useSpotifyMusic, CURATED_SPOTIFY_PRESETS, SpotifyPreset } from '../context/SpotifyMusicContext';
@@ -53,6 +54,9 @@ import { GlassModal, GlassButton, GlassPrimaryButton } from './klyven';
 import { FeatureControlService } from '../services/featureControlService';
 import type { AdminFeature, AuditLogEntry, FeatureAdoptionStat } from '../types/featureControl';
 import { byoaiService } from '../services/byoaiService';
+import { quoteService } from '../services/quoteService';
+import type { AdminQuoteProvider, Quote, QuoteCategoryKey } from '../types/quotes';
+import { QUOTE_CATEGORIES } from '../types/quotes';
 
 export const AdminDashboard: React.FC = () => {
   // Navigation tabs
@@ -83,8 +87,33 @@ export const AdminDashboard: React.FC = () => {
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [adoptionStats, setAdoptionStats] = useState<FeatureAdoptionStat[]>([]);
   const [systemSubTab, setSystemSubTab] = useState<
-    'flags' | 'dependencies' | 'config' | 'rbac' | 'subscriptions' | 'versions' | 'audit' | 'analytics' | 'ops' | 'ai'
+    'flags' | 'dependencies' | 'config' | 'rbac' | 'subscriptions' | 'versions' | 'audit' | 'analytics' | 'ops' | 'ai' | 'quotes'
   >('flags');
+
+  // Quotes Sanctuary & Wisdom Library Admin State
+  const [quoteProviders, setQuoteProviders] = useState<AdminQuoteProvider[]>([]);
+  const [adminQuotes, setAdminQuotes] = useState<Quote[]>([]);
+  const [adminQuotesTotal, setAdminQuotesTotal] = useState(0);
+  const [adminQuoteCategory, setAdminQuoteCategory] = useState<string>('all');
+  const [adminQuoteSearch, setAdminQuoteSearch] = useState('');
+  const [adminQuoteVerifiedFilter, setAdminQuoteVerifiedFilter] = useState<'all' | 'verified' | 'unverified'>('all');
+  const [adminQuotePage, setAdminQuotePage] = useState(1);
+  const [isFetchingQuoteBatch, setIsFetchingQuoteBatch] = useState<string | null>(null);
+  const [isDeduplicatingQuotes, setIsDeduplicatingQuotes] = useState(false);
+  const [isAddQuoteModalOpen, setIsAddQuoteModalOpen] = useState(false);
+  const [newQuoteData, setNewQuoteData] = useState({
+    text: '',
+    author: '',
+    category: 'love_romance' as QuoteCategoryKey,
+    tags: '',
+    attribution: '',
+    sourceUrl: ''
+  });
+  const [assignDailyQuoteModal, setAssignDailyQuoteModal] = useState<{
+    quote: Quote | null;
+    dateStr: string;
+    reflectionQuestion: string;
+  } | null>(null);
   const [aiInfra, setAiInfra] = useState<{
     providers: any[];
     telemetry: any;
@@ -149,14 +178,145 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const loadAdminQuotesData = async () => {
+    try {
+      const [provs, qData] = await Promise.all([
+        quoteService.adminGetProviders(),
+        quoteService.adminGetQuotes({
+          category: adminQuoteCategory === 'all' ? undefined : adminQuoteCategory,
+          search: adminQuoteSearch.trim() || undefined,
+          isVerified: adminQuoteVerifiedFilter === 'all' ? undefined : (adminQuoteVerifiedFilter === 'verified'),
+          page: adminQuotePage,
+          limit: 20
+        })
+      ]);
+      setQuoteProviders(provs);
+      setAdminQuotes(qData.quotes || []);
+      setAdminQuotesTotal(qData.total || 0);
+    } catch (e) {
+      console.error('Failed to load admin quotes data', e);
+    }
+  };
+
+  const handleToggleQuoteProvider = async (providerId: string, currentEnabled: boolean) => {
+    try {
+      await quoteService.adminUpdateProvider(providerId, { isEnabled: !currentEnabled });
+      showToast(`Provider ${providerId} ${!currentEnabled ? 'enabled' : 'disabled'}`);
+      loadAdminQuotesData();
+    } catch (e: any) {
+      showToast(e.message || 'Failed to update provider');
+    }
+  };
+
+  const handleFetchQuoteBatch = async (providerId: string) => {
+    setIsFetchingQuoteBatch(providerId);
+    try {
+      const res = await quoteService.adminFetchProviderBatch(providerId, 30);
+      showToast(`Successfully ingested ${res.inserted} new quotes from ${providerId}!`);
+      loadAdminQuotesData();
+    } catch (e: any) {
+      showToast(e.message || 'Batch fetch failed');
+    } finally {
+      setIsFetchingQuoteBatch(null);
+    }
+  };
+
+  const handleDeduplicateQuotes = async () => {
+    setIsDeduplicatingQuotes(true);
+    try {
+      const res = await quoteService.adminDeduplicate();
+      showToast(`Deduplication complete. Removed ${res.removedCount} duplicate quotes.`);
+      loadAdminQuotesData();
+    } catch (e: any) {
+      showToast(e.message || 'Deduplication failed');
+    } finally {
+      setIsDeduplicatingQuotes(false);
+    }
+  };
+
+  const handleDeleteAdminQuote = async (id: string) => {
+    if (!confirm('Are you sure you want to permanently delete this quote?')) return;
+    try {
+      await quoteService.adminDeleteQuote(id);
+      showToast('Quote deleted successfully.');
+      loadAdminQuotesData();
+    } catch (e: any) {
+      showToast(e.message || 'Failed to delete quote');
+    }
+  };
+
+  const handleToggleVerifyQuote = async (quote: Quote) => {
+    try {
+      const next = !quote.isVerified;
+      await quoteService.adminUpdateQuote(quote.id, { isVerified: next });
+      showToast(`Quote marked as ${next ? 'Verified' : 'Unverified'}.`);
+      loadAdminQuotesData();
+    } catch (e: any) {
+      showToast(e.message || 'Failed to update verification status');
+    }
+  };
+
+  const handleCreateNewQuote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newQuoteData.text.trim() || !newQuoteData.author.trim()) {
+      showToast('Quote text and author are required.');
+      return;
+    }
+    try {
+      const tagsArray = newQuoteData.tags
+        .split(',')
+        .map(t => t.trim().toLowerCase())
+        .filter(Boolean);
+      await quoteService.adminCreateQuote({
+        text: newQuoteData.text.trim(),
+        author: newQuoteData.author.trim(),
+        category: newQuoteData.category,
+        tags: tagsArray,
+        attribution: newQuoteData.attribution.trim() || undefined,
+        sourceUrl: newQuoteData.sourceUrl.trim() || undefined
+      });
+      showToast('New wisdom quote added to the Sanctuary library!');
+      setIsAddQuoteModalOpen(false);
+      setNewQuoteData({
+        text: '',
+        author: '',
+        category: 'love_romance' as QuoteCategoryKey,
+        tags: '',
+        attribution: '',
+        sourceUrl: ''
+      });
+      loadAdminQuotesData();
+    } catch (e: any) {
+      showToast(e.message || 'Failed to create quote');
+    }
+  };
+
+  const handleConfirmDailyQuote = async () => {
+    if (!assignDailyQuoteModal || !assignDailyQuoteModal.quote) return;
+    try {
+      await quoteService.adminSetDailyQuote(
+        assignDailyQuoteModal.dateStr,
+        assignDailyQuoteModal.quote.id,
+        assignDailyQuoteModal.reflectionQuestion.trim() || undefined
+      );
+      showToast(`Quote locked as Featured Daily for ${assignDailyQuoteModal.dateStr}!`);
+      setAssignDailyQuoteModal(null);
+    } catch (e: any) {
+      showToast(e.message || 'Failed to set daily quote');
+    }
+  };
+
   React.useEffect(() => {
     if (activeTab === 'system') {
       refreshAdminControlLayer();
       if (systemSubTab === 'ai') {
         loadAiInfrastructure();
       }
+      if (systemSubTab === 'quotes') {
+        loadAdminQuotesData();
+      }
     }
-  }, [activeTab, systemSubTab]);
+  }, [activeTab, systemSubTab, adminQuoteCategory, adminQuoteVerifiedFilter, adminQuotePage]);
 
   // Music Presets Admin State
   const [presets, setPresets] = useState<SpotifyPreset[]>(CURATED_SPOTIFY_PRESETS);
@@ -1179,6 +1339,7 @@ export const AdminDashboard: React.FC = () => {
                 { id: 'audit', label: `Audit (${auditLogs.length})`, icon: ShieldCheck },
                 { id: 'analytics', label: 'Adoption', icon: Activity },
                 { id: 'ai', label: 'AI Infra', icon: Cpu },
+                { id: 'quotes', label: `Quotes (${adminQuotesTotal})`, icon: QuoteIcon },
                 { id: 'ops', label: 'SQLite Ops', icon: Database }
               ].map(sub => {
                 const Icon = sub.icon || Sliders;
@@ -2054,6 +2215,454 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* SUB-TAB 11: QUOTES & WISDOM SANCTUARY */}
+          {systemSubTab === 'quotes' && (
+            <div className="space-y-6 animate-fadeIn">
+              {/* Header Card */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl dark-glass border border-white/10 shadow-lg">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+                      <QuoteIcon className="w-5 h-5 text-amber-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white uppercase tracking-wider font-serif flex items-center gap-2">
+                        <span>Wisdom Sanctuary & Infinite Quotes Engine</span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          {adminQuotesTotal} Curated Quotes
+                        </span>
+                      </h3>
+                      <p className="text-xs text-zinc-400">
+                        Multi-provider adapters, rate limit guards, zero-duplicate library hygiene, and daily reflection locks.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={handleDeduplicateQuotes}
+                    disabled={isDeduplicatingQuotes}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl dark-glass hover:bg-white/10 border border-white/15 text-xs font-bold text-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <RotateCcw className={`w-3.5 h-3.5 ${isDeduplicatingQuotes ? 'animate-spin' : ''}`} />
+                    <span>{isDeduplicatingQuotes ? 'Deduplicating...' : 'Deduplicate Library'}</span>
+                  </button>
+                  <button
+                    onClick={() => setIsAddQuoteModalOpen(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-[#090A0E] hover:bg-zinc-200 text-xs font-black shadow-lg transition-transform active:scale-95 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Quote</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Provider Pipeline Cards */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  External Batch Ingestion Pipelines (Free Tier Resilient)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {quoteProviders.map(p => {
+                    const isIngesting = isFetchingQuoteBatch === p.providerId;
+                    return (
+                      <div
+                        key={p.providerId}
+                        className="p-4 rounded-2xl dark-glass border border-white/10 space-y-3 relative overflow-hidden"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-white">{p.name}</span>
+                              <span
+                                className={`text-[9px] font-mono px-2 py-0.5 rounded-full ${
+                                  p.isEnabled
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    : 'bg-zinc-500/20 text-zinc-400 border border-zinc-500/30'
+                                }`}
+                              >
+                                {p.isEnabled ? 'Active' : 'Disabled'}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-mono text-zinc-400 truncate block max-w-[200px]">
+                              {p.baseUrl}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => handleToggleQuoteProvider(p.providerId, p.isEnabled)}
+                            className={`p-1.5 rounded-xl border text-xs cursor-pointer transition-colors ${
+                              p.isEnabled
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20'
+                                : 'bg-zinc-500/10 border-zinc-500/30 text-zinc-400 hover:bg-zinc-500/20'
+                            }`}
+                            title={p.isEnabled ? 'Disable Provider' : 'Enable Provider'}
+                          >
+                            <Sliders className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1 border-t border-white/[0.06]">
+                          <span>Rate Limit: {p.rateLimitRpm} RPM</span>
+                          <span className="text-zinc-500 font-mono">ID: {p.providerId}</span>
+                        </div>
+
+                        <button
+                          onClick={() => handleFetchQuoteBatch(p.providerId)}
+                          disabled={!p.isEnabled || isIngesting}
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-medium text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Download className={`w-3.5 h-3.5 ${isIngesting ? 'animate-bounce' : ''}`} />
+                          <span>{isIngesting ? 'Ingesting Batch...' : 'Ingest 30 Quotes'}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Quotes Database Explorer & Controls */}
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-2xl dark-glass border border-white/10">
+                  {/* Search Input */}
+                  <div className="flex-1 min-w-[240px] relative">
+                    <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={adminQuoteSearch}
+                      onChange={(e) => setAdminQuoteSearch(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') loadAdminQuotesData(); }}
+                      placeholder="Search quotes or authors (Press Enter)..."
+                      className="w-full pl-9 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30"
+                    />
+                  </div>
+
+                  {/* Category Selector */}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={adminQuoteCategory}
+                      onChange={(e) => {
+                        setAdminQuoteCategory(e.target.value);
+                        setAdminQuotePage(1);
+                      }}
+                      className="px-3 py-2 rounded-xl bg-[#090A0E] border border-white/10 text-xs text-zinc-200 focus:outline-none focus:border-white/30 cursor-pointer"
+                    >
+                      <option value="all">All 16 Categories</option>
+                      {Object.values(QUOTE_CATEGORIES).map(cat => (
+                        <option key={cat.key} value={cat.key}>{cat.label}</option>
+                      ))}
+                    </select>
+
+                    {/* Verification Filter */}
+                    <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/10 text-xs">
+                      {(['all', 'verified', 'unverified'] as const).map(mode => (
+                        <button
+                          key={mode}
+                          onClick={() => {
+                            setAdminQuoteVerifiedFilter(mode);
+                            setAdminQuotePage(1);
+                          }}
+                          className={`px-2.5 py-1 rounded-lg font-medium capitalize transition-all cursor-pointer ${
+                            adminQuoteVerifiedFilter === mode
+                              ? 'bg-white text-[#090A0E] font-bold'
+                              : 'text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          {mode}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quotes List Table */}
+                <div className="rounded-2xl dark-glass border border-white/10 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-zinc-300">
+                      <thead className="bg-white/[0.04] text-[10px] uppercase tracking-wider text-zinc-400 font-bold border-b border-white/10">
+                        <tr>
+                          <th className="p-3">Quote Content</th>
+                          <th className="p-3">Category</th>
+                          <th className="p-3">Tags & Signals</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/[0.06]">
+                        {adminQuotes.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-zinc-500">
+                              No quotes matching your search or filters found.
+                            </td>
+                          </tr>
+                        ) : (
+                          adminQuotes.map(q => (
+                            <tr key={q.id} className="hover:bg-white/[0.02] transition-colors">
+                              <td className="p-3 max-w-md">
+                                <p className="font-serif italic text-white line-clamp-2">
+                                  "{q.text}"
+                                </p>
+                                <span className="text-[11px] text-zinc-400 font-medium">
+                                  — {q.author}
+                                  {q.attribution ? ` (${q.attribution})` : ''}
+                                </span>
+                              </td>
+                              <td className="p-3 whitespace-nowrap">
+                                <span
+                                  className="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                  style={{
+                                    backgroundColor: `${QUOTE_CATEGORIES[q.category]?.accentColor || '#FFFFFF'}15`,
+                                    color: QUOTE_CATEGORIES[q.category]?.accentColor || '#FFFFFF',
+                                    borderColor: `${QUOTE_CATEGORIES[q.category]?.accentColor || '#FFFFFF'}35`
+                                  }}
+                                >
+                                  {QUOTE_CATEGORIES[q.category]?.label || q.category}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                  {q.tags.slice(0, 3).map(t => (
+                                    <span key={t} className="px-1.5 py-0.5 rounded bg-white/5 text-[9px] text-zinc-400">
+                                      #{t}
+                                    </span>
+                                  ))}
+                                  {(q.likesCount ?? 0) > 0 && (
+                                    <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300 text-[9px] flex items-center gap-0.5">
+                                      <Heart className="w-2.5 h-2.5 fill-rose-300" /> {q.likesCount}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-3 whitespace-nowrap">
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit ${
+                                    q.isVerified
+                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                      : 'bg-zinc-500/20 text-zinc-400 border border-zinc-500/30'
+                                  }`}
+                                >
+                                  {q.isVerified ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                                  {q.isVerified ? 'Verified' : 'Community'}
+                                </span>
+                              </td>
+                              <td className="p-3 text-right whitespace-nowrap">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => handleToggleVerifyQuote(q)}
+                                    className="p-1.5 rounded-lg dark-glass hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer"
+                                    title={q.isVerified ? 'Mark Unverified' : 'Mark Verified'}
+                                  >
+                                    <CheckSquare className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => setAssignDailyQuoteModal({
+                                      quote: q,
+                                      dateStr: new Date().toISOString().split('T')[0],
+                                      reflectionQuestion: 'How does this perspective transform your day?'
+                                    })}
+                                    className="p-1.5 rounded-lg dark-glass hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 cursor-pointer"
+                                    title="Lock as Featured Daily Quote"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteAdminQuote(q.id)}
+                                    className="p-1.5 rounded-lg dark-glass hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 cursor-pointer"
+                                    title="Permanently Delete Quote"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination Footer */}
+                  <div className="flex items-center justify-between p-3 border-t border-white/10 text-xs text-zinc-400 bg-white/[0.02]">
+                    <span>
+                      Page {adminQuotePage} of {Math.max(1, Math.ceil(adminQuotesTotal / 20))}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setAdminQuotePage(p => Math.max(1, p - 1))}
+                        disabled={adminQuotePage <= 1}
+                        className="px-3 py-1 rounded-lg dark-glass hover:bg-white/10 text-white cursor-pointer disabled:opacity-40"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => setAdminQuotePage(p => p + 1)}
+                        disabled={adminQuotePage >= Math.ceil(adminQuotesTotal / 20)}
+                        className="px-3 py-1 rounded-lg dark-glass hover:bg-white/10 text-white cursor-pointer disabled:opacity-40"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add New Quote Modal */}
+          {isAddQuoteModalOpen && (
+            <GlassModal
+              isOpen={isAddQuoteModalOpen}
+              onClose={() => setIsAddQuoteModalOpen(false)}
+              title="Add New Wisdom Quote"
+              subtitle="Curate a quote directly into the Soulverse Wisdom Sanctuary"
+              maxWidth="md"
+            >
+              <form onSubmit={handleCreateNewQuote} className="space-y-4 text-xs">
+                <div className="space-y-1">
+                  <label className="font-bold text-white block">Quote Text *</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={newQuoteData.text}
+                    onChange={(e) => setNewQuoteData({ ...newQuoteData, text: e.target.value })}
+                    placeholder="Enter the full quote or thought..."
+                    className="w-full bg-white/5 border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-white block">Author *</label>
+                    <input
+                      required
+                      type="text"
+                      value={newQuoteData.author}
+                      onChange={(e) => setNewQuoteData({ ...newQuoteData, author: e.target.value })}
+                      placeholder="e.g. Marcus Aurelius"
+                      className="w-full bg-white/5 border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-white block">Category *</label>
+                    <select
+                      value={newQuoteData.category}
+                      onChange={(e) => setNewQuoteData({ ...newQuoteData, category: e.target.value as QuoteCategoryKey })}
+                      className="w-full bg-[#090A0E] border border-white/15 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-white/40"
+                    >
+                      {Object.values(QUOTE_CATEGORIES).map(cat => (
+                        <option key={cat.key} value={cat.key}>{cat.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-white block">Tags (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={newQuoteData.tags}
+                    onChange={(e) => setNewQuoteData({ ...newQuoteData, tags: e.target.value })}
+                    placeholder="e.g. wisdom, stoicism, healing"
+                    className="w-full bg-white/5 border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-white block">Attribution / Work</label>
+                    <input
+                      type="text"
+                      value={newQuoteData.attribution}
+                      onChange={(e) => setNewQuoteData({ ...newQuoteData, attribution: e.target.value })}
+                      placeholder="e.g. Meditations, Book IV"
+                      className="w-full bg-white/5 border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-white block">Source URL (optional)</label>
+                    <input
+                      type="url"
+                      value={newQuoteData.sourceUrl}
+                      onChange={(e) => setNewQuoteData({ ...newQuoteData, sourceUrl: e.target.value })}
+                      placeholder="https://..."
+                      className="w-full bg-white/5 border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+                  <GlassButton variant="subtle" onClick={() => setIsAddQuoteModalOpen(false)}>
+                    Cancel
+                  </GlassButton>
+                  <GlassButton variant="primary" type="submit">
+                    Add to Library
+                  </GlassButton>
+                </div>
+              </form>
+            </GlassModal>
+          )}
+
+          {/* Assign Daily Featured Quote Modal */}
+          {assignDailyQuoteModal && (
+            <GlassModal
+              isOpen={Boolean(assignDailyQuoteModal)}
+              onClose={() => setAssignDailyQuoteModal(null)}
+              title="Lock Featured Daily Quote"
+              subtitle={`Assign quote to ${assignDailyQuoteModal.dateStr}`}
+              maxWidth="md"
+            >
+              <div className="space-y-4 text-xs">
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                  <p className="font-serif italic text-white text-sm mb-1">
+                    "{assignDailyQuoteModal.quote?.text}"
+                  </p>
+                  <span className="text-zinc-400 font-medium">
+                    — {assignDailyQuoteModal.quote?.author}
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-white block">Calendar Date (YYYY-MM-DD)</label>
+                  <input
+                    type="date"
+                    value={assignDailyQuoteModal.dateStr}
+                    onChange={(e) => setAssignDailyQuoteModal({
+                      ...assignDailyQuoteModal,
+                      dateStr: e.target.value
+                    })}
+                    className="w-full bg-white/5 border border-white/15 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-white/40"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-white block">Daily Reflection Question</label>
+                  <textarea
+                    rows={2}
+                    value={assignDailyQuoteModal.reflectionQuestion}
+                    onChange={(e) => setAssignDailyQuoteModal({
+                      ...assignDailyQuoteModal,
+                      reflectionQuestion: e.target.value
+                    })}
+                    placeholder="Thought-provoking question for users..."
+                    className="w-full bg-white/5 border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+                  <GlassButton variant="subtle" onClick={() => setAssignDailyQuoteModal(null)}>
+                    Cancel
+                  </GlassButton>
+                  <GlassButton variant="primary" onClick={handleConfirmDailyQuote}>
+                    Lock Daily Quote
+                  </GlassButton>
+                </div>
+              </div>
+            </GlassModal>
           )}
 
           {/* Kill Switch Modal */}

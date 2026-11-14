@@ -37,7 +37,8 @@ import {
   Wifi,
   Battery,
   Mail,
-  Sliders
+  Sliders,
+  Quote as QuoteIcon
 } from 'lucide-react';
 import { SearchBar, PulseBadge } from './klyven';
 
@@ -79,6 +80,7 @@ import { TheUnspokenSanctuary } from './emotional/TheUnspokenSanctuary';
 import { UnopenedLetterModal } from './emotional/UnopenedLetterModal';
 import { UserControlCenterModal } from './control/UserControlCenterModal';
 import { FeatureControlService } from '../services/featureControlService';
+import { QuoteDiscoveryView } from './quotes/QuoteDiscoveryView';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -129,7 +131,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
   // Map route to 5 primary mobile destinations
   const getActiveMobileTab = (): MobilePrimaryTab => {
-    if (currentRoute === 'discover' || currentRoute === 'daily' || currentRoute === 'home') return 'discover';
+    if (currentRoute === 'discover' || currentRoute === 'daily' || currentRoute === 'home' || currentRoute === 'quotes') return 'discover';
     if (currentRoute === 'connect' || currentRoute === 'worlds' || currentRoute === 'connections') return 'connect';
     if (currentRoute === 'messages' || currentRoute === 'inbox') return 'inbox';
     if (currentRoute === 'profile' || currentRoute === 'settings' || currentRoute === 'identities' || currentRoute === 'account') return 'profile';
@@ -142,7 +144,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       const hash = window.location.hash.replace('#', '') as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
         'home', 'daily', 'discover', 'connect', 'connections', 'messages', 'inbox', 'profile', 
-        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken'
+        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes'
       ];
       if (validRoutes.includes(hash)) {
         setCurrentRoute(hash);
@@ -223,6 +225,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
     { id: 'connections' as SoulverseRoute, label: 'Relationship Vault', icon: Heart, badge: 'Vault', featureId: 'feat_relationship_vault' },
     { id: 'messages' as SoulverseRoute, label: 'Messages & Rooms', icon: MessageCircle, badge: '3' },
     { id: 'profile' as SoulverseRoute, label: 'My Identities', icon: User },
+    { id: 'quotes' as SoulverseRoute, label: 'Quotes Sanctuary', icon: QuoteIcon, badge: 'Wise', featureId: 'feat_daily_quotes' },
     { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily', featureId: 'feat_daily_quotes' },
     { id: 'identities' as SoulverseRoute, label: 'Identity Universe', icon: Sparkles, featureId: 'feat_imaginary_identities' },
     { id: 'worlds' as SoulverseRoute, label: 'Explore Worlds', icon: Globe2, featureId: 'feat_cinematic_profiles' },
@@ -580,6 +583,13 @@ export const SoulverseWebsiteShell: React.FC = () => {
             {/* SUB-VIEW: DAILY INTELLIGENCE */}
             {currentRoute === 'daily' && (
               <DailyConnectionHub onBackToHome={() => navigateTo('discover')} />
+            )}
+
+            {/* SUB-VIEW: QUOTE DISCOVERY SANCTUARY */}
+            {currentRoute === 'quotes' && (
+              <div className="h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass">
+                <QuoteDiscoveryView />
+              </div>
             )}
 
             {/* SUB-VIEW: CONNECTIONS & MUTUAL MATCHES */}
