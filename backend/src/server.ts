@@ -3847,6 +3847,84 @@ app.post('/api/v1/games/external/register', (req, res) => {
 });
 
 // ============================================================================
+// COUPLEPLAYHUB: INTIMATE GAMES REST API & SESSION MANAGEMENT
+// ============================================================================
+
+app.get('/api/v1/games/coupleplayhub', (_req, res) => {
+  const games = db.prepare("SELECT * FROM registered_external_games WHERE provider_name = 'CouplePlayHub'").all();
+  res.json({
+    success: true,
+    provider: 'CouplePlayHub',
+    repository: 'https://github.com/Maddy-O/coupleplayhub',
+    tiers: ['vanilla', 'pg', 'xxx', 'kinky'],
+    gamesCount: games.length,
+    games
+  });
+});
+
+app.post('/api/v1/games/coupleplayhub/session', (req, res) => {
+  const {
+    id = `cph_sess_${uuidv4().slice(0, 8)}`,
+    conversationId = null,
+    gameId,
+    tier = 'pg',
+    currentTurn = 'partner1',
+    state = {},
+    chemistryScore = 0
+  } = req.body;
+
+  if (!gameId) {
+    return res.status(400).json({ error: 'gameId is required' });
+  }
+
+  const now = Date.now();
+  const stateJson = typeof state === 'string' ? state : JSON.stringify(state);
+
+  const existing = db.prepare('SELECT id FROM coupleplayhub_sessions WHERE id = ?').get(id);
+
+  if (existing) {
+    db.prepare(`
+      UPDATE coupleplayhub_sessions 
+      SET tier = ?, current_turn = ?, state_json = ?, chemistry_score = ?, updated_at = ?
+      WHERE id = ?
+    `).run(tier, currentTurn, stateJson, chemistryScore, now, id);
+  } else {
+    db.prepare(`
+      INSERT INTO coupleplayhub_sessions (
+        id, conversation_id, game_id, tier, current_turn, state_json, chemistry_score, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, conversationId, gameId, tier, currentTurn, stateJson, chemistryScore, now, now);
+  }
+
+  const session = db.prepare('SELECT * FROM coupleplayhub_sessions WHERE id = ?').get(id) as any;
+  if (session) {
+    try {
+      session.state = JSON.parse(session.state_json);
+    } catch {
+      session.state = {};
+    }
+  }
+
+  res.json({ success: true, session });
+});
+
+app.get('/api/v1/games/coupleplayhub/session/:id', (req, res) => {
+  const { id } = req.params;
+  const session = db.prepare('SELECT * FROM coupleplayhub_sessions WHERE id = ?').get(id) as any;
+  if (!session) {
+    return res.status(404).json({ error: 'CouplePlayHub session not found' });
+  }
+
+  try {
+    session.state = JSON.parse(session.state_json);
+  } catch {
+    session.state = {};
+  }
+
+  res.json({ success: true, session });
+});
+
+// ============================================================================
 // THE CONTROL LAYER: FEATURE MANAGEMENT & PERSONALIZATION REST APIS
 // ============================================================================
 

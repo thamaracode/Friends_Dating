@@ -14,7 +14,8 @@ import {
   Lock, 
   ShieldAlert,
   Sparkles,
-  HeartHandshake
+  HeartHandshake,
+  Gamepad2
 } from 'lucide-react';
 import type { ExperienceTab } from '../types';
 
@@ -36,6 +37,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         { id: 'home' as ExperienceTab, label: 'Home Dashboard', icon: Home, badge: '' },
         { id: 'discover' as ExperienceTab, label: 'Discover Humans', icon: Compass, badge: 'HCM' },
         { id: 'messages_rooms' as ExperienceTab, label: 'Messages & Rooms', icon: Radio, badge: 'Live' },
+        { id: 'mini_games' as ExperienceTab, label: 'CouplePlayHub Games', icon: Gamepad2, badge: 'Hot' },
         { id: 'events' as ExperienceTab, label: 'Events & Parties', icon: Calendar, badge: '' },
         { id: 'communities' as ExperienceTab, label: 'Social Circles', icon: Users, badge: '5-10' }
       ]

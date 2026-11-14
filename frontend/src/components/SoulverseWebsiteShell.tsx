@@ -39,7 +39,8 @@ import {
   Mail,
   Sliders,
   ExternalLink,
-  Quote as QuoteIcon
+  Quote as QuoteIcon,
+  Gamepad2
 } from 'lucide-react';
 import { SearchBar, PulseBadge } from './klyven';
 
@@ -82,6 +83,7 @@ import { UnopenedLetterModal } from './emotional/UnopenedLetterModal';
 import { UserControlCenterModal } from './control/UserControlCenterModal';
 import { FeatureControlService } from '../services/featureControlService';
 import { QuoteDiscoveryView } from './quotes/QuoteDiscoveryView';
+import { CouplePlayHubView } from './games/CouplePlayHubView';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -252,6 +254,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       title: 'Relationships & Chat',
       items: [
         { id: 'connect' as SoulverseRoute, label: 'Connect & Social', icon: Users, badge: 'Live', featureId: 'feat_friendships' },
+        { id: 'mini_games' as SoulverseRoute, label: 'CouplePlayHub Games', icon: Gamepad2, badge: 'Hot' },
         { id: 'connections' as SoulverseRoute, label: 'Relationship Vault', icon: Heart, badge: 'Vault', featureId: 'feat_relationship_vault' },
         { id: 'messages' as SoulverseRoute, label: 'Messages & Rooms', icon: MessageCircle, badge: '3' },
       ]
@@ -624,6 +627,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
                   onOpenProfileDetail={(p) => setInspectedProfile(p)}
                   activeProfileOverride={activeChatProfileOverride}
                   onClearActiveProfileOverride={() => setActiveChatProfileOverride(null)}
+                  onOpenGame={() => navigateTo('mini_games')}
                 />
               </div>
             )}
@@ -659,6 +663,16 @@ export const SoulverseWebsiteShell: React.FC = () => {
             {currentRoute === 'quotes' && (
               <div className="h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass">
                 <QuoteDiscoveryView />
+              </div>
+            )}
+
+            {/* SUB-VIEW: COUPLE PLAY HUB GAMES */}
+            {currentRoute === 'mini_games' && (
+              <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass">
+                <CouplePlayHubView
+                  onNavigateToChat={() => navigateTo('messages')}
+                  partnerName={inspectedProfile?.name || 'Elena Rostova'}
+                />
               </div>
             )}
 

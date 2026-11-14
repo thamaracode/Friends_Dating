@@ -877,6 +877,19 @@ export function initDatabase() {
       FOREIGN KEY (registered_by) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    -- CouplePlayHub Synchronized Sessions Table
+    CREATE TABLE IF NOT EXISTS coupleplayhub_sessions (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT,
+      game_id TEXT NOT NULL,
+      tier TEXT NOT NULL DEFAULT 'pg',
+      current_turn TEXT NOT NULL DEFAULT 'partner1',
+      state_json TEXT NOT NULL,
+      chemistry_score INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
     -- Universal Indexes for sub-millisecond queries
     CREATE INDEX IF NOT EXISTS idx_identities_user_vis ON user_identities(user_id, visibility, status);
     CREATE INDEX IF NOT EXISTS idx_universes_creator_vis ON fictional_universes(creator_id, visibility, status);
@@ -1029,6 +1042,7 @@ export function initDatabase() {
   seedDailyConnectionContent();
   seedSoulverseExpansionData();
   seedFeatureControlLayer();
+  seedCouplePlayHubGames();
 }
 
 function seedInitialData() {
@@ -2423,6 +2437,88 @@ function seedSoulverseExpansionData() {
     'usr_me',
     now
   );
+}
+
+function seedCouplePlayHubGames() {
+  const cphCount = db.prepare("SELECT COUNT(*) as count FROM registered_external_games WHERE provider_name = 'CouplePlayHub'").get() as { count: number };
+  if (cphCount.count >= 7) return;
+
+  const now = Date.now();
+  const insertExternalGame = db.prepare(`
+    INSERT OR IGNORE INTO registered_external_games (
+      id, provider_name, game_title, game_url, allowed_origin, category, description,
+      thumbnail_url, is_approved, sandbox_attributes, registered_by, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const couplePlayHubGames = [
+    {
+      id: 'ext_cph_dice',
+      title: 'CouplePlayHub Super Sexy Dice',
+      category: 'dice_game',
+      desc: 'Multi-dice sensual physics rolling with custom intimacy tiers (Vanilla to Kinky).',
+      thumb: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=400&q=80'
+    },
+    {
+      id: 'ext_cph_roulette',
+      title: 'CouplePlayHub Passion Roulette',
+      category: 'roulette',
+      desc: '12 exciting sectors of whispers, sensual massage, teasing, and erotic dares.',
+      thumb: 'https://images.unsplash.com/photo-1511193311914-0346f16efe90?auto=format&fit=crop&w=400&q=80'
+    },
+    {
+      id: 'ext_cph_tod',
+      title: 'CouplePlayHub Truth or Dare',
+      category: 'truth_or_dare',
+      desc: '100+ deep curiosity questions and physical dares with turn tracking and chemistry points.',
+      thumb: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=400&q=80'
+    },
+    {
+      id: 'ext_cph_kamasutra',
+      title: 'CouplePlayHub Kama Sutra Cards',
+      category: 'kama_sutra',
+      desc: 'Artistic positions, emotional moods, intimacy scores, and bedroom inspiration.',
+      thumb: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=400&q=80'
+    },
+    {
+      id: 'ext_cph_bottle',
+      title: 'CouplePlayHub Spin the Bottle',
+      category: 'bottle_spin',
+      desc: 'Interactive digital bottle on velvet table with dynamic couple challenges.',
+      thumb: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=400&q=80'
+    },
+    {
+      id: 'ext_cph_timer',
+      title: 'CouplePlayHub Rush Challenge Timer',
+      category: 'sensory_timer',
+      desc: '30s to 300s countdown challenges with sensory touch missions before time expires.',
+      thumb: 'https://images.unsplash.com/photo-1501139083538-0139583c060f?auto=format&fit=crop&w=400&q=80'
+    },
+    {
+      id: 'ext_cph_party',
+      title: 'CouplePlayHub Date Night Party Games',
+      category: 'party_game',
+      desc: 'Would You Rather (Lovers Edition), Never Have I Ever, and Most Likely To with stats.',
+      thumb: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80'
+    }
+  ];
+
+  for (const cph of couplePlayHubGames) {
+    insertExternalGame.run(
+      cph.id,
+      'CouplePlayHub',
+      cph.title,
+      'https://github.com/Maddy-O/coupleplayhub',
+      'https://github.com',
+      cph.category,
+      cph.desc,
+      cph.thumb,
+      1,
+      'allow-scripts allow-same-origin allow-popups',
+      'usr_me',
+      now
+    );
+  }
 }
 
 function seedFeatureControlLayer() {

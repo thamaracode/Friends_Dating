@@ -17,7 +17,8 @@ export type SoulverseRoute =
   | 'journal'
   | 'unspoken'
   | 'quotes'
-  | 'admin';
+  | 'admin'
+  | 'mini_games';
 
 export type MobilePrimaryTab = 'discover' | 'connect' | 'create' | 'inbox' | 'profile';
 

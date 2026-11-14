@@ -722,4 +722,84 @@ describe('Soulverse Complete Product Expansion & Feature Engineering Directive -
     expect(dataUser.success).toBe(true);
     expect(dataUser.user.id).toBe('usr_me');
   });
+
+  // --------------------------------------------------------------------------
+  // Scenario 28: CouplePlayHub Games Discovery & Session Management
+  // --------------------------------------------------------------------------
+  it('Scenario 28: CouplePlayHub Games Discovery & Session Management', async () => {
+    // 1. Discover registered CouplePlayHub games
+    const resGames = await fetch(`${API_URL}/games/coupleplayhub`);
+    expect(resGames.status).toBe(200);
+    const dataGames = await resGames.json();
+    expect(dataGames.success).toBe(true);
+    expect(dataGames.provider).toBe('CouplePlayHub');
+    expect(dataGames.tiers).toEqual(['vanilla', 'pg', 'xxx', 'kinky']);
+    expect(dataGames.gamesCount).toBeGreaterThanOrEqual(7);
+
+    const gameIds = dataGames.games.map((g: any) => g.id);
+    expect(gameIds).toContain('ext_cph_dice');
+    expect(gameIds).toContain('ext_cph_roulette');
+    expect(gameIds).toContain('ext_cph_tod');
+    expect(gameIds).toContain('ext_cph_kamasutra');
+    expect(gameIds).toContain('ext_cph_bottle');
+    expect(gameIds).toContain('ext_cph_timer');
+    expect(gameIds).toContain('ext_cph_party');
+
+    // 2. Create synchronized couple game session
+    const sessionId = `test_cph_${Date.now()}`;
+    const sessionPayload = {
+      id: sessionId,
+      conversationId: 'conv_1',
+      gameId: 'sexy_dice',
+      tier: 'xxx',
+      currentTurn: 'partner1',
+      chemistryScore: 50,
+      state: {
+        lastRoll: { action: 'Kiss softly', bodyPart: 'Neck', duration: '60 Seconds' },
+        roundsPlayed: 1
+      }
+    };
+
+    const resCreate = await fetch(`${API_URL}/games/coupleplayhub/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sessionPayload)
+    });
+    expect(resCreate.status).toBe(200);
+    const dataCreate = await resCreate.json();
+    expect(dataCreate.success).toBe(true);
+    expect(dataCreate.session.id).toBe(sessionId);
+    expect(dataCreate.session.game_id).toBe('sexy_dice');
+    expect(dataCreate.session.tier).toBe('xxx');
+    expect(dataCreate.session.chemistry_score).toBe(50);
+    expect(dataCreate.session.state.roundsPlayed).toBe(1);
+
+    // 3. Fetch the created session
+    const resGet = await fetch(`${API_URL}/games/coupleplayhub/session/${sessionId}`);
+    expect(resGet.status).toBe(200);
+    const dataGet = await resGet.json();
+    expect(dataGet.success).toBe(true);
+    expect(dataGet.session.id).toBe(sessionId);
+    expect(dataGet.session.state.lastRoll.bodyPart).toBe('Neck');
+
+    // 4. Update the session turn and chemistry score
+    const resUpdate = await fetch(`${API_URL}/games/coupleplayhub/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: sessionId,
+        gameId: 'sexy_dice',
+        tier: 'kinky',
+        currentTurn: 'partner2',
+        chemistryScore: 85,
+        state: { roundsPlayed: 2 }
+      })
+    });
+    expect(resUpdate.status).toBe(200);
+    const dataUpdate = await resUpdate.json();
+    expect(dataUpdate.success).toBe(true);
+    expect(dataUpdate.session.tier).toBe('kinky');
+    expect(dataUpdate.session.current_turn).toBe('partner2');
+    expect(dataUpdate.session.chemistry_score).toBe(85);
+  });
 });
