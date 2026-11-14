@@ -1,13 +1,25 @@
 import { API_BASE_V1 as API_BASE, WS_BASE } from './apiConfig';
+import { offlineChatDb } from './offlineChatDb';
+import { webrtcCallService } from './webrtcCallService';
 
 export class ChatApiClient {
   private ws: WebSocket | null = null;
   private currentUserId: string = 'usr_me';
   private eventListeners: Map<string, Set<(data: any) => void>> = new Map();
+  private isDrainingOutbox: boolean = false;
 
   constructor(userId: string = 'usr_me') {
     this.currentUserId = userId;
     this.initWebSocket();
+
+    // Connect WebRTC signaling bridge
+    webrtcCallService.setSignalSender((signalPayload) => {
+      this.sendSocketEvent('call.signal', {
+        recipientId: signalPayload.recipientId,
+        callType: signalPayload.callType,
+        signalData: signalPayload.signalData || signalPayload
+      });
+    });
   }
 
   public setUserId(userId: string) {
@@ -22,9 +34,35 @@ export class ChatApiClient {
     try {
       this.ws = new WebSocket(`${WS_BASE}?userId=${this.currentUserId}`);
 
+      this.ws.onopen = () => {
+        this.triggerEvent('ws.open', { userId: this.currentUserId });
+        this.drainOutbox();
+      };
+
       this.ws.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
+
+          // Server message ACK handling
+          if (payload.type === 'ack') {
+            offlineChatDb.reconcileMessageAck(
+              payload.clientMessageId,
+              payload.serverMessageId,
+              payload.sequenceNumber,
+              payload.timestamp
+            );
+          }
+
+          // WebRTC call signaling handling
+          if (payload.type === 'call.signal' || payload.type.startsWith('call.')) {
+            webrtcCallService.handleIncomingSignal(
+              payload.senderId,
+              payload.signalData || payload,
+              payload.senderName,
+              payload.senderAvatar
+            );
+          }
+
           this.triggerEvent(payload.type, payload);
           this.triggerEvent('*', payload);
         } catch (e) {
@@ -33,6 +71,7 @@ export class ChatApiClient {
       };
 
       this.ws.onclose = () => {
+        this.triggerEvent('ws.close', { userId: this.currentUserId });
         setTimeout(() => this.initWebSocket(), 3000);
       };
 
@@ -41,6 +80,51 @@ export class ChatApiClient {
       };
     } catch (e) {
       console.warn('WS initialization error', e);
+    }
+  }
+
+  /**
+   * Automatically drains pending offline outbox messages in chronological order
+   */
+  public async drainOutbox() {
+    if (this.isDrainingOutbox) return;
+    this.isDrainingOutbox = true;
+
+    try {
+      const pending = await offlineChatDb.getPendingOutbox();
+      for (const item of pending) {
+        try {
+          await offlineChatDb.updateOutboxStatus(item.clientMessageId, 'sending');
+
+          if (item.type === 'poll' && item.pollData) {
+            await this.createPoll({
+              conversationId: item.conversationId,
+              clientMessageId: item.clientMessageId,
+              question: item.pollData.question,
+              options: item.pollData.options,
+              allowsMultiple: item.pollData.allowsMultiple
+            });
+          } else {
+            await this.sendMessage({
+              conversationId: item.conversationId,
+              clientMessageId: item.clientMessageId,
+              text: item.text,
+              type: item.type,
+              mediaUrl: item.mediaUrl,
+              voiceDuration: item.voiceDuration,
+              voiceWaveform: item.voiceWaveform,
+              replyToMessageId: item.replyToMessageId
+            });
+          }
+
+          await offlineChatDb.removeOutboxMessage(item.clientMessageId);
+        } catch (err: any) {
+          console.warn('Failed to drain outbox item', item.clientMessageId, err);
+          await offlineChatDb.updateOutboxStatus(item.clientMessageId, 'failed', err.message);
+        }
+      }
+    } finally {
+      this.isDrainingOutbox = false;
     }
   }
 
@@ -88,6 +172,7 @@ export class ChatApiClient {
 
   public async sendMessage(params: {
     conversationId: string;
+    clientMessageId?: string;
     text?: string;
     type?: string;
     mediaUrl?: string;
@@ -95,7 +180,7 @@ export class ChatApiClient {
     voiceWaveform?: number[];
     replyToMessageId?: string;
   }) {
-    const clientMessageId = `cli_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const clientMessageId = params.clientMessageId || `cli_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const res = await fetch(`${API_BASE}/conversations/${params.conversationId}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -115,6 +200,181 @@ export class ChatApiClient {
       throw new Error(err.error || 'Failed to send message');
     }
     return await res.json();
+  }
+
+  public async syncMessages(conversationId: string, sinceSequence: number = 0) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/sync?sinceSequence=${sinceSequence}&userId=${this.currentUserId}`);
+    if (!res.ok) throw new Error('Failed to sync messages');
+    const data = await res.json();
+    return data.messages || [];
+  }
+
+  // -------------------------------------------------------------
+  // Group Conversation Methods
+  // -------------------------------------------------------------
+
+  public async createGroup(title: string, memberIds: string[], description?: string, avatarUrl?: string) {
+    const res = await fetch(`${API_BASE}/conversations/group`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        creatorId: this.currentUserId,
+        title,
+        description,
+        avatarUrl,
+        memberIds
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to create group');
+    }
+    return await res.json();
+  }
+
+  public async addGroupMember(conversationId: string, userId: string, role: string = 'member') {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/members`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        actorId: this.currentUserId,
+        userId,
+        role
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to add group member');
+    }
+    return await res.json();
+  }
+
+  public async removeGroupMember(conversationId: string, userId: string) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/members/${userId}?actorId=${this.currentUserId}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to remove member');
+    }
+    return await res.json();
+  }
+
+  public async leaveGroup(conversationId: string) {
+    return await this.removeGroupMember(conversationId, this.currentUserId);
+  }
+
+  public async updateGroupInfo(conversationId: string, updates: { title?: string; description?: string; avatarUrl?: string; settings?: any }) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        actorId: this.currentUserId,
+        ...updates
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to update group');
+    }
+    return await res.json();
+  }
+
+  public async getGroupMembers(conversationId: string) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/members`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.members || [];
+  }
+
+  // -------------------------------------------------------------
+  // Real-Time Poll Methods
+  // -------------------------------------------------------------
+
+  public async createPoll(params: {
+    conversationId: string;
+    question: string;
+    options: string[];
+    allowsMultiple?: boolean;
+    clientMessageId?: string;
+  }) {
+    const clientMessageId = params.clientMessageId || `poll_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const res = await fetch(`${API_BASE}/conversations/${params.conversationId}/poll`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        senderId: this.currentUserId,
+        clientMessageId,
+        question: params.question,
+        options: params.options,
+        allowsMultiple: params.allowsMultiple
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to create poll');
+    }
+    return await res.json();
+  }
+
+  public async votePoll(messageId: string, optionIndex: number) {
+    const res = await fetch(`${API_BASE}/messages/${messageId}/poll/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: this.currentUserId,
+        optionIndex
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to vote on poll');
+    }
+    return await res.json();
+  }
+
+  // -------------------------------------------------------------
+  // Real-Time Calling Logging & History Methods
+  // -------------------------------------------------------------
+
+  public async logCall(callData: {
+    id: string;
+    conversationId: string;
+    recipientId: string;
+    callType: 'voice' | 'video';
+    status: string;
+    durationSeconds?: number;
+    startedAt?: number;
+    endedAt?: number;
+  }) {
+    const res = await fetch(`${API_BASE}/calls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        callerId: this.currentUserId,
+        ...callData
+      })
+    });
+    return await res.json();
+  }
+
+  public async updateCallStatus(callId: string, status: string, durationSeconds?: number) {
+    const res = await fetch(`${API_BASE}/calls/${callId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, durationSeconds })
+    });
+    return await res.json();
+  }
+
+  public async getCallHistory(conversationId?: string) {
+    const url = conversationId
+      ? `${API_BASE}/calls/history?userId=${this.currentUserId}&conversationId=${conversationId}`
+      : `${API_BASE}/calls/history?userId=${this.currentUserId}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.calls || [];
   }
 
   public async editMessage(messageId: string, text: string) {

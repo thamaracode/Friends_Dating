@@ -100,6 +100,97 @@ export function initCommunicationSchema() {
   addColumnIfNotExists('messages', 'thread_id', 'TEXT');
   addColumnIfNotExists('messages', 'deleted_for_users_json', "TEXT DEFAULT '[]'");
   addColumnIfNotExists('messages', 'attachment_json', 'TEXT');
+  addColumnIfNotExists('messages', 'expires_at', 'INTEGER');
+  addColumnIfNotExists('messages', 'scheduled_at', 'INTEGER');
+
+  // Migrate messages table if restrictive CHECK constraint exists on message_type
+  try {
+    const msgSql = (db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='messages'").get() as any)?.sql || '';
+    if (msgSql.includes("CHECK(message_type IN") && !msgSql.includes("'poll'")) {
+      db.pragma('foreign_keys = OFF');
+      db.exec(`
+        CREATE TABLE messages_v2 (
+          id TEXT PRIMARY KEY,
+          conversation_id TEXT NOT NULL,
+          sender_id TEXT NOT NULL,
+          client_message_id TEXT UNIQUE NOT NULL,
+          sequence_number INTEGER NOT NULL,
+          message_type TEXT NOT NULL,
+          text_content TEXT,
+          media_url TEXT,
+          voice_duration INTEGER,
+          voice_waveform TEXT,
+          reply_to_message_id TEXT,
+          thread_id TEXT,
+          is_edited INTEGER DEFAULT 0,
+          is_pinned INTEGER DEFAULT 0,
+          is_deleted_for_everyone INTEGER DEFAULT 0,
+          deleted_for_users_json TEXT DEFAULT '[]',
+          attachment_json TEXT,
+          expires_at INTEGER,
+          scheduled_at INTEGER,
+          created_at INTEGER NOT NULL
+        );
+
+        INSERT INTO messages_v2 (
+          id, conversation_id, sender_id, client_message_id, sequence_number, message_type,
+          text_content, media_url, voice_duration, voice_waveform, reply_to_message_id,
+          thread_id, is_edited, is_pinned, is_deleted_for_everyone, deleted_for_users_json,
+          attachment_json, expires_at, scheduled_at, created_at
+        )
+        SELECT 
+          id, conversation_id, sender_id, client_message_id, sequence_number, message_type,
+          text_content, media_url, voice_duration, voice_waveform, reply_to_message_id,
+          thread_id, is_edited, is_pinned, is_deleted_for_everyone,
+          COALESCE(deleted_for_users_json, '[]'),
+          COALESCE(attachment_json, NULL),
+          COALESCE(expires_at, NULL),
+          COALESCE(scheduled_at, NULL),
+          created_at
+        FROM messages;
+
+        DROP TABLE messages;
+        ALTER TABLE messages_v2 RENAME TO messages;
+      `);
+      db.pragma('foreign_keys = ON');
+    }
+  } catch (e) {
+    console.warn('Messages table migration note:', e);
+  }
+
+  // 4. Create poll_votes table for real-time polling
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS poll_votes (
+      id TEXT PRIMARY KEY,
+      message_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      option_index INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
+      UNIQUE(message_id, user_id, option_index),
+      FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_poll_votes_msg ON poll_votes(message_id);
+    CREATE INDEX IF NOT EXISTS idx_poll_votes_user ON poll_votes(user_id);
+  `);
+
+  // 5. Ensure calls table for WebRTC call history and logging
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS calls (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL,
+      caller_id TEXT NOT NULL,
+      recipient_id TEXT NOT NULL,
+      call_type TEXT NOT NULL,
+      status TEXT NOT NULL,
+      duration_seconds INTEGER DEFAULT 0,
+      started_at INTEGER NOT NULL,
+      ended_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_calls_user ON calls(caller_id, recipient_id);
+    CREATE INDEX IF NOT EXISTS idx_calls_conv ON calls(conversation_id);
+  `);
 
   // 4. Create message_attachments table
   db.exec(`

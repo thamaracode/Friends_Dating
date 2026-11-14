@@ -70,6 +70,125 @@ export class MessagingService {
   }
 
   /**
+   * Adds a member to an existing group conversation
+   */
+  public static addMemberToGroup(conversationId: string, actorUserId: string, targetUserId: string, role: string = 'member'): boolean {
+    const conv = db.prepare('SELECT type FROM conversations WHERE id = ?').get(conversationId) as any;
+    if (!conv) throw new Error('Conversation not found');
+    if (conv.type !== 'group') throw new Error('Cannot add members to non-group conversation');
+
+    // Check actor permissions
+    const actorMembership = db.prepare('SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ?')
+      .get(conversationId, actorUserId) as any;
+    if (!actorMembership || !['owner', 'admin'].includes(actorMembership.role)) {
+      throw new Error('Forbidden: Only group owner or admin can add members');
+    }
+
+    if (SafetyService.isBlocked(actorUserId, targetUserId)) {
+      throw new Error('Cannot add user: blocked by safety rules');
+    }
+
+    const now = Date.now();
+    db.prepare(`
+      INSERT INTO conversation_members (conversation_id, user_id, role, joined_at, unread_count)
+      VALUES (?, ?, ?, ?, 0)
+      ON CONFLICT(conversation_id, user_id) DO UPDATE SET role = ?
+    `).run(conversationId, targetUserId, role, now, role);
+
+    return true;
+  }
+
+  /**
+   * Removes a member from a group or allows a member to leave
+   */
+  public static removeMemberFromGroup(conversationId: string, actorUserId: string, targetUserId: string): boolean {
+    const conv = db.prepare('SELECT type FROM conversations WHERE id = ?').get(conversationId) as any;
+    if (!conv) throw new Error('Conversation not found');
+
+    if (actorUserId !== targetUserId) {
+      // Actor is removing someone else -> must be owner/admin
+      const actorMembership = db.prepare('SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ?')
+        .get(conversationId, actorUserId) as any;
+      if (!actorMembership || !['owner', 'admin'].includes(actorMembership.role)) {
+        throw new Error('Forbidden: Only group owner or admin can remove other members');
+      }
+    }
+
+    db.prepare('DELETE FROM conversation_members WHERE conversation_id = ? AND user_id = ?')
+      .run(conversationId, targetUserId);
+
+    return true;
+  }
+
+  /**
+   * Updates group metadata (title, description, avatarUrl, settings)
+   */
+  public static updateGroupInfo(
+    conversationId: string, 
+    actorUserId: string, 
+    updates: { title?: string; description?: string; avatarUrl?: string; settings?: any }
+  ): Conversation {
+    const actorMembership = db.prepare('SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ?')
+      .get(conversationId, actorUserId) as any;
+    if (!actorMembership || !['owner', 'admin'].includes(actorMembership.role)) {
+      throw new Error('Forbidden: Only group owner or admin can update group information');
+    }
+
+    const now = Date.now();
+    if (updates.title !== undefined) {
+      db.prepare('UPDATE conversations SET title = ?, updated_at = ? WHERE id = ?').run(updates.title, now, conversationId);
+    }
+    if (updates.description !== undefined) {
+      db.prepare('UPDATE conversations SET description = ?, updated_at = ? WHERE id = ?').run(updates.description, now, conversationId);
+    }
+    if (updates.avatarUrl !== undefined) {
+      db.prepare('UPDATE conversations SET avatar_url = ?, updated_at = ? WHERE id = ?').run(updates.avatarUrl, now, conversationId);
+    }
+    if (updates.settings !== undefined) {
+      db.prepare('UPDATE conversations SET settings_json = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(updates.settings), now, conversationId);
+    }
+
+    return this.getConversationById(conversationId, actorUserId)!;
+  }
+
+  /**
+   * Retrieves all members of a group with roles and presence
+   */
+  public static getGroupMembers(conversationId: string): Array<{
+    userId: string;
+    role: string;
+    joinedAt: number;
+    name: string;
+    avatarUrl: string;
+    isOnline: boolean;
+    lastSeenAt?: number;
+  }> {
+    const rows = db.prepare(`
+      SELECT 
+        cm.user_id,
+        cm.role,
+        cm.joined_at,
+        u.name,
+        u.avatar_url,
+        u.last_seen_at
+      FROM conversation_members cm
+      JOIN users u ON cm.user_id = u.id
+      WHERE cm.conversation_id = ?
+      ORDER BY cm.role = 'owner' DESC, cm.role = 'admin' DESC, cm.joined_at ASC
+    `).all(conversationId) as any[];
+
+    return rows.map(r => ({
+      userId: r.user_id,
+      role: r.role || 'member',
+      joinedAt: r.joined_at,
+      name: r.name,
+      avatarUrl: r.avatar_url,
+      isOnline: Boolean(Date.now() - (r.last_seen_at || 0) < 120000),
+      lastSeenAt: r.last_seen_at
+    }));
+  }
+
+  /**
    * Creates or retrieves a Direct Conversation between two users
    */
   public static getOrCreateDirectConversation(userA: string, userB: string): Conversation {
@@ -303,6 +422,9 @@ export class MessagingService {
     }>;
     replyToMessageId?: string;
     threadId?: string;
+    attachmentJson?: string;
+    expiresAt?: number;
+    scheduledAt?: number;
   }): { message: ChatMessage; deduplicated: boolean } {
     const { conversationId, senderId, clientMessageId } = params;
 
@@ -352,8 +474,8 @@ export class MessagingService {
           id, conversation_id, sender_id, client_message_id, sequence_number,
           message_type, text_content, media_url, voice_duration, voice_waveform,
           reply_to_message_id, thread_id, is_edited, is_pinned, is_deleted_for_everyone,
-          attachment_json, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?)
+          attachment_json, expires_at, scheduled_at, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?, ?)
       `).run(
         messageId,
         conversationId,
@@ -367,7 +489,9 @@ export class MessagingService {
         params.voiceWaveform ? JSON.stringify(params.voiceWaveform) : null,
         params.replyToMessageId || null,
         params.threadId || null,
-        params.attachments ? JSON.stringify(params.attachments) : null,
+        params.attachmentJson || (params.attachments ? JSON.stringify(params.attachments) : null),
+        params.expiresAt || null,
+        params.scheduledAt || null,
         now
       );
 
@@ -633,6 +757,158 @@ export class MessagingService {
   }
 
   // =========================================================================
+  // 3. REAL-TIME POLLS & CALL LOGGING
+  // =========================================================================
+
+  /**
+   * Creates a Poll message in a conversation
+   */
+  public static createPollMessage(params: {
+    conversationId: string;
+    senderId: string;
+    clientMessageId: string;
+    question: string;
+    options: string[];
+    allowsMultiple?: boolean;
+    expiresAt?: number;
+  }): { message: ChatMessage; deduplicated: boolean } {
+    if (!params.question.trim()) throw new Error('Poll question cannot be empty');
+    if (!params.options || params.options.length < 2) throw new Error('Poll must have at least 2 options');
+
+    const pollAttachment = {
+      question: params.question,
+      options: params.options.map((opt, id) => ({ id, text: opt })),
+      allowsMultiple: Boolean(params.allowsMultiple),
+      closed: false
+    };
+
+    return this.sendMessage({
+      conversationId: params.conversationId,
+      senderId: params.senderId,
+      clientMessageId: params.clientMessageId,
+      type: 'poll',
+      text: params.question,
+      attachmentJson: JSON.stringify(pollAttachment),
+      expiresAt: params.expiresAt
+    });
+  }
+
+  /**
+   * Casts or toggles a vote on a poll
+   */
+  public static votePoll(messageId: string, userId: string, optionIndex: number): {
+    success: boolean;
+    pollData: any;
+  } {
+    const msg = db.prepare('SELECT * FROM messages WHERE id = ?').get(messageId) as any;
+    if (!msg) throw new Error('Message not found');
+    if (msg.message_type !== 'poll') throw new Error('Message is not a poll');
+
+    const pollMetadata = msg.attachment_json ? JSON.parse(msg.attachment_json) : null;
+    if (!pollMetadata) throw new Error('Malformed poll metadata');
+    if (pollMetadata.closed) throw new Error('This poll is closed');
+
+    const allowsMultiple = Boolean(pollMetadata.allowsMultiple);
+    const existing = db.prepare('SELECT id FROM poll_votes WHERE message_id = ? AND user_id = ? AND option_index = ?')
+      .get(messageId, userId, optionIndex);
+
+    const now = Date.now();
+    const tx = db.transaction(() => {
+      if (existing) {
+        // Toggle off
+        db.prepare('DELETE FROM poll_votes WHERE message_id = ? AND user_id = ? AND option_index = ?')
+          .run(messageId, userId, optionIndex);
+      } else {
+        if (!allowsMultiple) {
+          // Clear any previous votes by this user
+          db.prepare('DELETE FROM poll_votes WHERE message_id = ? AND user_id = ?')
+            .run(messageId, userId);
+        }
+        const voteId = `pv_${now}_${Math.random().toString(36).slice(2, 6)}`;
+        db.prepare(`
+          INSERT INTO poll_votes (id, message_id, user_id, option_index, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(voteId, messageId, userId, optionIndex, now);
+      }
+    });
+
+    tx();
+
+    const formatted = this.formatMessageRow(msg, userId);
+    return {
+      success: true,
+      pollData: formatted.pollData
+    };
+  }
+
+  /**
+   * Logs a WebRTC call
+   */
+  public static logCall(call: {
+    id: string;
+    conversationId: string;
+    callerId: string;
+    recipientId: string;
+    callType: 'voice' | 'video';
+    status: 'ringing' | 'connected' | 'ended' | 'missed' | 'rejected';
+    durationSeconds?: number;
+    startedAt: number;
+    endedAt?: number;
+  }) {
+    db.prepare(`
+      INSERT OR REPLACE INTO calls (
+        id, conversation_id, caller_id, recipient_id, call_type, status, duration_seconds, started_at, ended_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      call.id,
+      call.conversationId,
+      call.callerId,
+      call.recipientId,
+      call.callType,
+      call.status,
+      call.durationSeconds || 0,
+      call.startedAt,
+      call.endedAt || null
+    );
+  }
+
+  /**
+   * Updates call status and duration
+   */
+  public static updateCallStatus(callId: string, status: string, durationSeconds?: number) {
+    const now = Date.now();
+    db.prepare(`
+      UPDATE calls 
+      SET status = ?, duration_seconds = COALESCE(?, duration_seconds), ended_at = ?
+      WHERE id = ?
+    `).run(status, durationSeconds || null, now, callId);
+  }
+
+  /**
+   * Retrieves call history for a user
+   */
+  public static getCallsHistory(userId: string, conversationId?: string) {
+    let sql = `
+      SELECT c.*, 
+             u1.name as caller_name, u1.avatar_url as caller_avatar,
+             u2.name as recipient_name, u2.avatar_url as recipient_avatar
+      FROM calls c
+      JOIN users u1 ON c.caller_id = u1.id
+      JOIN users u2 ON c.recipient_id = u2.id
+      WHERE (c.caller_id = ? OR c.recipient_id = ?)
+    `;
+    const params: any[] = [userId, userId];
+
+    if (conversationId) {
+      sql += ' AND c.conversation_id = ?';
+      params.push(conversationId);
+    }
+
+    sql += ' ORDER BY c.started_at DESC LIMIT 50';
+    return db.prepare(sql).all(...params);
+  }
+
+  // =========================================================================
   // HELPER FORMATTERS
   // =========================================================================
 
@@ -695,6 +971,37 @@ export class MessagingService {
 
     const isDeleted = Boolean(row.is_deleted_for_everyone);
 
+    // Poll data formatting
+    let pollData = undefined;
+    if (row.message_type === 'poll') {
+      try {
+        const rawPoll = row.attachment_json ? JSON.parse(row.attachment_json) : null;
+        if (rawPoll && rawPoll.question && rawPoll.options) {
+          const votes = db.prepare('SELECT user_id, option_index FROM poll_votes WHERE message_id = ?').all(row.id) as Array<{ user_id: string; option_index: number }>;
+          const userVotedOptionIds = votes.filter(v => v.user_id === currentUserId).map(v => v.option_index);
+          const options = rawPoll.options.map((opt: any, idx: number) => {
+            const optVotes = votes.filter(v => v.option_index === idx);
+            return {
+              id: idx,
+              text: typeof opt === 'string' ? opt : opt.text,
+              voteCount: optVotes.length,
+              voterIds: optVotes.map(v => v.user_id)
+            };
+          });
+          pollData = {
+            question: rawPoll.question,
+            options,
+            allowsMultiple: Boolean(rawPoll.allowsMultiple),
+            totalVotes: votes.length,
+            closed: Boolean(rawPoll.closed),
+            userVotedOptionIds
+          };
+        }
+      } catch (e) {
+        console.warn('Failed to parse poll data for message', row.id, e);
+      }
+    }
+
     return {
       id: row.id,
       clientMessageId: row.client_message_id,
@@ -720,7 +1027,8 @@ export class MessagingService {
       status: 'delivered',
       createdAt: row.created_at,
       timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isOutgoing: row.sender_id === currentUserId
+      isOutgoing: row.sender_id === currentUserId,
+      pollData
     };
   }
 }

@@ -351,6 +351,70 @@ $$\text{DISCOVER} \longrightarrow \text{SPECIFY} \longrightarrow \text{DESIGN} \
 - **Implementation Status**: **VERIFIED**
 - **Verification Evidence**: 15 tests passing in `telegram-emojis.test.ts`.
 
+#### Feature `MESSAGING-003`: Local-First Offline Outbox & Cursor Synchronization
+- **Purpose**: Guarantee zero message loss in network degradation scenarios using client-side IndexedDB persistence (Dexie.js), background outbox reconciliation, and cursor-based differential synchronization.
+- **Requirements**:
+  1. Offline storage with IndexedDB tables: `conversations`, `messages`, `outbox`, `drafts`, `settings`.
+  2. Automatic optimistic message rendering in outbox state (`sending`, `queued`, `delivered`, `failed`).
+  3. Continuous background reconciliation on network restoration and WebSocket re-connection.
+  4. Monotonic cursor differential synchronization (`GET /api/v1/conversations/:id/sync?since=:seq`) returning only newly sequenced deltas.
+  5. Persistent unsent draft preservation per conversation across client reloads.
+- **Dependencies**: `MESSAGING-001`, `offlineChatDb.ts`.
+- **Database Tables**: IndexedDB `soulverse_chat_db`, SQLite `messages`.
+- **API Endpoints**:
+  - `GET /api/v1/conversations/:id/sync?since=:seq`
+  - `POST /api/v1/conversations/:id/messages`
+- **Frontend Components**: `offlineChatDb.ts`, `chatApiClient.ts`, `MessagingInboxView.tsx`.
+- **Permissions**: Conversation membership verified.
+- **Validation Rules**: `since` must be non-negative integer sequence counter.
+- **Error Scenarios**: 401 on unauthenticated caller; 403 on non-participant.
+- **Automated Tests**: `backend/src/realtime-comms-master.test.ts` (Sync & Outbox assertions).
+- **Implementation Status**: **VERIFIED**
+- **Verification Evidence**: Monotonic delta synchronization contract tests passing in `realtime-comms-master.test.ts`.
+
+#### Feature `CALLING-001`: WebRTC Real-Time Audio & Video Calling Subsystem
+- **Purpose**: High-fidelity, low-latency 1-to-1 voice and video calling leveraging native browser `RTCPeerConnection` with WebSocket-based SDP/ICE signaling and zero recurring third-party media server costs.
+- **Requirements**:
+  1. Sovereign P2P media streaming via standard W3C WebRTC API and public Google STUN relays (`stun:stun.l.google.com:19302`).
+  2. Full signaling protocol over WebSocket: `call.offer`, `call.answer`, `call.ice_candidate`, `call.hangup`, `call.reject`.
+  3. Deterministic state machine (`idle`, `calling`, `ringing`, `connecting`, `connected`, `ended`, `error`).
+  4. Audio track mute/unmute and camera stream toggle without session renegotiation failures.
+  5. Persistent call history logging (`calls` table) recording caller, recipient, call type, status, and duration.
+- **Dependencies**: Realtime Gateway WebSocket server, native browser MediaDevices API.
+- **Database Tables**: `calls`.
+- **API Endpoints**:
+  - `POST /api/v1/calls`
+  - `PATCH /api/v1/calls/:id`
+  - `GET /api/v1/calls/history`
+- **Frontend Components**: `webrtcCallService.ts`, `MessagingInboxView.tsx` (Calling HUD & Incoming Call Prompts).
+- **Permissions**: Conversation participant.
+- **Validation Rules**: Call type must be `audio` or `video`; status transitions strictly enforced.
+- **Error Scenarios**: `permission_denied` gracefully handled with clear user-facing diagnostic; 404 on invalid call ID.
+- **Automated Tests**: `backend/src/realtime-comms-master.test.ts` (Call logging & lifecycle assertions).
+- **Implementation Status**: **VERIFIED**
+- **Verification Evidence**: Automated call lifecycle tests passing in `realtime-comms-master.test.ts`.
+
+#### Feature `POLLS-001`: Real-Time Interactive Poll Engine & Dynamic Consensus Voting
+- **Purpose**: Foster community and group decision-making with native, server-authoritative polls supporting single and multi-choice ballots, dynamic percentage recalculation, and real-time WebSocket sync.
+- **Requirements**:
+  1. Structured poll creation within conversations with question and 2-10 configurable options.
+  2. Atomic vote registration preventing ballot tampering or duplicate voting.
+  3. Real-time vote percentage and voter count aggregation computed directly by database engine.
+  4. Support for single-vote and multiple-vote configurations.
+  5. Interactive animated vote progress bars with optimistic toggle in UI.
+- **Dependencies**: `MESSAGING-001`.
+- **Database Tables**: `messages`, `poll_votes`.
+- **API Endpoints**:
+  - `POST /api/v1/conversations/:id/poll`
+  - `POST /api/v1/messages/:id/poll/vote`
+- **Frontend Components**: `MessagingInboxView.tsx` (Poll Card Bubble & New Poll Modal).
+- **Permissions**: Participant in conversation.
+- **Validation Rules**: Question required; at least 2 non-empty options; option index in valid range.
+- **Error Scenarios**: 400 on out-of-bounds option index; 403 on non-participant.
+- **Automated Tests**: `backend/src/realtime-comms-master.test.ts` (Poll creation & vote aggregation assertions).
+- **Implementation Status**: **VERIFIED**
+- **Verification Evidence**: 13 / 13 tests passing in `realtime-comms-master.test.ts`.
+
 ---
 
 ### Domain H: Administration, Governance & Security

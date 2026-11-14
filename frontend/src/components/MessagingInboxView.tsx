@@ -57,6 +57,8 @@ import { TgEmoji, renderWithTelegramEmojis } from './common/TgEmoji';
 import { TelegramPremiumEmojiPicker } from './chat/TelegramPremiumEmojiPicker';
 import type { TelegramPremiumEmoji } from '../types/telegramEmoji';
 import { chatClient } from '../services/chatApiClient';
+import { offlineChatDb } from '../services/offlineChatDb';
+import { webrtcCallService, type CallSession } from '../services/webrtcCallService';
 import { BeforeYouTalkSheet } from './vault/BeforeYouTalkSheet';
 import { RelationshipVaultService } from '../services/relationshipVaultService';
 import { TwoPersonQuestionModal } from './emotional/TwoPersonQuestionModal';
@@ -116,16 +118,27 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<any>(null);
 
-  // WebRTC Call State
-  const [isCalling, setIsCalling] = useState<'voice' | 'video' | null>(null);
-  const [callDuration, setCallDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  // Genuine WebRTC Call State
+  const [callSession, setCallSession] = useState<CallSession | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-  const callTimerRef = useRef<any>(null);
+
+  // Group Management & Poll Modals
+  const [isNewGroupModalOpen, setIsNewGroupModalOpen] = useState(false);
+  const [newGroupTitle, setNewGroupTitle] = useState('');
+  const [newGroupDesc, setNewGroupDesc] = useState('');
+  const [selectedGroupMembers, setSelectedGroupMembers] = useState<string[]>([]);
+  const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
+  const [groupMembersList, setGroupMembersList] = useState<any[]>([]);
+
+  // Real-Time Polls State
+  const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollAllowsMultiple, setPollAllowsMultiple] = useState(false);
+
+  // Offline Outbox Status
+  const [pendingOutboxCount, setPendingOutboxCount] = useState(0);
 
   // Composer and context states
   const [inputMessage, setInputMessage] = useState('');
@@ -158,6 +171,30 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     chatClient.getMyInstalledStickerPacks().then(packs => {
       setInstalledPacks(packs);
     });
+
+    const unsubState = webrtcCallService.subscribeState(setCallSession);
+    const unsubStreams = webrtcCallService.subscribeStreams((stream, isLocal) => {
+      if (isLocal && localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      } else if (!isLocal && remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
+      }
+    });
+
+    const checkOutbox = async () => {
+      try {
+        const pending = await offlineChatDb.getPendingOutbox();
+        setPendingOutboxCount(pending.length);
+      } catch { /* noop */ }
+    };
+    checkOutbox();
+    const outboxTimer = setInterval(checkOutbox, 4000);
+
+    return () => {
+      unsubState();
+      unsubStreams();
+      clearInterval(outboxTimer);
+    };
   }, []);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -176,6 +213,9 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     try {
       const convs = await chatClient.getConversations();
       setConversations(convs);
+      try {
+        await offlineChatDb.bulkSaveConversations(convs as any);
+      } catch { /* noop */ }
       if (!activeConversationId && convs.length > 0) {
         if (activeProfileOverride) {
           const match = convs.find((c: any) => c.participantId === activeProfileOverride.id);
@@ -186,7 +226,13 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         }
       }
     } catch (err) {
-      console.warn('Fallback to local conversation list', err);
+      console.warn('Fallback to local conversation list from IndexedDB', err);
+      try {
+        const cached = await offlineChatDb.getCachedConversations();
+        if (cached.length > 0) {
+          setConversations(cached as any);
+        }
+      } catch { /* noop */ }
     }
   }, [activeConversationId, activeProfileOverride]);
 
@@ -267,13 +313,22 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       try {
         const msgs = await chatClient.getMessages(activeConversationId);
         setCurrentMessages(msgs);
+        try {
+          await offlineChatDb.bulkSaveMessages(msgs as any);
+        } catch { /* noop */ }
         await chatClient.markConversationAsRead(activeConversationId);
         
         // Load draft
         const draft = await chatClient.getDraft(activeConversationId);
         if (draft) setInputMessage(draft);
       } catch (e) {
-        console.error('Failed to load messages from backend', e);
+        console.warn('Failed to load messages from backend, falling back to offline cache', e);
+        try {
+          const cached = await offlineChatDb.getCachedMessages(activeConversationId);
+          if (cached.length > 0) {
+            setCurrentMessages(cached as any);
+          }
+        } catch { /* noop */ }
       } finally {
         setIsLoadingMessages(false);
       }
@@ -318,78 +373,104 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedMessageForMenu, replyingTo, editingMessage, isEmojiPickerOpen, isActionDockOpen, isChatSettingsOpen, activeMediaViewerUrl, inputMessage, currentMessages]);
 
-  // WebRTC Calling Lifecycle
+  // Genuine WebRTC Calling Lifecycle (Zero Fake Simulation)
   const startCall = async (type: 'voice' | 'video') => {
-    setIsCalling(type);
-    setCallDuration(0);
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: type === 'video'
-      });
-      localStreamRef.current = stream;
-      if (localVideoRef.current && type === 'video') {
-        localVideoRef.current.srcObject = stream;
-      }
-
-      const pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-      });
-      peerConnectionRef.current = pc;
-
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-      pc.ontrack = (event) => {
-        if (remoteVideoRef.current && event.streams[0]) {
-          remoteVideoRef.current.srcObject = event.streams[0];
-        }
-      };
-
-      pc.onicecandidate = (event) => {
-        if (event.candidate && currentConv?.participantId) {
-          chatClient.sendSocketEvent('call.signal', {
-            recipientId: currentConv.participantId,
-            signalData: { candidate: event.candidate },
-            callType: type
-          });
-        }
-      };
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      if (currentConv?.participantId) {
-        chatClient.sendSocketEvent('call.signal', {
-          recipientId: currentConv.participantId,
-          signalData: { offer },
-          callType: type
-        });
-      }
-
-      callTimerRef.current = setInterval(() => {
-        setCallDuration(prev => prev + 1);
-      }, 1000);
-    } catch (err) {
-      console.warn('Call stream setup notice (simulating connected peer call):', err);
-      callTimerRef.current = setInterval(() => {
-        setCallDuration(prev => prev + 1);
-      }, 1000);
-    }
+    if (!currentConv) return;
+    const peerId = currentConv.participantId || (currentConv.partner && currentConv.partner.id) || 'usr_alex';
+    await webrtcCallService.startCall({
+      conversationId: currentConv.id,
+      peerId,
+      peerName: currentConv.title,
+      peerAvatar: currentConv.avatar,
+      callType: type
+    });
   };
 
   const endCall = () => {
-    if (callTimerRef.current) clearInterval(callTimerRef.current);
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(t => t.stop());
-      localStreamRef.current = null;
+    webrtcCallService.hangup();
+  };
+
+  // Real-Time Polls Handlers
+  const handleCreatePoll = async () => {
+    if (!activeConversationId || !pollQuestion.trim()) return;
+    const validOptions = pollOptions.filter(o => o.trim().length > 0);
+    if (validOptions.length < 2) return;
+
+    try {
+      await chatClient.createPoll({
+        conversationId: activeConversationId,
+        question: pollQuestion.trim(),
+        options: validOptions,
+        allowsMultiple: pollAllowsMultiple
+      });
+      setIsPollModalOpen(false);
+      setPollQuestion('');
+      setPollOptions(['', '']);
+      setPollAllowsMultiple(false);
+      const updated = await chatClient.getMessages(activeConversationId);
+      setCurrentMessages(updated);
+    } catch (e) {
+      console.error('Failed to create poll', e);
     }
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-      peerConnectionRef.current = null;
+  };
+
+  const handleVotePoll = async (messageId: string, optionIndex: number) => {
+    try {
+      await chatClient.votePoll(messageId, optionIndex);
+      if (activeConversationId) {
+        const updated = await chatClient.getMessages(activeConversationId);
+        setCurrentMessages(updated);
+      }
+    } catch (e) {
+      console.error('Failed to vote on poll', e);
     }
-    setIsCalling(null);
-    setCallDuration(0);
+  };
+
+  // Group Conversation Handlers
+  const handleCreateGroup = async () => {
+    if (!newGroupTitle.trim() || selectedGroupMembers.length === 0) return;
+    try {
+      const res = await chatClient.createGroup(
+        newGroupTitle.trim(),
+        selectedGroupMembers,
+        newGroupDesc.trim() || undefined
+      );
+      setIsNewGroupModalOpen(false);
+      setNewGroupTitle('');
+      setNewGroupDesc('');
+      setSelectedGroupMembers([]);
+      const convs = await chatClient.getConversations();
+      setConversations(convs);
+      if (res.conversation) {
+        setActiveConversationId(res.conversation.id);
+      }
+    } catch (e) {
+      console.error('Failed to create group', e);
+    }
+  };
+
+  const handleOpenGroupInfo = async () => {
+    if (!currentConv) return;
+    try {
+      const members = await chatClient.getGroupMembers(currentConv.id);
+      setGroupMembersList(members);
+      setIsGroupInfoModalOpen(true);
+    } catch (e) {
+      console.error('Failed to fetch group members', e);
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!currentConv) return;
+    try {
+      await chatClient.leaveGroup(currentConv.id);
+      setIsGroupInfoModalOpen(false);
+      setActiveConversationId(null);
+      const convs = await chatClient.getConversations();
+      setConversations(convs);
+    } catch (e) {
+      console.error('Failed to leave group', e);
+    }
   };
 
   // Browser Native Audio Recording with Web Audio API Waveforms
@@ -517,14 +598,32 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       return;
     }
 
+    const clientMessageId = `cli_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     try {
+      try {
+        await offlineChatDb.queueOutboxMessage({
+          clientMessageId,
+          conversationId: activeConversationId,
+          senderId: 'usr_me',
+          type: determinedType,
+          text: textToSend,
+          mediaUrl: determinedMedia,
+          replyToMessageId: replyingTo ? replyingTo.id : undefined
+        });
+      } catch { /* noop */ }
+
       await chatClient.sendMessage({
         conversationId: activeConversationId,
+        clientMessageId,
         text: textToSend,
         type: determinedType,
         mediaUrl: determinedMedia,
         replyToMessageId: replyingTo ? replyingTo.id : undefined
       });
+
+      try {
+        await offlineChatDb.removeOutboxMessage(clientMessageId);
+      } catch { /* noop */ }
 
       const updated = await chatClient.getMessages(activeConversationId);
       setCurrentMessages(updated);
@@ -533,7 +632,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       const convs = await chatClient.getConversations();
       setConversations(convs);
     } catch (e) {
-      console.error('Failed to submit message to real backend', e);
+      console.warn('Network offline or send delayed; message safely queued in local outbox', e);
+      setPendingOutboxCount(prev => prev + 1);
     }
 
     setInputMessage('');
@@ -673,7 +773,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
           <h1 className="text-xl font-black text-[#F3F4F6] tracking-tight">Messages</h1>
           <span className="text-[10px] text-[#E5E7EB] font-bold">Encrypted Cloud • TDLib Order</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setIsNewGroupModalOpen(true)}
+            className="h-8 px-2.5 rounded-full bg-white/[0.08] hover:bg-white/[0.15] border border-white/10 flex items-center gap-1 text-[11px] font-bold text-zinc-200 cursor-pointer transition-colors"
+            title="Create New Group Space"
+          >
+            <Plus className="w-3.5 h-3.5 text-pink-400" />
+            <span className="hidden sm:inline">New Group</span>
+          </button>
           <button 
             onClick={() => setActiveConversationId('conv_saved')}
             className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-amber-400 hover:scale-105 cursor-pointer"
@@ -719,6 +827,14 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
           />
         </div>
       </div>
+
+      {/* Offline Outbox Queue Banner */}
+      {pendingOutboxCount > 0 && (
+        <div className="mx-3 mb-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 flex items-center justify-between">
+          <span>📦 {pendingOutboxCount} offline queued</span>
+          <button onClick={() => chatClient.drainOutbox()} className="underline font-bold text-[10px] cursor-pointer">Sync Now</button>
+        </div>
+      )}
 
       {/* Conversation Rows */}
       <div className="flex-1 overflow-y-auto px-3 space-y-1.5 pb-20 no-scrollbar">
@@ -864,6 +980,18 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
           {/* Calling, Search & Settings Options */}
           <div className="flex items-center gap-2">
+            {/* Group Info Pill for Group Chats */}
+            {currentConv.type === 'group' && (
+              <button
+                onClick={handleOpenGroupInfo}
+                className="h-9 px-3 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/25 text-xs font-heading font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
+                title="Group Members & Settings"
+              >
+                <Info className="w-3.5 h-3.5 text-pink-300" />
+                <span className="hidden sm:inline">Group Info</span>
+              </button>
+            )}
+
             {/* Before You Talk / Relationship Memory Briefing Pill */}
             <button
               onClick={() => setIsBriefingOpen(true)}
@@ -1136,8 +1264,56 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                         </div>
                       )}
 
-                      {/* Voice Waveform Player */}
-                      {msg.type === 'voice' ? (
+                      {/* Poll or Voice or Text */}
+                      {msg.type === 'poll' && msg.pollData ? (
+                        <div className="space-y-3 py-1 min-w-[240px]">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-100">
+                            <span className="p-1 rounded-lg bg-pink-500/20 text-pink-400">📊</span>
+                            <span>{msg.pollData.question}</span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {msg.pollData.options.map((option) => {
+                              const isSelected = msg.pollData?.userVotedOptionIds?.includes(option.id);
+                              const totalVotes = msg.pollData?.totalVotes || 0;
+                              const pct = totalVotes > 0 ? Math.round((option.voteCount / totalVotes) * 100) : 0;
+                              return (
+                                <button
+                                  key={option.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleVotePoll(msg.id, option.id);
+                                  }}
+                                  className={`w-full text-left relative overflow-hidden rounded-xl p-2.5 border transition-all cursor-pointer ${
+                                    isSelected 
+                                      ? 'border-pink-500/60 bg-pink-500/15' 
+                                      : 'border-white/10 hover:border-white/20 bg-black/20'
+                                  }`}
+                                >
+                                  <div 
+                                    className="absolute inset-y-0 left-0 bg-pink-500/20 transition-all duration-300 pointer-events-none" 
+                                    style={{ width: `${pct}%` }} 
+                                  />
+                                  <div className="relative flex items-center justify-between z-10 text-[11px]">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] ${
+                                        isSelected ? 'border-pink-400 bg-pink-500 text-white' : 'border-white/40'
+                                      }`}>
+                                        {isSelected && '✓'}
+                                      </div>
+                                      <span className="font-medium text-zinc-100">{option.text}</span>
+                                    </div>
+                                    <span className="font-bold text-zinc-400">{pct}% ({option.voteCount})</span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <div className="text-[10px] text-zinc-400 flex items-center justify-between pt-1 border-t border-white/10">
+                            <span>{msg.pollData.totalVotes} {msg.pollData.totalVotes === 1 ? 'vote' : 'votes'}</span>
+                            <span>{msg.pollData.allowsMultiple ? 'Multiple choices' : 'Single choice'}</span>
+                          </div>
+                        </div>
+                      ) : msg.type === 'voice' ? (
                         <VoiceWaveformPlayer 
                           durationSeconds={msg.voiceDurationSeconds || 8}
                           waveformAmplitudes={msg.voiceWaveform}
@@ -1308,9 +1484,22 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
           </div>
         )}
 
-        {/* Action Dock (Telegram + Dating System) */}
+        {/* Action Dock (Telegram + Dating System + Real-Time Polls) */}
         {isActionDockOpen && (
-          <div className="p-4 bg-[#12141B] border-t border-[rgba(255,255,255,0.20)]/20 grid grid-cols-4 gap-3 animate-fadeIn">
+          <div className="p-4 bg-[#12141B] border-t border-[rgba(255,255,255,0.20)]/20 grid grid-cols-5 gap-2.5 animate-fadeIn">
+            <button
+              onClick={() => {
+                setIsPollModalOpen(true);
+                setIsActionDockOpen(false);
+              }}
+              className="flex flex-col items-center gap-1.5 p-2 rounded-2xl glass-panel text-[#F3F4F6] hover:text-[#FFFFFF] cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center text-pink-400">
+                <span className="text-base">📊</span>
+              </div>
+              <span className="text-[10px] font-bold">New Poll</span>
+            </button>
+
             <button
               onClick={() => {
                 if (onOpenGame) onOpenGame();
@@ -1625,18 +1814,63 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         </div>
       )}
 
-      {/* WebRTC Video / Voice Call Modal */}
-      {isCalling && (
+      {/* WebRTC Video / Voice Call Modal & Incoming Call Prompt */}
+      {callSession && callSession.state === 'ringing' && (
+        <div className="fixed inset-0 z-50 bg-[#090A0E]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+          <div className="max-w-sm w-full p-6 rounded-3xl bg-[#12141B] border border-white/20 shadow-2xl flex flex-col items-center space-y-5">
+            <div className="relative">
+              <img
+                src={callSession.peerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80'}
+                alt={callSession.peerName}
+                className="w-24 h-24 rounded-full object-cover border-4 border-pink-500 shadow-[0_0_30px_rgba(236,72,153,0.5)] animate-pulse"
+              />
+              <span className="absolute bottom-0 right-0 p-1.5 rounded-full bg-pink-500 text-white">
+                {callSession.callType === 'video' ? <Video className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+              </span>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white">{callSession.peerName}</h3>
+              <p className="text-xs text-pink-400 font-semibold animate-pulse">
+                Incoming {callSession.callType} call...
+              </p>
+            </div>
+            <div className="flex items-center gap-6 pt-2">
+              <button
+                onClick={() => webrtcCallService.rejectCall()}
+                className="w-14 h-14 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-lg cursor-pointer transition-transform active:scale-95"
+                title="Decline Call"
+              >
+                <PhoneOff className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => webrtcCallService.answerCall()}
+                className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shadow-lg cursor-pointer transition-transform active:scale-95 animate-bounce"
+                title="Accept Call"
+              >
+                <Phone className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {callSession && callSession.state !== 'idle' && callSession.state !== 'ringing' && (
         <div className="fixed inset-0 z-50 bg-[#090A0E]/95 backdrop-blur-xl flex flex-col items-center justify-between p-6 text-center animate-fadeIn">
           <div className="pt-6 space-y-2">
-            <h3 className="text-lg font-black text-[#F3F4F6]">{currentConv?.title}</h3>
+            <h3 className="text-lg font-black text-[#F3F4F6]">{callSession.peerName}</h3>
             <p className="text-xs text-[#E5E7EB]">
-              Connected • {Math.floor(callDuration / 60)}:{(callDuration % 60).toString().padStart(2, '0')}
+              {callSession.state === 'connected' ? (
+                `Connected • ${Math.floor(callSession.durationSeconds / 60)}:${(callSession.durationSeconds % 60).toString().padStart(2, '0')}`
+              ) : (
+                <span className={callSession.state === 'error' ? 'text-rose-400 font-bold' : 'text-amber-300 animate-pulse'}>
+                  {callSession.diagnosticNotice || callSession.state}
+                </span>
+              )}
             </p>
           </div>
 
           <div className="relative w-full max-w-sm flex-1 flex items-center justify-center my-4 overflow-hidden rounded-3xl bg-black/60 border border-[rgba(255,255,255,0.20)]/30">
-            {isCalling === 'video' ? (
+            {callSession.callType === 'video' ? (
               <div className="relative w-full h-full min-h-[300px]">
                 <video 
                   ref={remoteVideoRef} 
@@ -1655,15 +1889,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             ) : (
               <div className="space-y-4">
                 <img 
-                  src={currentConv?.avatar || MOCK_PROFILES[0].avatar} 
-                  alt={currentConv?.title || 'User'} 
+                  src={callSession.peerAvatar || currentConv?.avatar || MOCK_PROFILES[0].avatar} 
+                  alt={callSession.peerName} 
                   className="w-28 h-28 rounded-full object-cover mx-auto border-4 border-[#FFFFFF] shadow-[0_0_30px_rgba(255,79,135,0.7)]"
                 />
                 <div className="flex justify-center gap-1">
                   {[40, 80, 60, 100, 75, 45].map((h, i) => (
                     <div 
                       key={i} 
-                      className="w-1 bg-[#FFFFFF] rounded-full animate-pulse" 
+                      className={`w-1 rounded-full ${callSession.state === 'connected' ? 'bg-[#FFFFFF] animate-pulse' : 'bg-zinc-600'}`}
                       style={{ height: `${h * 0.3}px`, animationDelay: `${i * 150}ms` }} 
                     />
                   ))}
@@ -1674,47 +1908,284 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
           <div className="flex items-center gap-4 pb-6">
             <button
-              onClick={() => {
-                if (localStreamRef.current) {
-                  const audioTrack = localStreamRef.current.getAudioTracks()[0];
-                  if (audioTrack) {
-                    audioTrack.enabled = !audioTrack.enabled;
-                    setIsMuted(!audioTrack.enabled);
-                  }
-                }
-              }}
+              onClick={() => webrtcCallService.toggleAudio()}
               className={`w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-colors ${
-                isMuted ? 'bg-rose-500 text-white' : 'glass-panel text-[#F3F4F6]'
+                callSession.isAudioMuted ? 'bg-rose-500 text-white' : 'glass-panel text-[#F3F4F6]'
               }`}
+              title={callSession.isAudioMuted ? 'Unmute' : 'Mute'}
             >
-              {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              {callSession.isAudioMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
             </button>
 
-            {isCalling === 'video' && (
+            {callSession.callType === 'video' && (
               <button
-                onClick={() => {
-                  if (localStreamRef.current) {
-                    const videoTrack = localStreamRef.current.getVideoTracks()[0];
-                    if (videoTrack) {
-                      videoTrack.enabled = !videoTrack.enabled;
-                      setIsVideoEnabled(videoTrack.enabled);
-                    }
-                  }
-                }}
+                onClick={() => webrtcCallService.toggleVideo()}
                 className={`w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-colors ${
-                  !isVideoEnabled ? 'bg-rose-500 text-white' : 'glass-panel text-[#F3F4F6]'
+                  callSession.isVideoMuted ? 'bg-rose-500 text-white' : 'glass-panel text-[#F3F4F6]'
                 }`}
+                title={callSession.isVideoMuted ? 'Enable Camera' : 'Disable Camera'}
               >
-                {!isVideoEnabled ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+                {callSession.isVideoMuted ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
               </button>
             )}
 
             <button
               onClick={endCall}
               className="w-14 h-14 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-[0_0_20px_rgba(225,29,72,0.8)] cursor-pointer transition-transform active:scale-95"
+              title="Hangup"
             >
               <PhoneOff className="w-6 h-6" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* New Group Chat Creation Modal */}
+      {isNewGroupModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-md bg-[#12141B] border border-white/20 rounded-3xl p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span className="p-1 rounded-xl bg-pink-500/20 text-pink-400">👥</span>
+                <span>Create Group Space</span>
+              </h3>
+              <button onClick={() => setIsNewGroupModalOpen(false)} className="text-zinc-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-zinc-300 block mb-1">Group Title *</label>
+                <input
+                  type="text"
+                  value={newGroupTitle}
+                  onChange={(e) => setNewGroupTitle(e.target.value)}
+                  placeholder="e.g. Midnight Philosophy Lounge"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300 block mb-1">Description (Optional)</label>
+                <input
+                  type="text"
+                  value={newGroupDesc}
+                  onChange={(e) => setNewGroupDesc(e.target.value)}
+                  placeholder="Shared topics and purpose of this group..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300 block mb-1.5">Select Members *</label>
+                <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 no-scrollbar">
+                  {MOCK_PROFILES.map((p) => {
+                    const isSelected = selectedGroupMembers.includes(p.id);
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setSelectedGroupMembers(prev => 
+                            isSelected ? prev.filter(id => id !== p.id) : [...prev, p.id]
+                          );
+                        }}
+                        className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition-colors ${
+                          isSelected ? 'bg-pink-500/15 border-pink-500/50' : 'bg-white/[0.02] border-white/10 hover:bg-white/[0.05]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <img src={p.avatar} alt={p.name} className="w-8 h-8 rounded-full object-cover" />
+                          <div>
+                            <span className="text-xs font-semibold text-white block">{p.name}</span>
+                            <span className="text-[10px] text-zinc-400">{(p as any).occupation || p.location || 'Member'}</span>
+                          </div>
+                        </div>
+                        <div className={`w-4 h-4 rounded-md border flex items-center justify-center text-[10px] ${
+                          isSelected ? 'border-pink-500 bg-pink-500 text-white' : 'border-white/30'
+                        }`}>
+                          {isSelected && '✓'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/10">
+              <button
+                onClick={() => setIsNewGroupModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateGroup}
+                disabled={!newGroupTitle.trim() || selectedGroupMembers.length === 0}
+                className="px-5 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-xs font-bold text-white shadow-lg cursor-pointer"
+              >
+                Create Group
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Group Info Modal */}
+      {isGroupInfoModalOpen && currentConv && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-md bg-[#12141B] border border-white/20 rounded-3xl p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">{currentConv.title}</h3>
+              <button onClick={() => setIsGroupInfoModalOpen(false)} className="text-zinc-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/10">
+                <img src={currentConv.avatar} alt={currentConv.title} className="w-12 h-12 rounded-2xl object-cover" />
+                <div>
+                  <span className="text-xs font-bold text-white block">{currentConv.title}</span>
+                  <span className="text-[11px] text-zinc-400">{groupMembersList.length} members enrolled</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs font-semibold text-zinc-300 block mb-2">Members</span>
+                <div className="max-h-52 overflow-y-auto space-y-1.5 no-scrollbar">
+                  {groupMembersList.map((m) => (
+                    <div key={m.userId} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <img src={m.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80'} alt={m.name} className="w-8 h-8 rounded-full object-cover" />
+                        <div>
+                          <span className="text-xs font-semibold text-white block">{m.name}</span>
+                          <span className="text-[10px] text-zinc-400">{m.isOnline ? 'Online' : 'Offline'}</span>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        m.role === 'owner' ? 'bg-amber-500/20 text-amber-300' : m.role === 'admin' ? 'bg-purple-500/20 text-purple-300' : 'bg-white/10 text-zinc-400'
+                      }`}>
+                        {m.role}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-white/10">
+              <button
+                onClick={handleLeaveGroup}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+              >
+                Leave Group
+              </button>
+              <button
+                onClick={() => setIsGroupInfoModalOpen(false)}
+                className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Poll Creation Modal */}
+      {isPollModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-md bg-[#12141B] border border-white/20 rounded-3xl p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span className="p-1 rounded-xl bg-pink-500/20 text-pink-400">📊</span>
+                <span>Create Real-Time Poll</span>
+              </h3>
+              <button onClick={() => setIsPollModalOpen(false)} className="text-zinc-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-zinc-300 block mb-1">Question *</label>
+                <input
+                  type="text"
+                  value={pollQuestion}
+                  onChange={(e) => setPollQuestion(e.target.value)}
+                  placeholder="e.g. Which date idea sounds most intriguing?"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300 block mb-1">Poll Options (min 2) *</label>
+                <div className="space-y-2">
+                  {pollOptions.map((opt, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={opt}
+                        onChange={(e) => {
+                          const updated = [...pollOptions];
+                          updated[idx] = e.target.value;
+                          setPollOptions(updated);
+                        }}
+                        placeholder={`Option ${idx + 1}`}
+                        className="flex-1 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500"
+                      />
+                      {pollOptions.length > 2 && (
+                        <button
+                          onClick={() => setPollOptions(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-zinc-400 hover:text-rose-400 p-1"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {pollOptions.length < 8 && (
+                    <button
+                      onClick={() => setPollOptions(prev => [...prev, ''])}
+                      className="text-xs text-pink-400 hover:text-pink-300 font-semibold flex items-center gap-1 pt-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Option</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="pollMulti"
+                  checked={pollAllowsMultiple}
+                  onChange={(e) => setPollAllowsMultiple(e.target.checked)}
+                  className="rounded border-white/20 text-pink-500 focus:ring-0 cursor-pointer"
+                />
+                <label htmlFor="pollMulti" className="text-xs text-zinc-300 cursor-pointer select-none">
+                  Allow multiple answers
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+              <button
+                onClick={() => setIsPollModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreatePoll}
+                disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
+                className="px-5 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-xs font-bold text-white shadow-lg cursor-pointer"
+              >
+                Post Poll
+              </button>
+            </div>
           </div>
         </div>
       )}

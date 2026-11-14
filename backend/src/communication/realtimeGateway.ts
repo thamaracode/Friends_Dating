@@ -254,12 +254,21 @@ export class RealtimeGateway {
       }
 
       // 7. WebRTC Call signaling
-      case 'call.signal': {
-        if (event.recipientId) {
-          this.sendToUser(event.recipientId, {
-            type: 'call.signal',
+      case 'call.signal':
+      case 'call.offer':
+      case 'call.answer':
+      case 'call.ice_candidate':
+      case 'call.hangup':
+      case 'call.reject': {
+        const targetUserId = event.recipientId || (event.signalData && event.signalData.recipientId);
+        if (targetUserId) {
+          const senderInfo = db.prepare('SELECT name, avatar_url FROM users WHERE id = ?').get(userId) as any;
+          this.sendToUser(targetUserId, {
+            type: event.type,
             senderId: userId,
-            signalData: event.signalData,
+            senderName: senderInfo?.name || 'Soulverse Peer',
+            senderAvatar: senderInfo?.avatar_url,
+            signalData: event.signalData || event,
             callType: event.callType
           });
         }

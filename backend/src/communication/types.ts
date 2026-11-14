@@ -19,7 +19,8 @@ export type MessageType =
   | 'slot_event' 
   | 'coin_event' 
   | 'gift_event'
-  | 'watch_party_event';
+  | 'watch_party_event'
+  | 'poll';
 
 export type DeliveryStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
 
@@ -138,6 +139,28 @@ export interface ChatMessage {
   createdAt: number;
   timestamp: string;
   isOutgoing?: boolean;
+  pollData?: {
+    question: string;
+    options: Array<{ id: number; text: string; voteCount: number; voterIds: string[] }>;
+    allowsMultiple?: boolean;
+    totalVotes: number;
+    closed?: boolean;
+    userVotedOptionIds?: number[];
+  };
+}
+
+export interface CallLogRecord {
+  id: string;
+  conversationId: string;
+  callerId: string;
+  callerName?: string;
+  recipientId: string;
+  recipientName?: string;
+  callType: 'voice' | 'video';
+  status: 'ringing' | 'connected' | 'ended' | 'missed' | 'rejected';
+  durationSeconds: number;
+  startedAt: number;
+  endedAt?: number;
 }
 
 export interface MessageEditHistory {

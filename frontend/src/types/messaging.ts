@@ -11,7 +11,24 @@ export type MessageType =
   | 'sticker'
   | 'custom_emoji'
   | 'gift_event'
-  | 'system';
+  | 'system'
+  | 'poll';
+
+export interface PollOption {
+  id: number;
+  text: string;
+  voteCount: number;
+  voterIds: string[];
+}
+
+export interface PollData {
+  question: string;
+  options: PollOption[];
+  allowsMultiple?: boolean;
+  totalVotes: number;
+  closed?: boolean;
+  userVotedOptionIds?: number[];
+}
 
 export interface MessageReaction {
   emoji: string;
@@ -52,6 +69,7 @@ export interface ChatMessage {
     response?: string;
     status: string;
   };
+  pollData?: PollData;
 }
 
 export type ChatFolderType = 'all' | 'matches' | 'friends' | 'unread' | 'personal' | 'archived';
@@ -65,6 +83,7 @@ export interface ChatFolder {
 
 export interface ConversationItem {
   id: string;
+  type?: string;
   participantId: string;
   title: string;
   avatar: string;
@@ -74,10 +93,17 @@ export interface ConversationItem {
   isPinned?: boolean;
   isArchived?: boolean;
   isMuted?: boolean;
-  category: 'match' | 'friend' | 'saved_messages' | 'anonymous';
+  category: 'match' | 'friend' | 'saved_messages' | 'anonymous' | 'group';
   draftText?: string;
   typingUser?: string;
   unreadCount: number;
+  partner?: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+    isVerified?: boolean;
+    lastSeenAt?: number;
+  };
   lastMessage?: {
     text: string;
     senderId: string;

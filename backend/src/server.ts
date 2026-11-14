@@ -284,12 +284,17 @@ app.get('/api/v1/conversations', (req, res) => {
     SELECT 
       c.id,
       c.type,
+      c.title,
+      c.description,
+      c.avatar_url,
+      c.created_by,
       c.updated_at,
       cm.is_pinned,
       cm.is_archived,
       cm.is_muted,
       cm.unread_count,
       cm.draft_text,
+      cm.role,
       partner.id as partner_id,
       partner.name as partner_name,
       partner.avatar_url as partner_avatar,
@@ -301,7 +306,7 @@ app.get('/api/v1/conversations', (req, res) => {
       lm.created_at as last_msg_created_at
     FROM conversations c
     JOIN conversation_members cm ON c.id = cm.conversation_id AND cm.user_id = ?
-    LEFT JOIN conversation_members other ON c.id = other.conversation_id AND other.user_id != ?
+    LEFT JOIN conversation_members other ON c.id = other.conversation_id AND other.user_id != ? AND c.type = 'direct'
     LEFT JOIN users partner ON other.user_id = partner.id
     LEFT JOIN messages lm ON c.last_message_id = lm.id
     ORDER BY cm.is_pinned DESC, c.updated_at DESC
@@ -316,14 +321,17 @@ app.get('/api/v1/conversations', (req, res) => {
     isMuted: Boolean(r.is_muted),
     unreadCount: r.unread_count,
     draftText: r.draft_text,
-    title: r.type === 'saved_messages' ? 'Saved Messages' : (r.partner_name || 'Match'),
+    role: r.role || 'member',
+    title: r.type === 'saved_messages' 
+      ? 'Saved Messages' 
+      : (r.type === 'group' ? (r.title || 'Group Chat') : (r.partner_name || 'Match')),
     avatar: r.type === 'saved_messages' 
       ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80' 
-      : (r.partner_avatar || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80'),
-    isOnline: userSockets.has(r.partner_id || ''),
-    lastSeenText: r.type === 'saved_messages' ? 'Your personal cloud' : (userSockets.has(r.partner_id || '') ? 'Online now' : 'Recently active'),
+      : (r.type === 'group' ? (r.avatar_url || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&auto=format&fit=crop&q=80') : (r.partner_avatar || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80')),
+    isOnline: r.type === 'direct' ? userSockets.has(r.partner_id || '') : false,
+    lastSeenText: r.type === 'saved_messages' ? 'Your personal cloud' : (r.type === 'group' ? 'Group Space' : (userSockets.has(r.partner_id || '') ? 'Online now' : 'Recently active')),
     isVerified: Boolean(r.partner_verified),
-    category: r.type === 'saved_messages' ? 'saved_messages' : 'match',
+    category: r.type === 'saved_messages' ? 'saved_messages' : (r.type === 'group' ? 'group' : 'match'),
     lastMessage: r.last_msg_text ? {
       text: r.last_msg_text,
       senderId: r.last_msg_sender,
@@ -359,6 +367,7 @@ app.get('/api/v1/conversations/:id/messages', (req, res) => {
       m.is_edited,
       m.is_pinned,
       m.is_deleted_for_everyone,
+      m.attachment_json,
       m.created_at
     FROM messages m
     JOIN users u ON m.sender_id = u.id
@@ -407,27 +416,57 @@ app.get('/api/v1/conversations/:id/messages', (req, res) => {
     }
   }
 
-  const result = messages.map(m => ({
-    id: m.id,
-    clientMessageId: m.client_message_id,
-    conversationId: m.conversation_id,
-    senderId: m.sender_id,
-    senderName: m.sender_name,
-    type: m.type,
-    text: m.is_deleted_for_everyone ? 'This message was deleted' : m.text,
-    mediaUrl: m.is_deleted_for_everyone ? undefined : m.media_url,
-    voiceDurationSeconds: m.voice_duration,
-    voiceWaveform: m.voice_waveform ? JSON.parse(m.voice_waveform) : undefined,
-    replyTo: m.reply_to_message_id ? replyMap.get(m.reply_to_message_id) : undefined,
-    timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    createdAt: m.created_at,
-    isOutgoing: m.sender_id === userId,
-    status: 'delivered',
-    isEdited: Boolean(m.is_edited),
-    isPinned: Boolean(m.is_pinned),
-    isDeleted: Boolean(m.is_deleted_for_everyone),
-    reactions: reactionsMap.get(m.id) || []
-  }));
+  const result = messages.map(m => {
+    let pollData = undefined;
+    if (m.type === 'poll' && m.attachment_json) {
+      try {
+        const rawPoll = JSON.parse(m.attachment_json);
+        const votes = db.prepare('SELECT user_id, option_index FROM poll_votes WHERE message_id = ?').all(m.id) as Array<{ user_id: string; option_index: number }>;
+        const userVotedOptionIds = votes.filter(v => v.user_id === userId).map(v => v.option_index);
+        const options = (rawPoll.options || []).map((opt: any, idx: number) => {
+          const optVotes = votes.filter(v => v.option_index === idx);
+          return {
+            id: idx,
+            text: typeof opt === 'string' ? opt : opt.text,
+            voteCount: optVotes.length,
+            voterIds: optVotes.map(v => v.user_id)
+          };
+        });
+        pollData = {
+          question: rawPoll.question,
+          options,
+          allowsMultiple: Boolean(rawPoll.allowsMultiple),
+          totalVotes: votes.length,
+          closed: Boolean(rawPoll.closed),
+          userVotedOptionIds
+        };
+      } catch (e) { /* ignore */ }
+    }
+
+    return {
+      id: m.id,
+      clientMessageId: m.client_message_id,
+      conversationId: m.conversation_id,
+      senderId: m.sender_id,
+      senderName: m.sender_name,
+      sequenceNumber: m.sequence_number,
+      type: m.type,
+      text: m.is_deleted_for_everyone ? 'This message was deleted' : m.text,
+      mediaUrl: m.is_deleted_for_everyone ? undefined : m.media_url,
+      voiceDurationSeconds: m.voice_duration,
+      voiceWaveform: m.voice_waveform ? JSON.parse(m.voice_waveform) : undefined,
+      replyTo: m.reply_to_message_id ? replyMap.get(m.reply_to_message_id) : undefined,
+      timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      createdAt: m.created_at,
+      isOutgoing: m.sender_id === userId,
+      status: 'delivered',
+      isEdited: Boolean(m.is_edited),
+      isPinned: Boolean(m.is_pinned),
+      isDeleted: Boolean(m.is_deleted_for_everyone),
+      reactions: reactionsMap.get(m.id) || [],
+      pollData
+    };
+  });
 
   res.json({ success: true, messages: result });
 });
@@ -8746,7 +8785,7 @@ app.get('/api/v1/ai/features/status', (req, res) => {
 // =========================================================================
 
 // 1. Group & Direct Conversation Endpoints
-app.post('/api/v1/communication/conversations/group', (req, res) => {
+app.post(['/api/v1/conversations/group', '/api/v1/communication/conversations/group'], (req, res) => {
   try {
     const creatorId = (req.headers['x-user-id'] as string) || req.body.creatorId || 'usr_me';
     const { title, description, avatarUrl, memberIds = [] } = req.body;
@@ -8755,6 +8794,47 @@ app.post('/api/v1/communication/conversations/group', (req, res) => {
     res.status(201).json({ success: true, conversation: conv });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to create group' });
+  }
+});
+
+app.post(['/api/v1/conversations/:id/members', '/api/v1/communication/conversations/:id/members'], (req, res) => {
+  try {
+    const actorId = (req.headers['x-user-id'] as string) || req.body.actorId || 'usr_me';
+    const { userId, role } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    MessagingService.addMemberToGroup(req.params.id, actorId, userId, role || 'member');
+    res.status(201).json({ success: true, message: 'Member added successfully' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to add member' });
+  }
+});
+
+app.delete(['/api/v1/conversations/:id/members/:userId', '/api/v1/communication/conversations/:id/members/:userId'], (req, res) => {
+  try {
+    const actorId = (req.headers['x-user-id'] as string) || (req.query.actorId as string) || 'usr_me';
+    MessagingService.removeMemberFromGroup(req.params.id, actorId, req.params.userId);
+    res.json({ success: true, message: 'Member removed successfully' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to remove member' });
+  }
+});
+
+app.patch(['/api/v1/conversations/:id', '/api/v1/communication/conversations/:id'], (req, res) => {
+  try {
+    const actorId = (req.headers['x-user-id'] as string) || req.body.actorId || 'usr_me';
+    const conv = MessagingService.updateGroupInfo(req.params.id, actorId, req.body);
+    res.json({ success: true, conversation: conv });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to update conversation' });
+  }
+});
+
+app.get(['/api/v1/conversations/:id/members', '/api/v1/communication/conversations/:id/members'], (req, res) => {
+  try {
+    const members = MessagingService.getGroupMembers(req.params.id);
+    res.json({ success: true, members });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get group members' });
   }
 });
 
@@ -8829,10 +8909,10 @@ app.get('/api/v1/communication/conversations/:id/messages', (req, res) => {
   }
 });
 
-app.get('/api/v1/communication/conversations/:id/sync', (req, res) => {
+app.get(['/api/v1/conversations/:id/sync', '/api/v1/communication/conversations/:id/sync'], (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
-    const sinceSequence = parseInt((req.query.sinceSequence as string) || '0');
+    const sinceSequence = parseInt((req.query.sinceSequence as string) || (req.query.since as string) || '0');
     const messages = MessagingService.syncMessages(req.params.id, sinceSequence, userId);
     res.json({ success: true, messages, count: messages.length });
   } catch (err: any) {
@@ -8883,6 +8963,90 @@ app.post('/api/v1/communication/conversations/:id/read', (req, res) => {
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to mark as read' });
+  }
+});
+
+// Polls: Creation & Voting
+app.post(['/api/v1/conversations/:id/poll', '/api/v1/communication/conversations/:id/poll'], (req, res) => {
+  try {
+    const senderId = (req.headers['x-user-id'] as string) || req.body.senderId || 'usr_me';
+    const { clientMessageId, question, options, allowsMultiple, expiresAt } = req.body;
+    if (!clientMessageId) return res.status(400).json({ error: 'clientMessageId is required' });
+    if (!question) return res.status(400).json({ error: 'question is required' });
+    if (!options || options.length < 2) return res.status(400).json({ error: 'At least 2 options are required' });
+
+    const result = MessagingService.createPollMessage({
+      conversationId: req.params.id,
+      senderId,
+      clientMessageId,
+      question,
+      options,
+      allowsMultiple,
+      expiresAt
+    });
+    res.status(result.deduplicated ? 200 : 201).json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to create poll' });
+  }
+});
+
+app.post(['/api/v1/messages/:id/poll/vote', '/api/v1/communication/messages/:id/poll/vote'], (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { optionIndex } = req.body;
+    if (typeof optionIndex !== 'number') return res.status(400).json({ error: 'optionIndex number is required' });
+
+    const result = MessagingService.votePoll(req.params.id, userId, optionIndex);
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to vote on poll' });
+  }
+});
+
+// Calls: Logging & Status Updates
+app.post(['/api/v1/calls', '/api/v1/communication/calls'], (req, res) => {
+  try {
+    const callerId = (req.headers['x-user-id'] as string) || req.body.callerId || 'usr_me';
+    const { id, conversationId, recipientId, callType, status, durationSeconds, startedAt, endedAt } = req.body;
+    if (!id || !conversationId || !recipientId) {
+      return res.status(400).json({ error: 'id, conversationId, and recipientId are required' });
+    }
+    MessagingService.logCall({
+      id,
+      conversationId,
+      callerId,
+      recipientId,
+      callType: callType || 'voice',
+      status: status || 'ringing',
+      durationSeconds: durationSeconds || 0,
+      startedAt: startedAt || Date.now(),
+      endedAt
+    });
+    res.status(201).json({ success: true, message: 'Call logged successfully' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to log call' });
+  }
+});
+
+app.patch(['/api/v1/calls/:id', '/api/v1/communication/calls/:id'], (req, res) => {
+  try {
+    const { status, durationSeconds } = req.body;
+    if (!status) return res.status(400).json({ error: 'status is required' });
+    MessagingService.updateCallStatus(req.params.id, status, durationSeconds);
+    res.json({ success: true, message: 'Call status updated' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to update call status' });
+  }
+});
+
+app.get(['/api/v1/calls/history', '/api/v1/communication/calls/history'], (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const conversationId = req.query.conversationId as string;
+    const history = MessagingService.getCallsHistory(userId, conversationId);
+    res.json({ success: true, calls: history });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get call history' });
   }
 });
 
