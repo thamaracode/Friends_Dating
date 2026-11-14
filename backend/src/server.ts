@@ -68,6 +68,7 @@ initSocialSchema();
 QuestionsService.ensureSeeded();
 SoulPromptsService.initTables();
 ContentEngineService.ensureTables();
+SocialDiscoveryService.seedDiscoveryProfiles();
 BackgroundJobManager.start();
 
 const app = express();
@@ -7912,6 +7913,95 @@ app.get('/api/v1/discovery/feed', (req, res) => {
     res.json({ success: true, ...feed });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to fetch discovery feed' });
+  }
+});
+
+// 2b. Infinite Dating Discovery Feed (Cursor-based, batch pagination, exclusion-guaranteed)
+app.get('/api/v1/discovery/swipe/feed', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const {
+      cursor,
+      limit,
+      connectionType,
+      minAge,
+      maxAge,
+      city,
+      interests,
+      values,
+      excludeIds
+    } = req.query;
+
+    const filters = {
+      cursor: cursor as string | undefined,
+      limit: limit ? parseInt(limit as string, 10) : 20,
+      connectionType: (connectionType as any) || 'all',
+      minAge: minAge ? parseInt(minAge as string, 10) : undefined,
+      maxAge: maxAge ? parseInt(maxAge as string, 10) : undefined,
+      city: city as string | undefined,
+      interests: interests ? (interests as string).split(',').map(s => s.trim()) : undefined,
+      values: values ? (values as string).split(',').map(s => s.trim()) : undefined,
+      excludeIds: excludeIds ? (excludeIds as string).split(',').map(s => s.trim()).filter(Boolean) : undefined
+    };
+
+    const feed = SocialDiscoveryService.getInfiniteDiscoveryFeed(userId, filters);
+    res.json({ success: true, ...feed });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch infinite discovery feed' });
+  }
+});
+
+// 2c. Persistent Swipe Action with Idempotency & Real Match Detection
+app.post('/api/v1/discovery/swipe', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { actionId, targetUserId, action, connectionType } = req.body;
+
+    if (!actionId || !targetUserId || !action) {
+      return res.status(400).json({ error: 'actionId, targetUserId, and action are required' });
+    }
+
+    const result = SocialDiscoveryService.recordSwipe(userId, {
+      actionId,
+      targetUserId,
+      action,
+      connectionType: connectionType || 'dating'
+    });
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to record swipe' });
+  }
+});
+
+// 2d. Undo Last Swipe Action
+app.post('/api/v1/discovery/swipe/undo', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body?.userId || 'usr_me';
+    const result = SocialDiscoveryService.undoLastSwipe(userId);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to undo swipe' });
+  }
+});
+
+// 2e. Reset Passed Profiles (Allows user to cycle back through passes when deck is empty)
+app.post('/api/v1/discovery/swipe/reset-passes', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body?.userId || 'usr_me';
+    const clearedCount = SocialDiscoveryService.resetPasses(userId);
+    res.json({ success: true, clearedCount });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to reset passes' });
   }
 });
 

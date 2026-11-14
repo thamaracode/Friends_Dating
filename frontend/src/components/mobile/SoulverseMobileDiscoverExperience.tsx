@@ -326,6 +326,8 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
       {viewMode === 'swipe' && (
         <div className="w-full pt-1 pb-4 animate-in fade-in">
           <TinderSwipeDeck
+            category={selectedCategory}
+            initialProfiles={filteredProfiles}
             profiles={filteredProfiles}
             onOpenProfileDetail={onOpenProfile}
             onInitiateChat={onInitiateChat}

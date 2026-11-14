@@ -262,7 +262,9 @@ export interface DiscoveryProfile {
   hide_city?: boolean;
 }
 
-export type InteractionType = 'like' | 'pass' | 'save' | 'follow' | 'connect';
+export type InteractionType = 'like' | 'pass' | 'save' | 'follow' | 'connect' | 'superlike';
+
+export type SwipeAction = 'like' | 'pass' | 'superlike';
 
 export interface UserInteraction {
   id: string;
@@ -270,7 +272,52 @@ export interface UserInteraction {
   target_user_id: string;
   interaction_type: InteractionType;
   connection_type?: ConnectionType;
+  action_id?: string;
   created_at: number;
+}
+
+export interface SwipeRequest {
+  actionId: string;
+  targetUserId: string;
+  action: SwipeAction;
+  connectionType?: ConnectionType;
+}
+
+export interface SwipeResponse {
+  success: boolean;
+  isMatch: boolean;
+  connection?: UserConnection;
+  actionId: string;
+  error?: string;
+}
+
+export interface SwipeUndoResponse {
+  success: boolean;
+  restoredProfile?: DiscoveryProfile;
+  message?: string;
+}
+
+export interface InfiniteDiscoveryFeedFilters {
+  cursor?: string;
+  limit?: number;
+  connectionType?: ConnectionType | 'all';
+  minAge?: number;
+  maxAge?: number;
+  city?: string;
+  interests?: string[];
+  values?: string[];
+  excludeIds?: string[];
+}
+
+export interface InfiniteDiscoveryFeedResponse {
+  items: DiscoveryFeedItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  totalRemaining: number;
+  activeFilterSummary: {
+    connectionType: string;
+    totalExclusionsApplied: number;
+  };
 }
 
 export interface ConnectionRequest {

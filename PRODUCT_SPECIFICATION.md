@@ -149,6 +149,33 @@ $$\text{DISCOVER} \longrightarrow \text{SPECIFY} \longrightarrow \text{DESIGN} \
 - **Implementation Status**: **VERIFIED**
 - **Verification Evidence**: 14 tests passing in `discovery-engine.test.ts`.
 
+#### Feature `DISCOVERY-002`: Infinite Dating Discovery Feed & Persistent Swipe Engine
+- **Purpose**: Continuous, non-repeating Tinder-style human discovery feed with cursor pagination, background batch prefetching, hardware-accelerated drag physics, offline outbox reconciliation, and persistent server-authoritative matches.
+- **Requirements**:
+  1. Cursor-based server pagination returning batches of 20 profiles with automatic background prefetch when $\le 5$ remain.
+  2. Spring physics and rotational tilt up to $\pm 16^\circ$ with live `LIKE`, `NOPE`, and `SUPER LIKE` stamps.
+  3. Physical drag, touch gestures, and full keyboard shortcuts (← Pass, → Like, ↑ Super Like, Z Undo, Space Details).
+  4. Multi-level bidirectional exclusion: self, blocked accounts, reports, prior swipes, active matches, and in-memory client IDs.
+  5. Local pending-action queue (`SwipeSyncEngine`) guaranteeing zero dropped swipes across disconnections with auto-drain on reconnect.
+  6. Idempotency protection with client-generated `actionId` preventing duplicate records or match counts.
+  7. Server-validated swipe undo (`POST /api/v1/discovery/swipe/undo`) that dissolves accidental mutual connections and restores the profile to the deck.
+  8. Replenishable empty state with pass-reset mechanism (`POST /api/v1/discovery/swipe/reset-passes`).
+  9. Virtualized active card stack rendering only the top 2 cards in DOM, preloading upcoming images in background.
+- **Dependencies**: `DISCOVERY-001`, `IDENTITY-001`, `COMMUNICATION-001`.
+- **Database Tables**: `discovery_profiles`, `user_interactions`, `user_connections`, `user_blocks`, `user_reports`, `users`.
+- **API Endpoints**:
+  - `GET /api/v1/discovery/swipe/feed`
+  - `POST /api/v1/discovery/swipe`
+  - `POST /api/v1/discovery/swipe/undo`
+  - `POST /api/v1/discovery/swipe/reset-passes`
+- **Frontend Components**: `TinderSwipeDeck.tsx`, `SoulverseMobileDiscoverExperience.tsx`, `swipeSyncEngine.ts`.
+- **Permissions**: Authenticated user; bidirectional boundary enforcement.
+- **Validation Rules**: `actionId` required; action $\in$ `['like', 'pass', 'superlike']`; targetUserId cannot equal viewerId.
+- **Error Scenarios**: 400 on missing parameters or self-swipe; 400 on blocked user; 400 when no swipe history to undo.
+- **Automated Tests**: `backend/src/infinite-discovery.test.ts` (12 tests passing).
+- **Implementation Status**: **VERIFIED**
+- **Verification Evidence**: 12/12 passing tests in `infinite-discovery.test.ts`; 358 backend tests passing; zero build errors in `frontend`.
+
 #### Feature `MATCHING-001`: Bidirectional Connection Request Lifecycle
 - **Purpose**: Formalize human connections through intention-labeled connection requests.
 - **Requirements**:

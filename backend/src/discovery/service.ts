@@ -8,7 +8,13 @@ import type {
   InteractionType,
   ConnectionType,
   ConnectionRequest,
-  UserConnection
+  UserConnection,
+  SwipeAction,
+  SwipeRequest,
+  SwipeResponse,
+  SwipeUndoResponse,
+  InfiniteDiscoveryFeedFilters,
+  InfiniteDiscoveryFeedResponse
 } from './types';
 import { calculateExplainableResonance } from './matchingEngine';
 
@@ -17,6 +23,34 @@ export class SocialDiscoveryService {
    * Initializes SQLite tables for social discovery, interactions, and connections
    */
   public static initTables() {
+    // 1. Ensure user_interactions table migration for superlike and action_id before creating indices
+    try {
+      const row = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='user_interactions'").get() as any;
+      if (row && row.sql && (!row.sql.includes('superlike') || !row.sql.includes('action_id'))) {
+        db.pragma('foreign_keys = OFF');
+        db.exec(`
+          CREATE TABLE user_interactions_migrated (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            target_user_id TEXT NOT NULL,
+            interaction_type TEXT NOT NULL CHECK(interaction_type IN ('like', 'pass', 'save', 'follow', 'superlike')),
+            connection_type TEXT DEFAULT 'friendship',
+            action_id TEXT,
+            created_at INTEGER NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE CASCADE
+          );
+          INSERT OR IGNORE INTO user_interactions_migrated (id, user_id, target_user_id, interaction_type, connection_type, created_at)
+          SELECT id, user_id, target_user_id, interaction_type, connection_type, created_at FROM user_interactions;
+          DROP TABLE user_interactions;
+          ALTER TABLE user_interactions_migrated RENAME TO user_interactions;
+        `);
+        db.pragma('foreign_keys = ON');
+      }
+    } catch (e) {
+      console.warn('user_interactions migration notice:', e);
+    }
+
     db.exec(`
       -- Discovery Profiles
       CREATE TABLE IF NOT EXISTS discovery_profiles (
@@ -48,13 +82,14 @@ export class SocialDiscoveryService {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
 
-      -- User Discovery Interactions (likes, passes, saves, follows)
+      -- User Discovery Interactions (likes, passes, saves, follows, superlike)
       CREATE TABLE IF NOT EXISTS user_interactions (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         target_user_id TEXT NOT NULL,
-        interaction_type TEXT NOT NULL CHECK(interaction_type IN ('like', 'pass', 'save', 'follow')),
+        interaction_type TEXT NOT NULL CHECK(interaction_type IN ('like', 'pass', 'save', 'follow', 'superlike')),
         connection_type TEXT DEFAULT 'friendship',
+        action_id TEXT,
         created_at INTEGER NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -62,6 +97,8 @@ export class SocialDiscoveryService {
 
       CREATE INDEX IF NOT EXISTS idx_user_interactions_lookup 
         ON user_interactions(user_id, target_user_id, interaction_type);
+      CREATE INDEX IF NOT EXISTS idx_user_interactions_action 
+        ON user_interactions(action_id);
 
       -- Explicit Connection Requests (Mutual Consent Protocol)
       CREATE TABLE IF NOT EXISTS connection_requests (
@@ -407,6 +444,344 @@ export class SocialDiscoveryService {
   }
 
   /**
+   * Retrieves infinite cursor-paginated discovery feed with strict exclusion rules,
+   * ranking algorithms, and duplicate prevention across client batches.
+   */
+  public static getInfiniteDiscoveryFeed(
+    viewerId: string,
+    filters: InfiniteDiscoveryFeedFilters = {}
+  ): InfiniteDiscoveryFeedResponse {
+    const limit = Math.max(1, Math.min(50, filters.limit || 20));
+
+    // 1. Fetch or synthesize viewer profile
+    let viewerProfile = this.getProfile(viewerId);
+    if (!viewerProfile) {
+      viewerProfile = this.upsertProfile({
+        id: viewerId,
+        name: 'You',
+        username: viewerId,
+        primary_intention: (filters.connectionType && filters.connectionType !== 'all') ? filters.connectionType : 'friendship'
+      });
+    }
+
+    // 2. Strict Exclusions:
+    // - Blocker or blocked
+    // - Reported accounts
+    // - Prior interactions (likes, passes, superlikes) by this user
+    // - Established mutual matches (user_connections)
+    // - Client-side currently loaded excludeIds
+    const blockedRows = db.prepare(`
+      SELECT blocked_id AS uid FROM user_blocks WHERE blocker_id = ?
+      UNION
+      SELECT blocker_id AS uid FROM user_blocks WHERE blocked_id = ?
+    `).all(viewerId, viewerId) as { uid: string }[];
+
+    const reportedRows = db.prepare(`
+      SELECT reported_user_id AS uid FROM user_reports WHERE reporter_id = ?
+    `).all(viewerId) as { uid: string }[];
+
+    const interactedRows = db.prepare(`
+      SELECT target_user_id AS uid FROM user_interactions 
+      WHERE user_id = ? AND interaction_type IN ('like', 'pass', 'superlike')
+    `).all(viewerId) as { uid: string }[];
+
+    const connectedRows = db.prepare(`
+      SELECT CASE WHEN user_a_id = ? THEN user_b_id ELSE user_a_id END AS uid
+      FROM user_connections
+      WHERE (user_a_id = ? OR user_b_id = ?) AND status = 'active'
+    `).all(viewerId, viewerId, viewerId) as { uid: string }[];
+
+    const excludedIds = new Set<string>([
+      viewerId,
+      ...blockedRows.map(r => r.uid),
+      ...reportedRows.map(r => r.uid),
+      ...interactedRows.map(r => r.uid),
+      ...connectedRows.map(r => r.uid),
+      ...(filters.excludeIds || [])
+    ]);
+
+    // 3. Query eligible candidate profiles (visible only)
+    const allCandidatesRaw = db.prepare(`
+      SELECT * FROM discovery_profiles 
+      WHERE discovery_visible = 1
+    `).all();
+
+    let candidates = allCandidatesRaw
+      .map(r => this.rowToProfile(r))
+      .filter(p => !excludedIds.has(p.id));
+
+    // 4. Apply Filters
+    if (filters.connectionType && filters.connectionType !== 'all') {
+      const targetType = filters.connectionType;
+      candidates = candidates.filter(p => 
+        p.primary_intention === targetType || p.intentions.includes(targetType)
+      );
+    }
+
+    if (filters.minAge) {
+      candidates = candidates.filter(p => p.age >= filters.minAge!);
+    }
+    if (filters.maxAge) {
+      candidates = candidates.filter(p => p.age <= filters.maxAge!);
+    }
+    if (filters.city && filters.city.trim()) {
+      const q = filters.city.toLowerCase().trim();
+      candidates = candidates.filter(p => p.city.toLowerCase().includes(q));
+    }
+    if (filters.interests && filters.interests.length > 0) {
+      const targetInterests = new Set(filters.interests.map(i => i.toLowerCase().trim()));
+      candidates = candidates.filter(p => 
+        p.interests.some(i => targetInterests.has(i.toLowerCase().trim()))
+      );
+    }
+    if (filters.values && filters.values.length > 0) {
+      const targetValues = new Set(filters.values.map(v => v.toLowerCase().trim()));
+      candidates = candidates.filter(p => 
+        p.core_values.some(v => targetValues.has(v.toLowerCase().trim()))
+      );
+    }
+
+    // 5. Query viewer interaction states
+    const likesReceived = new Set(
+      (db.prepare(`
+        SELECT user_id FROM user_interactions 
+        WHERE target_user_id = ? AND interaction_type IN ('like', 'superlike')
+      `).all(viewerId) as { user_id: string }[]).map(r => r.user_id)
+    );
+
+    // 6. Compute Resonance & Rank candidates
+    const scoredItems: DiscoveryFeedItem[] = candidates.map(candidate => {
+      const hasLikedViewer = likesReceived.has(candidate.id);
+      const resonance = calculateExplainableResonance(viewerProfile!, candidate, false);
+
+      return {
+        profile: candidate,
+        resonance,
+        hasLikedViewer,
+        hasViewerLiked: false,
+        isSaved: false,
+        connectionStatus: 'none'
+      };
+    });
+
+    // Score based on:
+    // - Overall resonance score
+    // - Profile completeness (photos, bio, values)
+    // - Recency bonus
+    scoredItems.sort((a, b) => {
+      const completenessA = (a.profile.photos.length * 5) + (a.profile.core_values.length * 3) + (a.profile.bio ? 10 : 0);
+      const completenessB = (b.profile.photos.length * 5) + (b.profile.core_values.length * 3) + (b.profile.bio ? 10 : 0);
+      const scoreA = a.resonance.overallResonanceScore + completenessA;
+      const scoreB = b.resonance.overallResonanceScore + completenessB;
+      return scoreB - scoreA;
+    });
+
+    // Cursor handling
+    let startIndex = 0;
+    if (filters.cursor) {
+      try {
+        const decoded = JSON.parse(Buffer.from(filters.cursor, 'base64').toString('utf8'));
+        if (decoded.offset && typeof decoded.offset === 'number') {
+          startIndex = Math.min(decoded.offset, scoredItems.length);
+        } else if (decoded.lastId) {
+          const idx = scoredItems.findIndex(i => i.profile.id === decoded.lastId);
+          if (idx !== -1) {
+            startIndex = idx + 1;
+          }
+        }
+      } catch {
+        startIndex = 0;
+      }
+    }
+
+    const totalRemaining = scoredItems.length - startIndex;
+    const paginatedItems = scoredItems.slice(startIndex, startIndex + limit);
+    const hasMore = startIndex + limit < scoredItems.length;
+
+    let nextCursor: string | null = null;
+    if (hasMore && paginatedItems.length > 0) {
+      const lastItem = paginatedItems[paginatedItems.length - 1];
+      nextCursor = Buffer.from(JSON.stringify({
+        offset: startIndex + paginatedItems.length,
+        lastId: lastItem.profile.id,
+        t: Date.now()
+      })).toString('base64');
+    }
+
+    return {
+      items: paginatedItems,
+      nextCursor,
+      hasMore,
+      totalRemaining,
+      activeFilterSummary: {
+        connectionType: filters.connectionType || 'all',
+        totalExclusionsApplied: excludedIds.size
+      }
+    };
+  }
+
+  /**
+   * Persists a swipe action with idempotency protection, boundary checks, and real mutual matching.
+   */
+  public static recordSwipe(
+    userId: string,
+    req: SwipeRequest
+  ): SwipeResponse {
+    const { actionId, targetUserId, action, connectionType = 'dating' } = req;
+
+    if (!actionId || !targetUserId || !action) {
+      return { success: false, isMatch: false, actionId, error: 'Missing required swipe parameters.' };
+    }
+
+    if (userId === targetUserId) {
+      return { success: false, isMatch: false, actionId, error: 'Cannot swipe on yourself.' };
+    }
+
+    // 1. Idempotency Check: if actionId has already been recorded, return existing result
+    const existing = db.prepare(`
+      SELECT * FROM user_interactions WHERE action_id = ?
+    `).get(actionId) as any;
+
+    if (existing) {
+      const existingConn = db.prepare(`
+        SELECT * FROM user_connections 
+        WHERE (user_a_id = ? AND user_b_id = ?) OR (user_a_id = ? AND user_b_id = ?)
+      `).get(userId, targetUserId, targetUserId, userId) as any;
+
+      return {
+        success: true,
+        isMatch: Boolean(existingConn),
+        connection: existingConn ? {
+          id: existingConn.id,
+          user_a_id: existingConn.user_a_id,
+          user_b_id: existingConn.user_b_id,
+          connection_type: existingConn.connection_type,
+          status: existingConn.status,
+          established_at: existingConn.established_at
+        } : undefined,
+        actionId
+      };
+    }
+
+    // 2. Boundary Check: ensure user is not blocked
+    const isBlocked = db.prepare(`
+      SELECT 1 FROM user_blocks 
+      WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)
+    `).get(userId, targetUserId, targetUserId, userId);
+
+    if (isBlocked) {
+      return { success: false, isMatch: false, actionId, error: 'User is blocked or unavailable.' };
+    }
+
+    const now = Date.now();
+    const interactionId = `act_${userId}_${targetUserId}_${action}_${now}`;
+
+    // Ensure target user exists in users table for foreign key integrity
+    try {
+      db.prepare(`
+        INSERT OR IGNORE INTO users (id, name, username, avatar_url, is_verified, last_seen_at)
+        VALUES (?, ?, ?, '', 0, ?)
+      `).run(targetUserId, `User ${targetUserId}`, `user_${targetUserId}`, now);
+    } catch {}
+
+    // 3. Insert or replace interaction with action_id
+    db.prepare(`
+      INSERT OR REPLACE INTO user_interactions (
+        id, user_id, target_user_id, interaction_type, connection_type, action_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(interactionId, userId, targetUserId, action, connectionType, actionId, now);
+
+    let isMatch = false;
+    let establishedConnection: UserConnection | undefined;
+
+    // 4. Mutual Match Detection on 'like' or 'superlike'
+    if (action === 'like' || action === 'superlike') {
+      const reciprocal = db.prepare(`
+        SELECT * FROM user_interactions 
+        WHERE user_id = ? AND target_user_id = ? AND interaction_type IN ('like', 'superlike')
+      `).get(targetUserId, userId) as any;
+
+      if (reciprocal) {
+        isMatch = true;
+        const [userA, userB] = [userId, targetUserId].sort();
+        const existingConn = db.prepare(`
+          SELECT * FROM user_connections WHERE user_a_id = ? AND user_b_id = ?
+        `).get(userA, userB) as any;
+
+        if (!existingConn) {
+          const connId = `conn_${userA}_${userB}_${now}`;
+          db.prepare(`
+            INSERT INTO user_connections (id, user_a_id, user_b_id, connection_type, status, established_at)
+            VALUES (?, ?, ?, ?, 'active', ?)
+          `).run(connId, userA, userB, connectionType, now);
+
+          establishedConnection = {
+            id: connId,
+            user_a_id: userA,
+            user_b_id: userB,
+            connection_type: connectionType as ConnectionType,
+            status: 'active',
+            established_at: now
+          };
+        } else {
+          establishedConnection = {
+            id: existingConn.id,
+            user_a_id: existingConn.user_a_id,
+            user_b_id: existingConn.user_b_id,
+            connection_type: existingConn.connection_type,
+            status: existingConn.status,
+            established_at: existingConn.established_at
+          };
+        }
+      }
+    }
+
+    return {
+      success: true,
+      isMatch,
+      connection: establishedConnection,
+      actionId
+    };
+  }
+
+  /**
+   * Reverts the viewer's most recent swipe action, restores their deck profile,
+   * and tears down accidental mutual connections if created.
+   */
+  public static undoLastSwipe(viewerId: string): SwipeUndoResponse {
+    const lastInteraction = db.prepare(`
+      SELECT * FROM user_interactions 
+      WHERE user_id = ? AND interaction_type IN ('like', 'pass', 'superlike')
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `).get(viewerId) as any;
+
+    if (!lastInteraction) {
+      return { success: false, message: 'No swipe history found to undo.' };
+    }
+
+    const targetUserId = lastInteraction.target_user_id;
+
+    // 1. If a mutual connection was formed from this swipe, dissolve it
+    db.prepare(`
+      DELETE FROM user_connections 
+      WHERE (user_a_id = ? AND user_b_id = ?) OR (user_a_id = ? AND user_b_id = ?)
+    `).run(viewerId, targetUserId, targetUserId, viewerId);
+
+    // 2. Delete the interaction record
+    db.prepare('DELETE FROM user_interactions WHERE id = ?').run(lastInteraction.id);
+
+    // 3. Fetch restored profile
+    const restoredProfile = this.getProfile(targetUserId);
+
+    return {
+      success: true,
+      restoredProfile: restoredProfile || undefined,
+      message: 'Previous swipe undone successfully.'
+    };
+  }
+
+  /**
    * Generates a deep-dive explainable resonance report between viewer and target user
    */
   public static explainResonance(viewerId: string, targetUserId: string): ExplainableResonanceReport | null {
@@ -714,7 +1089,7 @@ export class SocialDiscoveryService {
     this.initTables();
 
     const existingCount = db.prepare('SELECT COUNT(*) as c FROM discovery_profiles').get() as { c: number };
-    if (existingCount && existingCount.c >= 6) {
+    if (existingCount && existingCount.c >= 30) {
       return; // Already populated
     }
 
@@ -1003,6 +1378,634 @@ export class SocialDiscoveryService {
         discovery_visible: true,
         last_active_at: now - 1200000,
         created_at: now - 86400000 * 4
+      },
+      {
+        id: 'usr_maya',
+        name: 'Maya Jayawardena',
+        username: 'maya_j',
+        avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+        age: 23,
+        city: 'Colombo',
+        country: 'Sri Lanka',
+        tagline: 'Documentary director, vintage 35mm lens hoarder & tea enthusiast.',
+        bio: 'Finding beauty in unplanned conversations and rainy afternoons. Seeking someone who listens with presence and values artistic authenticity.',
+        verified: true,
+        primary_intention: 'dating',
+        intentions: ['dating', 'creative_collaboration', 'friendship'],
+        core_values: ['Authenticity', 'Curiosity', 'Vulnerability', 'Kindness'],
+        interests: ['Film Noir', 'Analog Photography', 'Philosophy', 'Jazz', 'Psychology'],
+        activities: ['Cafe Writing', 'Darkroom Developing', 'Weekend Roadtrips'],
+        lifestyle: { sleep_schedule: 'night_owl', social_energy: 'ambivert', pets: 'cat_lover', living_space: 'cozy_cluttered' },
+        communication: { cadence: 'balanced', style: 'gentle', listening_style: 'reflective', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800',
+          'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 450000,
+        created_at: now - 86400000 * 3
+      },
+      {
+        id: 'usr_kavish',
+        name: 'Kavishka Bandara',
+        username: 'kavishka_b',
+        avatar_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
+        age: 27,
+        city: 'Kandy',
+        country: 'Sri Lanka',
+        tagline: 'Sustainable landscape architect & watercolorist. Nature as medicine.',
+        bio: 'Designing ecological botanical gardens. Let us talk about native Sri Lankan flora, urban sustainability, and quiet mountain mornings.',
+        verified: true,
+        primary_intention: 'creative_collaboration',
+        intentions: ['creative_collaboration', 'friendship', 'activity_partners'],
+        core_values: ['Creative Agency', 'Kindness', 'Loyalty', 'Curiosity'],
+        interests: ['Landscape Architecture', 'Botanical Illustration', 'Acoustic Guitar', 'Hiking'],
+        activities: ['Plein Air Painting', 'Forest Bathing', 'Tea Tasting'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'introvert', pets: 'all_animals', living_space: 'minimalist' },
+        communication: { cadence: 'slow_asynchronous', style: 'gentle', listening_style: 'reflective', conflict_approach: 'need_space_first' },
+        photos: [
+          'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800',
+          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 600000,
+        created_at: now - 86400000 * 5
+      },
+      {
+        id: 'usr_nadia',
+        name: 'Nadia De Silva',
+        username: 'nadia_surf',
+        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        age: 25,
+        city: 'Galle',
+        country: 'Sri Lanka',
+        tagline: 'Ceramicist, longboard ocean surfer & lover of sourdough toast.',
+        bio: 'Throwing stoneware clay on the wheel and catching sunrise tide swells. Looking for an authentic romantic connection rooted in emotional clarity.',
+        verified: true,
+        primary_intention: 'dating',
+        intentions: ['dating', 'long_term', 'activity_partners'],
+        core_values: ['Authenticity', 'Courage', 'Kindness', 'Loyalty'],
+        interests: ['Ceramics', 'Ocean Surfing', 'Indie Folk', 'Meditation'],
+        activities: ['Dawn Surfing', 'Pottery Throwing', 'Beach Sunsets'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'ambivert', pets: 'dog_lover', living_space: 'organized' },
+        communication: { cadence: 'frequent_daily', style: 'direct', listening_style: 'action_oriented', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800',
+          'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 180000,
+        created_at: now - 86400000 * 2
+      },
+      {
+        id: 'usr_rohan',
+        name: 'Rohan Mendis',
+        username: 'rohan_sax',
+        avatar_url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&q=80',
+        age: 29,
+        city: 'Colombo',
+        country: 'Sri Lanka',
+        tagline: 'Jazz saxophonist & vinyl record archivist. Finding groove in simplicity.',
+        bio: 'Performing with local indie quartets. In search of a devoted life partner who appreciates spontaneous vinyl sessions and deep, unguarded honesty.',
+        verified: true,
+        primary_intention: 'long_term',
+        intentions: ['long_term', 'dating', 'shared_interest'],
+        core_values: ['Loyalty', 'Intellectual Honesty', 'Kindness', 'Patience'],
+        interests: ['Bebop Jazz', 'Vinyl Records', 'Coffee Brewing', 'Literature'],
+        activities: ['Record Hunting', 'Rehearsal Sessions', 'Evening Walks'],
+        lifestyle: { sleep_schedule: 'night_owl', social_energy: 'introvert', pets: 'cat_lover', living_space: 'cozy_cluttered' },
+        communication: { cadence: 'balanced', style: 'gentle', listening_style: 'reflective', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 900000,
+        created_at: now - 86400000 * 7
+      },
+      {
+        id: 'usr_ananya',
+        name: 'Ananya Sharma',
+        username: 'ananya_reefs',
+        avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+        age: 26,
+        city: 'Negombo',
+        country: 'Sri Lanka',
+        tagline: 'Marine biologist & coral reef restorer. Saltwater soul.',
+        bio: 'Working to revive damaged coral nurseries across the western coast. Excited to meet adventurous humans who love ocean life and night dives.',
+        verified: true,
+        primary_intention: 'activity_partners',
+        intentions: ['activity_partners', 'friendship', 'community_connections'],
+        core_values: ['Courage', 'Environmental Stewardship', 'Kindness', 'Curiosity'],
+        interests: ['Marine Ecology', 'Scuba Diving', 'Underwater Photography', 'Folk Music'],
+        activities: ['Reef Monitoring', 'Kayaking', 'Coastal Cleanups'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'extrovert', pets: 'all_animals', living_space: 'minimalist' },
+        communication: { cadence: 'frequent_daily', style: 'direct', listening_style: 'action_oriented', conflict_approach: 'collaborative_walk' },
+        photos: [
+          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 120000,
+        created_at: now - 86400000 * 9
+      },
+      {
+        id: 'usr_liam',
+        name: 'Liam Chen',
+        username: 'liam_tea',
+        avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+        age: 28,
+        city: 'Nuwara Eliya',
+        country: 'Sri Lanka',
+        tagline: 'Highland artisan tea alchemist & mist chaser. Slow mornings.',
+        bio: 'Crafting small-batch single estate white teas in the central mountains. Seeking genuine, low-drama friendships with thoughtful thinkers.',
+        verified: true,
+        primary_intention: 'friendship',
+        intentions: ['friendship', 'shared_interest', 'creative_collaboration'],
+        core_values: ['Simplicity', 'Authenticity', 'Curiosity', 'Kindness'],
+        interests: ['Tea Cultivation', 'Bonsai', 'Woodcraft', 'Indie Games'],
+        activities: ['Mountain Treks', 'Tea Blending', 'Book Reading'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'introvert', pets: 'dog_lover', living_space: 'organized' },
+        communication: { cadence: 'slow_asynchronous', style: 'gentle', listening_style: 'reflective', conflict_approach: 'need_space_first' },
+        photos: [
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 2400000,
+        created_at: now - 86400000 * 12
+      },
+      {
+        id: 'usr_ishani',
+        name: 'Ishani Senaratne',
+        username: 'ishani_pixels',
+        avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+        age: 24,
+        city: 'Colombo',
+        country: 'Sri Lanka',
+        tagline: 'Interaction designer, typography nerd & matcha latte lover.',
+        bio: 'Obsessed with fluid animation curves and human-centric software. Looking for a spark of romance with someone curious and empathetic.',
+        verified: true,
+        primary_intention: 'dating',
+        intentions: ['dating', 'casual_dating', 'creative_collaboration'],
+        core_values: ['Creative Agency', 'Authenticity', 'Empathy', 'Curiosity'],
+        interests: ['Typography', 'UI Design', 'Architecture', 'Electronic Music'],
+        activities: ['Art Gallery Visits', 'Bouldering', 'Baking Cinnamon Rolls'],
+        lifestyle: { sleep_schedule: 'flexible', social_energy: 'ambivert', pets: 'cat_lover', living_space: 'organized' },
+        communication: { cadence: 'balanced', style: 'playful', listening_style: 'validating', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 300000,
+        created_at: now - 86400000 * 4
+      },
+      {
+        id: 'usr_hasan',
+        name: 'Hasan Rameez',
+        username: 'hasan_script',
+        avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+        age: 30,
+        city: 'Colombo',
+        country: 'Sri Lanka',
+        tagline: 'Calligrapher & bookbinder. Preserving physical ink traditions.',
+        bio: 'Carving reed pens and binding hand-pressed journals. Looking for quiet, deeply loyal friendships with creators and book collectors.',
+        verified: true,
+        primary_intention: 'friendship',
+        intentions: ['friendship', 'creative_collaboration', 'shared_interest'],
+        core_values: ['Patience', 'Loyalty', 'Simplicity', 'Intellectual Honesty'],
+        interests: ['Calligraphy', 'Bookbinding', 'History', 'Middle Eastern Poetry'],
+        activities: ['Ink Making', 'Library Wandering', 'Chess'],
+        lifestyle: { sleep_schedule: 'night_owl', social_energy: 'introvert', pets: 'cat_lover', living_space: 'organized' },
+        communication: { cadence: 'slow_asynchronous', style: 'intellectual', listening_style: 'reflective', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 4800000,
+        created_at: now - 86400000 * 18
+      },
+      {
+        id: 'usr_chloe',
+        name: 'Chloe Dubois',
+        username: 'chloe_wild',
+        avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
+        age: 27,
+        city: 'Ella',
+        country: 'Sri Lanka',
+        tagline: 'Wildlife conservation tracker & mountain ridge trail runner.',
+        bio: 'Monitoring leopard corridors in the southern highlands. Seeking rugged partners for sunrise trail runs and multi-day ridge camping.',
+        verified: true,
+        primary_intention: 'activity_partners',
+        intentions: ['activity_partners', 'friendship', 'dating'],
+        core_values: ['Courage', 'Environmental Stewardship', 'Accountability', 'Kindness'],
+        interests: ['Trail Running', 'Wildlife Conservation', 'Outdoor Navigation', 'Indie Rock'],
+        activities: ['Mountain Climbing', 'Wilderness Camping', 'Star Mapping'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'extrovert', pets: 'dog_lover', living_space: 'nomadic' },
+        communication: { cadence: 'direct', style: 'direct', listening_style: 'action_oriented', conflict_approach: 'collaborative_walk' },
+        photos: [
+          'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 1500000,
+        created_at: now - 86400000 * 11
+      },
+      {
+        id: 'usr_arjun',
+        name: 'Arjun Wijesinghe',
+        username: 'arjun_wood',
+        avatar_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
+        age: 26,
+        city: 'Galle',
+        country: 'Sri Lanka',
+        tagline: 'Minimalist timber craftsman & acoustic instrument builder.',
+        bio: 'Working with reclaimed teak and jacaranda wood. Always open to collaborate with acoustic musicians and poets who appreciate organic textures.',
+        verified: true,
+        primary_intention: 'creative_collaboration',
+        intentions: ['creative_collaboration', 'friendship', 'shared_interest'],
+        core_values: ['Creative Agency', 'Patience', 'Authenticity', 'Simplicity'],
+        interests: ['Woodworking', 'Lutherie', 'Acoustic Folk', 'Architecture'],
+        activities: ['Hand-planing Wood', 'Listening to Vinyl', 'Cycling Coastlines'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'introvert', pets: 'none', living_space: 'minimalist' },
+        communication: { cadence: 'balanced', style: 'gentle', listening_style: 'reflective', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 800000,
+        created_at: now - 86400000 * 14
+      },
+      {
+        id: 'usr_meera',
+        name: 'Meera Pillai',
+        username: 'meera_roots',
+        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        age: 25,
+        city: 'Jaffna',
+        country: 'Sri Lanka',
+        tagline: 'Heritage architectural conservator & Carnatic vocal student.',
+        bio: 'Restoring historical stone courtyards in the north. Seeking a long-term partner who values cultural roots, slow conversations, and loyalty.',
+        verified: true,
+        primary_intention: 'long_term',
+        intentions: ['long_term', 'dating', 'creative_collaboration'],
+        core_values: ['Loyalty', 'Authenticity', 'Kindness', 'Patience'],
+        interests: ['Heritage Architecture', 'Classical Music', 'Poetry', 'Philosophy'],
+        activities: ['Monument Sketching', 'Singing Ragas', 'Cooking Traditional Meals'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'introvert', pets: 'all_animals', living_space: 'organized' },
+        communication: { cadence: 'balanced', style: 'gentle', listening_style: 'validating', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 1100000,
+        created_at: now - 86400000 * 16
+      },
+      {
+        id: 'usr_zack',
+        name: 'Zack Al-Husseini',
+        username: 'zack_waves',
+        avatar_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
+        age: 28,
+        city: 'Colombo',
+        country: 'Sri Lanka',
+        tagline: 'Sound engineer, modular synthesis artist & urban cyclist.',
+        bio: 'Exploring psychoacoustics and ambient noise sculptures. Looking for easygoing dates, gallery hops, and good espresso.',
+        verified: true,
+        primary_intention: 'casual_dating',
+        intentions: ['casual_dating', 'dating', 'creative_collaboration'],
+        core_values: ['Curiosity', 'Creative Agency', 'Authenticity', 'Humor'],
+        interests: ['Modular Synthesis', 'Field Recording', 'Urban Cycling', 'Film'],
+        activities: ['Night Biking', 'Synthesizer Jamming', 'Coffee Tasting'],
+        lifestyle: { sleep_schedule: 'night_owl', social_energy: 'ambivert', pets: 'cat_lover', living_space: 'cozy_cluttered' },
+        communication: { cadence: 'balanced', style: 'playful', listening_style: 'analytical', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 650000,
+        created_at: now - 86400000 * 8
+      },
+      {
+        id: 'usr_thilini',
+        name: 'Thilini Gunawardena',
+        username: 'thilini_botany',
+        avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+        age: 26,
+        city: 'Kandy',
+        country: 'Sri Lanka',
+        tagline: 'Highland botanist, wild orchid specialist & quiet hiker.',
+        bio: 'Cataloguing endemic cloud forest orchids. In search of a sincere connection with an empathetic, thoughtful soul.',
+        verified: true,
+        primary_intention: 'dating',
+        intentions: ['dating', 'long_term', 'friendship'],
+        core_values: ['Kindness', 'Loyalty', 'Curiosity', 'Simplicity'],
+        interests: ['Botany', 'Cloud Forests', 'Acoustic Indie', 'Watercolor'],
+        activities: ['Plant Pressing', 'Quiet Mountain Hikes', 'Herb Garden Care'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'introvert', pets: 'cat_lover', living_space: 'organized' },
+        communication: { cadence: 'slow_asynchronous', style: 'gentle', listening_style: 'reflective', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 500000,
+        created_at: now - 86400000 * 6
+      },
+      {
+        id: 'usr_dilan',
+        name: 'Dilan Rathnayake',
+        username: 'dilan_stars',
+        avatar_url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&q=80',
+        age: 27,
+        city: 'Anuradhapura',
+        country: 'Sri Lanka',
+        tagline: 'Astrophysics teacher & public planetarium volunteer.',
+        bio: 'Explaining cosmic microwave background radiation to students. Seeking deep philosophical friendships with curious minds.',
+        verified: true,
+        primary_intention: 'friendship',
+        intentions: ['friendship', 'shared_interest', 'community_connections'],
+        core_values: ['Intellectual Honesty', 'Kindness', 'Patience', 'Curiosity'],
+        interests: ['Astronomy', 'Cosmology', 'Science Fiction', 'Board Games'],
+        activities: ['Telescope Star Parties', 'Science Writing', 'Tea Discussions'],
+        lifestyle: { sleep_schedule: 'night_owl', social_energy: 'introvert', pets: 'dog_lover', living_space: 'organized' },
+        communication: { cadence: 'balanced', style: 'intellectual', listening_style: 'reflective', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 1800000,
+        created_at: now - 86400000 * 15
+      },
+      {
+        id: 'usr_sophia',
+        name: 'Sophia Lindqvist',
+        username: 'sophia_deep',
+        avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+        age: 25,
+        city: 'Mirissa',
+        country: 'Sri Lanka',
+        tagline: 'Freediver & blue whale acoustic researcher. Depth over surface.',
+        bio: 'Holding my breath at 30 meters beneath the waves. Looking for romantic resonance with someone unafraid of vulnerability and truth.',
+        verified: true,
+        primary_intention: 'dating',
+        intentions: ['dating', 'long_term', 'activity_partners'],
+        core_values: ['Vulnerability', 'Courage', 'Authenticity', 'Kindness'],
+        interests: ['Freediving', 'Bioacoustics', 'Oceanography', 'Ambient Music'],
+        activities: ['Breathwork Sessions', 'Ocean Dives', 'Sunset Journaling'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'ambivert', pets: 'all_animals', living_space: 'minimalist' },
+        communication: { cadence: 'frequent_daily', style: 'gentle', listening_style: 'validating', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 220000,
+        created_at: now - 86400000 * 3
+      },
+      {
+        id: 'usr_kamal',
+        name: 'Kamal Wickramasinghe',
+        username: 'kamal_rare',
+        avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+        age: 31,
+        city: 'Colombo',
+        country: 'Sri Lanka',
+        tagline: 'Rare manuscript conservator & specialty pour-over brewer.',
+        bio: 'Restoring centuries-old palm leaf ola manuscripts. Looking for a lasting, warm romantic partnership built on quiet loyalty.',
+        verified: true,
+        primary_intention: 'long_term',
+        intentions: ['long_term', 'dating', 'shared_interest'],
+        core_values: ['Loyalty', 'Patience', 'Authenticity', 'Kindness'],
+        interests: ['Archival Conservation', 'Linguistics', 'Classical Literature', 'Espresso'],
+        activities: ['Paper Restoration', 'Antiquarian Book Browsing', 'Long Quiet Walks'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'introvert', pets: 'cat_lover', living_space: 'organized' },
+        communication: { cadence: 'balanced', style: 'gentle', listening_style: 'reflective', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 3600000,
+        created_at: now - 86400000 * 20
+      },
+      {
+        id: 'usr_aisha',
+        name: 'Aisha Farooq',
+        username: 'aisha_craft',
+        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        age: 24,
+        city: 'Kandy',
+        country: 'Sri Lanka',
+        tagline: 'Zero-waste natural dye textile designer & quiet bookworm.',
+        bio: 'Dyeing organic cotton using local indigo and madder root. Excited to meet fellow creative spirits who care deeply about ethical craft.',
+        verified: true,
+        primary_intention: 'creative_collaboration',
+        intentions: ['creative_collaboration', 'friendship', 'dating'],
+        core_values: ['Creative Agency', 'Kindness', 'Environmental Stewardship', 'Authenticity'],
+        interests: ['Textile Design', 'Botanical Dyes', 'Poetry', 'Folk Crafts'],
+        activities: ['Fabric Printing', 'Botanical Foraging', 'Book Club Meetings'],
+        lifestyle: { sleep_schedule: 'flexible', social_energy: 'introvert', pets: 'cat_lover', living_space: 'cozy_cluttered' },
+        communication: { cadence: 'slow_asynchronous', style: 'gentle', listening_style: 'reflective', conflict_approach: 'need_space_first' },
+        photos: [
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 720000,
+        created_at: now - 86400000 * 5
+      },
+      {
+        id: 'usr_danilo',
+        name: 'Danilo Rossi',
+        username: 'danilo_crust',
+        avatar_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
+        age: 29,
+        city: 'Galle',
+        country: 'Sri Lanka',
+        tagline: 'Artisan sourdough baker & slow-food philosophy lover.',
+        bio: 'Fermenting wild sourdough loaves with 72-hour cold proofing. Looking for spontaneous companionship, shared dinners, and laughter.',
+        verified: true,
+        primary_intention: 'casual_dating',
+        intentions: ['casual_dating', 'dating', 'activity_partners'],
+        core_values: ['Patience', 'Authenticity', 'Curiosity', 'Humor'],
+        interests: ['Culinary Arts', 'Fermentation', 'Wine Tasting', 'Architecture'],
+        activities: ['Baking Sourdough', 'Dinner Parties', 'Scooter Coastal Rides'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'ambivert', pets: 'dog_lover', living_space: 'organized' },
+        communication: { cadence: 'frequent_daily', style: 'playful', listening_style: 'action_oriented', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 400000,
+        created_at: now - 86400000 * 7
+      },
+      {
+        id: 'usr_ruvindu',
+        name: 'Ruvindu Jayasuriya',
+        username: 'ruvindu_earth',
+        avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+        age: 26,
+        city: 'Kurunegala',
+        country: 'Sri Lanka',
+        tagline: 'Permaculture farmer, Sinhala poet & acoustic flutist.',
+        bio: 'Regenerating heirloom rice varieties and writing verses at twilight. Looking for genuine platonic friendships with respectful minds.',
+        verified: true,
+        primary_intention: 'friendship',
+        intentions: ['friendship', 'community_connections', 'creative_collaboration'],
+        core_values: ['Simplicity', 'Kindness', 'Loyalty', 'Environmental Stewardship'],
+        interests: ['Permaculture', 'Traditional Farming', 'Sinhala Literature', 'Flute'],
+        activities: ['Tree Planting', 'Poetry Evenings', 'Flute Improvisation'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'introvert', pets: 'all_animals', living_space: 'minimalist' },
+        communication: { cadence: 'slow_asynchronous', style: 'metaphorical', listening_style: 'reflective', conflict_approach: 'collaborative_walk' },
+        photos: [
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 2800000,
+        created_at: now - 86400000 * 14
+      },
+      {
+        id: 'usr_yuki',
+        name: 'Yuki Takahashi',
+        username: 'yuki_draws',
+        avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+        age: 27,
+        city: 'Colombo',
+        country: 'Sri Lanka',
+        tagline: 'Graphic novelist, fantasy concept artist & ramen cook.',
+        bio: 'Sketching mythical island legends with dip pens. Seeking a warm romantic bond with an imaginative partner who loves storytelling.',
+        verified: true,
+        primary_intention: 'dating',
+        intentions: ['dating', 'creative_collaboration', 'long_term'],
+        core_values: ['Creative Agency', 'Authenticity', 'Curiosity', 'Kindness'],
+        interests: ['Graphic Novels', 'Fantasy Worldbuilding', 'Animation', 'Ramen'],
+        activities: ['Digital Painting', 'Comic Inking', 'Manga Reading'],
+        lifestyle: { sleep_schedule: 'night_owl', social_energy: 'ambivert', pets: 'cat_lover', living_space: 'cozy_cluttered' },
+        communication: { cadence: 'balanced', style: 'playful', listening_style: 'validating', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 520000,
+        created_at: now - 86400000 * 4
+      },
+      {
+        id: 'usr_samadhi',
+        name: 'Samadhi Abeykoon',
+        username: 'samadhi_geo',
+        avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+        age: 25,
+        city: 'Ratnapura',
+        country: 'Sri Lanka',
+        tagline: 'Field geologist, sapphire researcher & white-water kayaker.',
+        bio: 'Studying tectonic history and gemstone mineralogy. Ready to connect with active outdoor humans who love rivers and rugged landscapes.',
+        verified: true,
+        primary_intention: 'activity_partners',
+        intentions: ['activity_partners', 'friendship', 'dating'],
+        core_values: ['Courage', 'Intellectual Honesty', 'Kindness', 'Curiosity'],
+        interests: ['Geology', 'Mineralogy', 'Kayaking', 'Rock Climbing'],
+        activities: ['River Kayaking', 'Field Sampling', 'Campfire Discussions'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'extrovert', pets: 'dog_lover', living_space: 'minimalist' },
+        communication: { cadence: 'direct', style: 'direct', listening_style: 'action_oriented', conflict_approach: 'collaborative_walk' },
+        photos: [
+          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 1600000,
+        created_at: now - 86400000 * 10
+      },
+      {
+        id: 'usr_malik',
+        name: 'Malik Cassim',
+        username: 'malik_diver',
+        avatar_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
+        age: 30,
+        city: 'Batticaloa',
+        country: 'Sri Lanka',
+        tagline: 'Marine archaeologist & historic shipwreck surveyor.',
+        bio: 'Mapping 18th-century maritime trade shipwrecks in the eastern coast. Seeking collaborators in historical documentation and 3D modeling.',
+        verified: true,
+        primary_intention: 'creative_collaboration',
+        intentions: ['creative_collaboration', 'friendship', 'shared_interest'],
+        core_values: ['Intellectual Honesty', 'Courage', 'Patience', 'Curiosity'],
+        interests: ['Maritime Archaeology', '3D Photogrammetry', 'Shipwrecks', 'Diving'],
+        activities: ['Deep Wreck Diving', 'Sonar Mapping', 'Archival Research'],
+        lifestyle: { sleep_schedule: 'flexible', social_energy: 'ambivert', pets: 'none', living_space: 'organized' },
+        communication: { cadence: 'balanced', style: 'intellectual', listening_style: 'analytical', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 2100000,
+        created_at: now - 86400000 * 13
+      },
+      {
+        id: 'usr_elise',
+        name: 'Elise Moreau',
+        username: 'elise_strings',
+        avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+        age: 26,
+        city: 'Colombo',
+        country: 'Sri Lanka',
+        tagline: 'Neoclassical cellist & ambient electronic producer.',
+        bio: 'Layering acoustic cello over modular tape loops. Looking for romantic resonance with someone kind, patient, and artistically attuned.',
+        verified: true,
+        primary_intention: 'dating',
+        intentions: ['dating', 'long_term', 'creative_collaboration'],
+        core_values: ['Authenticity', 'Vulnerability', 'Kindness', 'Creative Agency'],
+        interests: ['Cello Performance', 'Ambient Music', 'French Cinema', 'Philosophy'],
+        activities: ['Sound Recording', 'Concert Going', 'Rainy Cafe Reading'],
+        lifestyle: { sleep_schedule: 'night_owl', social_energy: 'introvert', pets: 'cat_lover', living_space: 'cozy_cluttered' },
+        communication: { cadence: 'balanced', style: 'gentle', listening_style: 'reflective', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 350000,
+        created_at: now - 86400000 * 5
+      },
+      {
+        id: 'usr_kasun',
+        name: 'Kasun Dissanayake',
+        username: 'kasun_solar',
+        avatar_url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&q=80',
+        age: 28,
+        city: 'Matara',
+        country: 'Sri Lanka',
+        tagline: 'Solar microgrid engineer & open-water sunrise swimmer.',
+        bio: 'Deploying off-grid solar microgrids for southern agricultural communities. Looking for a steadfast life partner with shared moral values.',
+        verified: true,
+        primary_intention: 'long_term',
+        intentions: ['long_term', 'dating', 'community_connections'],
+        core_values: ['Accountability', 'Loyalty', 'Kindness', 'Environmental Stewardship'],
+        interests: ['Renewable Energy', 'Open-Water Swimming', 'Permaculture', 'Economics'],
+        activities: ['Ocean Swims', 'Microgrid Designing', 'Volunteering'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'ambivert', pets: 'dog_lover', living_space: 'minimalist' },
+        communication: { cadence: 'frequent_daily', style: 'direct', listening_style: 'reflective', conflict_approach: 'direct_discussion' },
+        photos: [
+          'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 850000,
+        created_at: now - 86400000 * 11
+      },
+      {
+        id: 'usr_harini',
+        name: 'Harini Balasubramaniam',
+        username: 'harini_waves',
+        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        age: 24,
+        city: 'Trincomalee',
+        country: 'Sri Lanka',
+        tagline: 'Ocean wave energy researcher, coastal birder & indie reader.',
+        bio: 'Investigating tidal energy prototypes. Seeking warm and intellectually stimulating friendships with other curious humans.',
+        verified: true,
+        primary_intention: 'friendship',
+        intentions: ['friendship', 'shared_interest', 'activity_partners'],
+        core_values: ['Curiosity', 'Kindness', 'Simplicity', 'Intellectual Honesty'],
+        interests: ['Wave Energy', 'Ornithology', 'Coastline Ecology', 'Indie Fiction'],
+        activities: ['Birdwatching', 'Beach Walks', 'Reading Papers'],
+        lifestyle: { sleep_schedule: 'early_bird', social_energy: 'introvert', pets: 'all_animals', living_space: 'organized' },
+        communication: { cadence: 'slow_asynchronous', style: 'gentle', listening_style: 'reflective', conflict_approach: 'collaborative_walk' },
+        photos: [
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800'
+        ],
+        discovery_visible: true,
+        last_active_at: now - 1400000,
+        created_at: now - 86400000 * 9
       }
     ];
 
