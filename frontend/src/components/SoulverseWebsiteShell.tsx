@@ -41,7 +41,8 @@ import {
   ExternalLink,
   Quote as QuoteIcon,
   Gamepad2,
-  Brain
+  Brain,
+  Layers
 } from 'lucide-react';
 import { SearchBar, PulseBadge } from './klyven';
 
@@ -92,6 +93,7 @@ import { SpotifyEmbedHubView } from './spotify/SpotifyEmbedHubView';
 import { PersonalitySanctuaryView } from './personality/PersonalitySanctuaryView';
 import { SocialDiscoveryEngineView } from './discovery/SocialDiscoveryEngineView';
 import { DynamicContentEngineView } from './content/DynamicContentEngineView';
+import { DesignSystemShowcase } from './ui/DesignSystemShowcase';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -173,7 +175,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       const hash = window.location.hash.replace('#', '') as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
         'home', 'daily', 'discover', 'connect', 'connections', 'messages', 'inbox', 'profile', 
-        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games', 'personality', 'discovery_engine'
+        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games', 'personality', 'discovery_engine', 'content_engine', 'design_system'
       ];
       if (validRoutes.includes(hash)) {
         setCurrentRoute(hash);
@@ -298,6 +300,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       title: 'Control & System',
       items: [
         { id: 'settings' as SoulverseRoute, label: 'Settings', icon: Settings },
+        { id: 'design_system' as SoulverseRoute, label: 'Design System & UI', icon: Layers, badge: 'UI' },
         { id: 'admin' as SoulverseRoute, label: 'Admin Ops', icon: ShieldAlert, badge: 'Staff' }
       ]
     }
@@ -741,6 +744,13 @@ export const SoulverseWebsiteShell: React.FC = () => {
             {currentRoute === 'spotify' && (
               <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass">
                 <SpotifyEmbedHubView />
+              </div>
+            )}
+
+            {/* SUB-VIEW: COMPLETE PREMIUM INTERFACE & DESIGN SYSTEM SHOWCASE (Master Prompt 09) */}
+            {currentRoute === 'design_system' && (
+              <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass p-2 sm:p-6 animate-fadeIn">
+                <DesignSystemShowcase />
               </div>
             )}
 

@@ -1,11 +1,14 @@
 import React from 'react';
 import { SoulverseWebsiteShell } from './components/SoulverseWebsiteShell';
 import { SpotifyMusicProvider } from './context/SpotifyMusicContext';
+import { ToastProvider } from './components/ui/Toast';
 
 export function App() {
   return (
     <SpotifyMusicProvider>
-      <SoulverseWebsiteShell />
+      <ToastProvider>
+        <SoulverseWebsiteShell />
+      </ToastProvider>
     </SpotifyMusicProvider>
   );
 }
