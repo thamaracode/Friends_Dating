@@ -56,6 +56,7 @@ pie title Feature Implementation Status (23 Master Features)
 | **MESSAGING-001** | Monotonic Sequenced Messaging | Real-Time Comms | **VERIFIED** | 24 | 2026-11-14 | `MessagingInboxView.tsx`, `ChatInterface.tsx`, `/api/v1/conversations/:id/messages` |
 | **MESSAGING-002** | Reactions, Emojis & Games | Real-Time Comms | **VERIFIED** | 15 | 2026-11-14 | `CouplePlayHubView.tsx`, `MessagingInboxView.tsx`, `/api/telegram-emojis/style` |
 | **MESSAGING-003** | Local-First Offline Outbox & Sync | Real-Time Comms | **VERIFIED** | 5 | 2026-11-14 | `offlineChatDb.ts`, `chatApiClient.ts`, `/api/v1/conversations/:id/sync` |
+| **SAFETY-002** | Mindful Closure & Parting Words Dialogue | Safety & Messaging | **VERIFIED** | 6 | 2026-11-15 | `BlockClosureModal.tsx`, `MessagingInboxView.tsx`, `/api/v1/communication/safety/block` |
 | **CALLING-001** | WebRTC Real-Time Calling | Real-Time Comms | **VERIFIED** | 4 | 2026-11-14 | `webrtcCallService.ts`, `MessagingInboxView.tsx`, `/api/v1/calls` |
 | **POLLS-001** | Real-Time Polls & Consensus Voting| Real-Time Comms | **VERIFIED** | 4 | 2026-11-14 | `MessagingInboxView.tsx`, `/api/v1/conversations/:id/poll`, `/api/v1/messages/:id/poll/vote` |
 | **ADMIN-001** | Air-Gapped Admin Console | Admin Governance | **VERIFIED** | 27 | 2026-11-14 | `admin-frontend/src/App.tsx`, `AdminDashboard.tsx`, `/api/features/registry` |
