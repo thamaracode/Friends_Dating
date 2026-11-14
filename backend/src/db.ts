@@ -7,7 +7,7 @@ export const db = new Database(dbPath);
 // Enable WAL mode, foreign keys, and busy timeout for high-performance concurrent writes
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
-db.pragma('busy_timeout = 5000');
+db.pragma('busy_timeout = 15000');
 
 export function initDatabase() {
   db.exec(`

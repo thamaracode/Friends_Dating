@@ -24,6 +24,8 @@ dist-ssr
 *.db-wal
 backend/node_modules/
 backend/dist/
+backend/uploads/
+backups/
 
 .vscode/*
 !.vscode/extensions.json

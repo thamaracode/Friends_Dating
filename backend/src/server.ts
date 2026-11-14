@@ -53,21 +53,30 @@ import {
   getCallerUserId,
   isAuthorizedUserOrAdmin
 } from './security';
+import { initArchitectureSchema } from './architecture/schema';
+import { architectureRouter } from './architecture/router';
+import { BackgroundJobManager } from './architecture/backgroundJobs';
+import { DataProtectionService } from './architecture/dataProtection';
 
 initDatabase();
 initCommunicationSchema();
+initArchitectureSchema();
 SoulPromptsService.initTables();
 ContentEngineService.ensureTables();
+BackgroundJobManager.start();
 
 const app = express();
 app.use(cors({
   origin: true,
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-user-id', 'x-admin-id']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-user-id', 'x-admin-id', 'idempotency-key', 'x-idempotency-key']
 }));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(createRateLimiter({ windowMs: 60 * 1000, maxRequests: 500 }));
+
+// Production Architecture & Security Router (Master Prompt 11)
+app.use('/api/v1', architectureRouter);
 
 // Serve uploaded media statically
 const uploadsDir = path.resolve(__dirname, '../uploads');
@@ -802,21 +811,13 @@ app.delete('/api/v1/users/:id', (req, res) => {
   }
 
   try {
-    const purgeTx = db.transaction(() => {
-      db.prepare('DELETE FROM conversation_members WHERE user_id = ?').run(id);
-      db.prepare('DELETE FROM friends_event_rsvps WHERE user_id = ?').run(id);
-      db.prepare('DELETE FROM quote_user_interactions WHERE user_id = ?').run(id);
-      db.prepare('DELETE FROM quote_user_preferences WHERE user_id = ?').run(id);
-      db.prepare('DELETE FROM user_ai_connections WHERE user_id = ?').run(id);
-      db.prepare('DELETE FROM user_blocks WHERE blocker_id = ? OR blocked_id = ?').run(id, id);
-      db.prepare('DELETE FROM users WHERE id = ?').run(id);
-    });
-    purgeTx.immediate();
+    const result = DataProtectionService.deleteUserAccount(id, 'Requested via DELETE /api/v1/users/:id');
     res.json({ 
       success: true, 
       deleted: true,
       userId: id, 
-      message: `Account and associated personal records for user ${id} permanently wiped from database.` 
+      message: `Account and associated personal records for user ${id} permanently wiped from database.`,
+      purgedSummary: result.purgedTables
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

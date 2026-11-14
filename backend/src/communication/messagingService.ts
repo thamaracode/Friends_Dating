@@ -408,7 +408,7 @@ export class MessagingService {
       savedMsg = db.prepare('SELECT * FROM messages WHERE id = ?').get(messageId);
     });
 
-    tx();
+    tx.immediate();
 
     return {
       message: this.formatMessageRow(savedMsg, senderId),
@@ -440,10 +440,10 @@ export class MessagingService {
       queryParams.push(params.beforeSequence);
     }
 
-    query += ` ORDER BY m.sequence_number ASC LIMIT ?`;
+    query += ` ORDER BY m.sequence_number DESC LIMIT ?`;
     queryParams.push(limit);
 
-    const rows = db.prepare(query).all(...queryParams) as any[];
+    const rows = (db.prepare(query).all(...queryParams) as any[]).reverse();
 
     return rows.map(r => this.formatMessageRow(r, params.userId));
   }

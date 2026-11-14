@@ -81,6 +81,7 @@ describe('Master Prompt 08: Real-Time Communication & Social Interaction System'
     beforeAll(() => {
       const conv = MessagingService.getOrCreateDirectConversation(TEST_USER_A, TEST_USER_B);
       testConvId = conv.id;
+      db.prepare('DELETE FROM messages WHERE conversation_id = ?').run(testConvId);
     });
 
     it('sends message with strictly monotonic sequence number and idempotency', () => {
@@ -239,6 +240,7 @@ describe('Master Prompt 08: Real-Time Communication & Social Interaction System'
     beforeAll(() => {
       const conv = MessagingService.getOrCreateDirectConversation(TEST_USER_A, TEST_USER_B);
       testConvId = conv.id;
+      db.prepare('DELETE FROM messages WHERE conversation_id = ?').run(testConvId);
     });
 
     it('starts Truth or Dare session and draws tiered cards', () => {
