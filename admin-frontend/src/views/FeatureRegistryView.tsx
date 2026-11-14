@@ -52,7 +52,8 @@ export const FeatureRegistryView: React.FC = () => {
       loadFeatures();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Update failed: ${err.message}`);
+      setFeedback(`❌ Update failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -63,7 +64,8 @@ export const FeatureRegistryView: React.FC = () => {
       loadFeatures();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Rollout update failed: ${err.message}`);
+      setFeedback(`❌ Rollout update failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -82,7 +84,8 @@ export const FeatureRegistryView: React.FC = () => {
       loadFeatures();
       setTimeout(() => setFeedback(null), 4000);
     } catch (err: any) {
-      alert(`Kill-switch action failed: ${err.message}`);
+      setFeedback(`❌ Kill-switch action failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -98,7 +101,8 @@ export const FeatureRegistryView: React.FC = () => {
       setSnapshots(vers.versions || []);
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Snapshot creation failed: ${err.message}`);
+      setFeedback(`❌ Snapshot creation failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -112,7 +116,8 @@ export const FeatureRegistryView: React.FC = () => {
       setIsSnapshotModalOpen(false);
       setTimeout(() => setFeedback(null), 4000);
     } catch (err: any) {
-      alert(`Rollback failed: ${err.message}`);
+      setFeedback(`❌ Rollback failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 

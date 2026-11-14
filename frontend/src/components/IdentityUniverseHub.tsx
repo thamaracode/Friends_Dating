@@ -66,6 +66,13 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
   const [isAddTimelineOpen, setIsAddTimelineOpen] = useState(false);
   const [isGameLauncherOpen, setIsGameLauncherOpen] = useState(false);
   const [activeGameToPlay, setActiveGameToPlay] = useState<RegisteredExternalGame | null>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [hubToast, setHubToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setHubToast(msg);
+    setTimeout(() => setHubToast(null), 3500);
+  };
 
   // Form State: Create Identity
   const [newIdentityName, setNewIdentityName] = useState('');
@@ -135,10 +142,11 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
         setNewIdentityTitle('');
         setNewIdentityDesc('');
         setNewIdentityBio('');
+        showToast('✨ Identity persona created successfully');
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to create identity');
+      showToast('❌ Failed to create identity');
     }
   };
 
@@ -166,10 +174,11 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
         setNewTimeTitle('');
         setNewTimeDesc('');
         setNewTimeIsFictional(false);
+        showToast('⏳ Universal timeline event pinned successfully');
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to add timeline event');
+      showToast('❌ Failed to add timeline event');
     }
   };
 
@@ -388,7 +397,7 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => alert(`Previewing identity: ${selectedIdentity.name}`)}
+                    onClick={() => setIsPreviewModalOpen(true)}
                     className="px-3 py-1.5 rounded-xl dark-glass text-xs text-zinc-200 border border-white/10 hover:border-white/30 flex items-center gap-1.5"
                   >
                     <Eye className="w-3.5 h-3.5 text-zinc-300" />
@@ -804,6 +813,86 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
               loading="lazy"
             />
           </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL 4: PUBLIC IDENTITY PREVIEW MODAL                              */}
+      {/* =================================================================== */}
+      {isPreviewModalOpen && selectedIdentity && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-lg rounded-3xl dark-glass border border-white/20 p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono uppercase tracking-widest text-emerald-400">Public Persona View</span>
+              </div>
+              <button
+                onClick={() => setIsPreviewModalOpen(false)}
+                className="p-1.5 rounded-full dark-glass text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-zinc-700 to-zinc-900 border border-white/20 flex items-center justify-center text-2xl shadow-inner font-serif text-white">
+                {selectedIdentity.avatar_url ? (
+                  <img src={selectedIdentity.avatar_url} alt={selectedIdentity.name} className="w-full h-full object-cover rounded-2xl" />
+                ) : (
+                  selectedIdentity.name.charAt(0).toUpperCase()
+                )}
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white font-serif">{selectedIdentity.name}</h4>
+                {selectedIdentity.display_title && (
+                  <p className="text-xs text-zinc-300">{selectedIdentity.display_title}</p>
+                )}
+                <div className="mt-1.5 flex items-center gap-2">
+                  {getClassificationBadge(selectedIdentity.classification)}
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10 capitalize">
+                    {selectedIdentity.visibility}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Bio & Narrative</span>
+              <p className="text-xs text-zinc-300 leading-relaxed dark-glass p-3 rounded-2xl border border-white/5">
+                {selectedIdentity.biography || selectedIdentity.description || 'No public narrative provided.'}
+              </p>
+            </div>
+
+            {selectedIdentity.skills && selectedIdentity.skills.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Signature Traits & Skills</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedIdentity.skills.map((s, idx) => (
+                    <span key={idx} className="px-2.5 py-1 rounded-full bg-white/10 text-zinc-200 border border-white/15 font-medium text-[11px]">
+                      ⚡ {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsPreviewModalOpen(false)}
+                className="px-5 py-2 rounded-xl gray-glass-btn font-semibold text-xs text-white"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating In-App Toast */}
+      {hubToast && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-zinc-900/95 border border-white/20 text-xs text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 flex items-center gap-2">
+          <span>{hubToast}</span>
         </div>
       )}
 

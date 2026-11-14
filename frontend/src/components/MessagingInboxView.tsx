@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Search, 
   Send, 
@@ -147,6 +147,13 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   const [pickerTab, setPickerTab] = useState<'emoji' | 'stickers' | 'luck'>('luck');
   const [installedPacks, setInstalledPacks] = useState<any[]>([]);
 
+  // Production Toast Feedback State
+  const [chatToast, setChatToast] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setChatToast(msg);
+    setTimeout(() => setChatToast(null), 3500);
+  };
+
   useEffect(() => {
     chatClient.getMyInstalledStickerPacks().then(packs => {
       setInstalledPacks(packs);
@@ -165,26 +172,26 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     { id: 'archived', title: 'Archived', badgeCount: undefined }
   ];
 
+  const loadConversations = useCallback(async () => {
+    try {
+      const convs = await chatClient.getConversations();
+      setConversations(convs);
+      if (!activeConversationId && convs.length > 0) {
+        if (activeProfileOverride) {
+          const match = convs.find((c: any) => c.participantId === activeProfileOverride.id);
+          setActiveConversationId(match ? match.id : convs[0].id);
+        } else if (window.innerWidth >= 1024) {
+          // Auto-select first chat on desktop
+          setActiveConversationId(convs[0].id);
+        }
+      }
+    } catch (err) {
+      console.warn('Fallback to local conversation list', err);
+    }
+  }, [activeConversationId, activeProfileOverride]);
+
   // Fetch conversations from Backend on mount & subscribe to Real-Time events
   useEffect(() => {
-    const loadConversations = async () => {
-      try {
-        const convs = await chatClient.getConversations();
-        setConversations(convs);
-        if (!activeConversationId && convs.length > 0) {
-          if (activeProfileOverride) {
-            const match = convs.find((c: any) => c.participantId === activeProfileOverride.id);
-            setActiveConversationId(match ? match.id : convs[0].id);
-          } else if (window.innerWidth >= 1024) {
-            // Auto-select first chat on desktop
-            setActiveConversationId(convs[0].id);
-          }
-        }
-      } catch (err) {
-        console.warn('Fallback to local conversation list', err);
-      }
-    };
-
     loadConversations();
 
     // Subscribe to real-time events
@@ -583,9 +590,10 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         text: `Forwarded from ${msg.senderName}: "${msg.text}"`,
         type: msg.type
       });
-      alert("Saved to personal cloud storage!");
+      showToast("Saved to personal cloud storage!");
     } catch (e) {
       console.error(e);
+      showToast("Failed to save to cloud storage.");
     }
     setSelectedMessageForMenu(null);
   };
@@ -599,9 +607,10 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         reason,
         details: 'User report filed via in-chat action menu'
       });
-      alert('Report submitted to Trust & Safety moderation queue.');
+      showToast('Report submitted to Trust & Safety moderation queue.');
     } catch (e) {
       console.error(e);
+      showToast('Failed to submit report.');
     }
     setSelectedMessageForMenu(null);
   };
@@ -610,10 +619,11 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     if (!currentConv?.participantId) return;
     try {
       await chatClient.blockUser(currentConv.participantId);
-      alert(`${currentConv.title} has been blocked.`);
+      showToast(`${currentConv.title} has been blocked.`);
       setActiveConversationId(null);
     } catch (e) {
       console.error(e);
+      showToast('Failed to block user.');
     }
     setSelectedMessageForMenu(null);
   };
@@ -793,6 +803,12 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
     return (
       <div className="flex-1 flex flex-col h-full bg-[#090A0E] animate-fadeIn relative overflow-hidden">
+        {chatToast && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-[#090A0E]/95 border border-amber-400/40 text-white text-xs font-heading font-bold shadow-2xl backdrop-blur-md animate-fadeIn flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>{chatToast}</span>
+          </div>
+        )}
         {/* Header */}
         <div className="px-4 py-3 glass-panel-elevated flex items-center justify-between border-b border-[rgba(255,255,255,0.20)]/20 z-30">
           <div className="flex items-center gap-3">
@@ -918,19 +934,27 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         {isChatSettingsOpen && (
           <div className="absolute right-4 top-14 w-60 rounded-3xl glass-panel-elevated p-3 border border-[rgba(255,255,255,0.20)]/30 z-40 shadow-2xl space-y-1 animate-fadeIn text-xs">
             <button
-              onClick={() => {
-                alert("Notifications muted for 8 hours.");
+              onClick={async () => {
+                if (currentConv) {
+                  await chatClient.muteConversation(currentConv.id, true);
+                  loadConversations();
+                  showToast("Notifications muted for 8 hours.");
+                }
                 setIsChatSettingsOpen(false);
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
             >
               <VolumeX className="w-4 h-4 text-[#9CA3AF]" />
-              <span>Mute Notifications</span>
+              <span>Mute Notifications (8h)</span>
             </button>
 
             <button
-              onClick={() => {
-                alert("Conversation archived.");
+              onClick={async () => {
+                if (currentConv) {
+                  await chatClient.archiveConversation(currentConv.id, true);
+                  loadConversations();
+                  showToast("Conversation moved to Archive.");
+                }
                 setIsChatSettingsOpen(false);
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
@@ -940,13 +964,16 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             </button>
 
             <button
-              onClick={() => {
-                alert("Auto-delete set to 24 hours.");
+              onClick={async () => {
+                if (currentConv) {
+                  await chatClient.setAutoDeleteTtl(currentConv.id, 24);
+                  showToast("Auto-delete message timer set to 24 hours.");
+                }
                 setIsChatSettingsOpen(false);
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
             >
-              <Clock className="w-4 h-4 text-[rgba(255,255,255,0.20)]" />
+              <Clock className="w-4 h-4 text-amber-300" />
               <span>Auto-Delete (24h)</span>
             </button>
 
@@ -1492,7 +1519,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(selectedMessageForMenu.text);
-                  alert("Copied to clipboard!");
+                  showToast("Copied message to clipboard!");
                   setSelectedMessageForMenu(null);
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"

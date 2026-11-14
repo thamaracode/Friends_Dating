@@ -61,7 +61,8 @@ export const SystemOperationsView: React.FC = () => {
       loadData();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`WAL Checkpoint failed: ${err.message}`);
+      setFeedback(`❌ WAL Checkpoint failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -73,7 +74,8 @@ export const SystemOperationsView: React.FC = () => {
       loadData();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`VACUUM failed: ${err.message}`);
+      setFeedback(`❌ VACUUM failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -85,7 +87,8 @@ export const SystemOperationsView: React.FC = () => {
       loadData();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Failed to revoke session: ${err.message}`);
+      setFeedback(`❌ Failed to revoke session: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 

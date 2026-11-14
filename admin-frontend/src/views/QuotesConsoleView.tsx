@@ -84,7 +84,8 @@ export const QuotesConsoleView: React.FC = () => {
       loadQuotes();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Failed to add quote: ${err.message}`);
+      setFeedback(`❌ Failed to add quote: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -97,7 +98,8 @@ export const QuotesConsoleView: React.FC = () => {
       loadQuotes();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Failed to delete quote: ${err.message}`);
+      setFeedback(`❌ Failed to delete quote: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -109,7 +111,8 @@ export const QuotesConsoleView: React.FC = () => {
       loadProviders();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Provider toggle failed: ${err.message}`);
+      setFeedback(`❌ Provider toggle failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 

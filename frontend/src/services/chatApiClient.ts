@@ -230,6 +230,33 @@ export class ChatApiClient {
     return await res.json();
   }
 
+  public async archiveConversation(conversationId: string, isArchived?: boolean) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/archive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: this.currentUserId, isArchived })
+    });
+    return await res.json();
+  }
+
+  public async muteConversation(conversationId: string, isMuted?: boolean, durationHours: number = 8) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/mute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: this.currentUserId, isMuted, durationHours })
+    });
+    return await res.json();
+  }
+
+  public async setAutoDeleteTtl(conversationId: string, ttlHours: number = 24) {
+    const res = await fetch(`${API_BASE}/conversations/${conversationId}/auto-delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ttlHours })
+    });
+    return await res.json();
+  }
+
   public async startDatingGame(conversationId: string, gameType: string) {
     const res = await fetch(`${API_BASE}/games/start`, {
       method: 'POST',

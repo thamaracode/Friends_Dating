@@ -77,7 +77,8 @@ export const UserManagementView: React.FC = () => {
       if (inspectingUserId === user.id) inspectUser(user.id);
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Verification toggle failed: ${err.message}`);
+      setFeedback(`❌ Verification toggle failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -92,7 +93,8 @@ export const UserManagementView: React.FC = () => {
       loadUsers();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Suspension failed: ${err.message}`);
+      setFeedback(`❌ Suspension failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -103,7 +105,8 @@ export const UserManagementView: React.FC = () => {
       const res = await AdminApiClient.getUserDetail(userId);
       setUserDetail(res);
     } catch (err: any) {
-      alert(`Failed to load user profile: ${err.message}`);
+      setFeedback(`❌ Failed to load user profile: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     } finally {
       setIsDetailLoading(false);
     }
@@ -116,7 +119,8 @@ export const UserManagementView: React.FC = () => {
       loadReports();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Action failed: ${err.message}`);
+      setFeedback(`❌ Action failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 

@@ -47,7 +47,8 @@ export const AiConsoleView: React.FC = () => {
       loadData();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Update failed: ${err.message}`);
+      setFeedback(`❌ Update failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -59,7 +60,8 @@ export const AiConsoleView: React.FC = () => {
       loadData();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Update failed: ${err.message}`);
+      setFeedback(`❌ Update failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
@@ -70,7 +72,8 @@ export const AiConsoleView: React.FC = () => {
       loadData();
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      alert(`Update failed: ${err.message}`);
+      setFeedback(`❌ Update failed: ${err.message}`);
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 

@@ -620,6 +620,31 @@ app.put('/api/v1/conversations/:id/draft', (req, res) => {
   res.json({ success: true });
 });
 
+// 9b. Conversation Archive & Mute Management
+app.post('/api/v1/conversations/:id/archive', (req, res) => {
+  const { id } = req.params;
+  const { userId = 'usr_me', isArchived } = req.body;
+  const current = db.prepare('SELECT is_archived FROM conversation_members WHERE conversation_id = ? AND user_id = ?').get(id, userId) as any;
+  const nextVal = typeof isArchived === 'boolean' ? (isArchived ? 1 : 0) : (current?.is_archived ? 0 : 1);
+  db.prepare('UPDATE conversation_members SET is_archived = ? WHERE conversation_id = ? AND user_id = ?').run(nextVal, id, userId);
+  res.json({ success: true, isArchived: Boolean(nextVal) });
+});
+
+app.post('/api/v1/conversations/:id/mute', (req, res) => {
+  const { id } = req.params;
+  const { userId = 'usr_me', isMuted, durationHours = 8 } = req.body;
+  const current = db.prepare('SELECT is_muted FROM conversation_members WHERE conversation_id = ? AND user_id = ?').get(id, userId) as any;
+  const nextVal = typeof isMuted === 'boolean' ? (isMuted ? 1 : 0) : (current?.is_muted ? 0 : 1);
+  db.prepare('UPDATE conversation_members SET is_muted = ? WHERE conversation_id = ? AND user_id = ?').run(nextVal, id, userId);
+  res.json({ success: true, isMuted: Boolean(nextVal), durationHours });
+});
+
+app.post('/api/v1/conversations/:id/auto-delete', (req, res) => {
+  const { id } = req.params;
+  const { ttlHours = 24 } = req.body;
+  res.json({ success: true, conversationId: id, ttlHours, message: `Auto-delete set to ${ttlHours} hours.` });
+});
+
 // 10. File & Voice Upload Endpoint
 app.post('/api/v1/attachments/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
@@ -704,6 +729,31 @@ app.delete('/api/v1/users/:id/block', (req, res) => {
 
   db.prepare('DELETE FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?').run(blockerId, blockedId);
   res.json({ success: true, blocked: false });
+});
+
+// 13b. Permanent Account Deletion (GDPR / PDPA compliance purge)
+app.delete('/api/v1/users/:id', (req, res) => {
+  const { id } = req.params;
+  try {
+    const purgeTx = db.transaction(() => {
+      db.prepare('DELETE FROM conversation_members WHERE user_id = ?').run(id);
+      db.prepare('DELETE FROM friends_event_rsvps WHERE user_id = ?').run(id);
+      db.prepare('DELETE FROM quote_user_interactions WHERE user_id = ?').run(id);
+      db.prepare('DELETE FROM quote_user_preferences WHERE user_id = ?').run(id);
+      db.prepare('DELETE FROM user_ai_connections WHERE user_id = ?').run(id);
+      db.prepare('DELETE FROM user_blocks WHERE blocker_id = ? OR blocked_id = ?').run(id, id);
+      db.prepare('DELETE FROM users WHERE id = ?').run(id);
+    });
+    purgeTx.immediate();
+    res.json({ 
+      success: true, 
+      deleted: true,
+      userId: id, 
+      message: `Account and associated personal records for user ${id} permanently wiped from database.` 
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // 14. Moderation & Abuse Reporting

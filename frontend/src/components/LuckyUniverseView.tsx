@@ -35,6 +35,12 @@ export const LuckyUniverseView: React.FC<LuckyUniverseViewProps> = ({
   const [currentDiceValue, setCurrentDiceValue] = useState<number>(5);
   const [cubes, setCubes] = useState<CollectibleCube[]>(THEMED_CUBES);
   const [selectedOutcome, setSelectedOutcome] = useState<LuckyDiceRollResult>(LUCKY_DICE_OUTCOMES[5]);
+  const [luckyToast, setLuckyToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setLuckyToast(msg);
+    setTimeout(() => setLuckyToast(null), 3500);
+  };
 
   const handleRollDice = () => {
     if (isRolling) return;
@@ -74,7 +80,7 @@ export const LuckyUniverseView: React.FC<LuckyUniverseViewProps> = ({
 
   const handleUnlockCube = (cube: CollectibleCube) => {
     if (wallet.balance < cube.costInCoins) {
-      alert("Insufficient virtual coins. Complete daily icebreakers or mini-game challenges to earn more!");
+      showToast("⚠️ Insufficient virtual coins. Complete daily icebreakers or mini-game challenges to earn more!");
       return;
     }
 
@@ -92,6 +98,7 @@ export const LuckyUniverseView: React.FC<LuckyUniverseViewProps> = ({
         ...prev.transactions
       ]
     }));
+    showToast(`✨ Successfully unlocked ${cube.name}!`);
 
     setCubes(prev => prev.map(c => c.id === cube.id ? { ...c, unlocked: true } : c));
   };
@@ -234,6 +241,13 @@ export const LuckyUniverseView: React.FC<LuckyUniverseViewProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Floating In-App Toast */}
+      {luckyToast && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-zinc-900/95 border border-white/20 text-xs text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 flex items-center gap-2">
+          <span>{luckyToast}</span>
+        </div>
+      )}
     </div>
   );
 };

@@ -21,6 +21,12 @@ export const SoulverseAccountPage: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
   const [isExporting, setIsExporting] = useState(false);
   const [exportDone, setExportDone] = useState(false);
+  const [accountToast, setAccountToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setAccountToast(msg);
+    setTimeout(() => setAccountToast(null), 3500);
+  };
 
   const handleExportData = async () => {
     try {
@@ -34,9 +40,10 @@ export const SoulverseAccountPage: React.FC = () => {
       a.click();
       URL.revokeObjectURL(url);
       setExportDone(true);
+      showToast('📦 Autobiography exported successfully');
       setTimeout(() => setExportDone(false), 3000);
     } catch (e) {
-      alert('Export failed');
+      showToast('❌ Export failed');
     } finally {
       setIsExporting(false);
     }
@@ -46,9 +53,9 @@ export const SoulverseAccountPage: React.FC = () => {
     if (!confirm('CAUTION: This will permanently purge your living profile sections, Q&As, timeline events, and thoughts from the database. Are you sure?')) return;
     try {
       await livingProfileClient.deleteProfileData('usr_me');
-      alert('All custom living profile data permanently wiped.');
+      showToast('🗑️ All custom living profile data permanently wiped from database.');
     } catch (e) {
-      alert('Deletion failed');
+      showToast('❌ Deletion failed');
     }
   };
 
@@ -162,6 +169,13 @@ export const SoulverseAccountPage: React.FC = () => {
           Permanently Delete All Profile Data
         </button>
       </div>
+
+      {/* Floating In-App Toast */}
+      {accountToast && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-zinc-900/95 border border-white/20 text-xs text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 flex items-center gap-2">
+          <span>{accountToast}</span>
+        </div>
+      )}
     </div>
   );
 };

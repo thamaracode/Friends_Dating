@@ -1668,7 +1668,7 @@ export const AdminDashboard: React.FC = () => {
                           setConfigSaveStatus('Error saving remote config');
                         }
                       } catch (err: any) {
-                        alert('Invalid JSON syntax: ' + err.message);
+                        showToast('❌ Invalid JSON syntax: ' + err.message);
                       }
                     }}
                     className="text-xs py-2 px-4 font-bold flex items-center gap-1.5"
@@ -1868,7 +1868,7 @@ export const AdminDashboard: React.FC = () => {
                       variant="primary"
                       onClick={async () => {
                         if (!newSnapshotSummary.trim()) {
-                          alert('Please enter a change summary for the snapshot');
+                          showToast('⚠️ Please enter a change summary for the snapshot');
                           return;
                         }
                         const res = await FeatureControlService.createConfigurationSnapshot(newSnapshotSummary.trim());
@@ -2702,7 +2702,7 @@ export const AdminDashboard: React.FC = () => {
                     variant={killModalFeature.killSwitchActive ? 'primary' : 'danger'}
                     onClick={async () => {
                       if (!killReason.trim()) {
-                        alert('A governance reason is strictly required.');
+                        showToast('⚠️ A governance reason is strictly required.');
                         return;
                       }
                       const next = !killModalFeature.killSwitchActive;
@@ -2771,7 +2771,7 @@ export const AdminDashboard: React.FC = () => {
                     variant="primary"
                     onClick={async () => {
                       if (!rolloutReason.trim()) {
-                        alert('A governance reason is required.');
+                        showToast('⚠️ A governance reason is required.');
                         return;
                       }
                       await FeatureControlService.updateAdminFlag(rolloutModalFeature.id, {

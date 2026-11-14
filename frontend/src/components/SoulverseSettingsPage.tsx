@@ -69,6 +69,31 @@ export const SoulverseSettingsPage: React.FC = () => {
   const [isMessageControlsModalOpen, setIsMessageControlsModalOpen] = useState(false);
   const [shareFeedback, setShareFeedback] = useState(false);
   const [restoreFeedback, setRestoreFeedback] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [settingsToast, setSettingsToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setSettingsToast(msg);
+    setTimeout(() => setSettingsToast(null), 3500);
+  };
+
+  const handlePermanentAccountDelete = async () => {
+    setIsDeletingAccount(true);
+    try {
+      const res = await fetch('/api/v1/users/usr_me', { method: 'DELETE' });
+      if (!res.ok) throw new Error('Account deletion failed on server');
+      localStorage.clear();
+      showToast('🗑️ Account permanently deleted. Resetting session...');
+      setIsDeleteModalOpen(false);
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
+    } catch (err: any) {
+      showToast(`❌ Deletion failed: ${err?.message || 'Server error'}`);
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
 
   // Auto-save whenever settings change
   const handleSaveAll = () => {
@@ -1124,13 +1149,11 @@ export const SoulverseSettingsPage: React.FC = () => {
               Cancel
             </GlassButton>
             <button
-              onClick={() => {
-                alert('Account deletion request queued. Goodbye!');
-                setIsDeleteModalOpen(false);
-              }}
-              className="px-4 py-2 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-colors cursor-pointer shadow-lg"
+              onClick={handlePermanentAccountDelete}
+              disabled={isDeletingAccount}
+              className="px-4 py-2 rounded-2xl bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold text-xs transition-colors cursor-pointer shadow-lg"
             >
-              Permanently Delete
+              {isDeletingAccount ? 'Purging Account...' : 'Permanently Delete'}
             </button>
           </div>
         </div>
@@ -1270,6 +1293,12 @@ export const SoulverseSettingsPage: React.FC = () => {
         />
       )}
 
+      {/* Floating In-App Toast */}
+      {settingsToast && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-zinc-900/95 border border-white/20 text-xs text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 flex items-center gap-2">
+          <span>{settingsToast}</span>
+        </div>
+      )}
     </div>
   );
 };

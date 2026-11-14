@@ -75,6 +75,12 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
   const [aiDraftInput, setAiDraftInput] = useState('');
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [profileToast, setProfileToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setProfileToast(msg);
+    setTimeout(() => setProfileToast(null), 3500);
+  };
 
   // New section form state
   const [newSecTitle, setNewSecTitle] = useState('');
@@ -179,9 +185,10 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
       setNewSecTitle('');
       setNewSecDesc('');
       setIsAddSectionOpen(false);
+      showToast('✨ Living section created successfully');
       loadProfile(viewerId);
     } catch (e) {
-      alert('Error creating section');
+      showToast('❌ Error creating section');
     }
   };
 
@@ -199,9 +206,10 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
       setNewEntryTitle('');
       setNewEntryContent('');
       setIsAddEntryOpen(null);
+      showToast('✨ Entry added to dossier');
       loadProfile(viewerId);
     } catch (e) {
-      alert('Error creating entry');
+      showToast('❌ Error creating entry');
     }
   };
 
@@ -228,9 +236,10 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
       setNewQDesc('');
       setNewQAnswer('');
       setIsAddQuestionOpen(false);
+      showToast('✨ Question prompt saved');
       loadProfile(viewerId);
     } catch (e) {
-      alert('Error creating question');
+      showToast('❌ Error creating question');
     }
   };
 
@@ -254,9 +263,10 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
       setNewTimeSig('');
       setNewTimeLessons('');
       setIsAddTimelineOpen(false);
+      showToast('⏳ Timeline milestone recorded');
       loadProfile(viewerId);
     } catch (e) {
-      alert('Error adding timeline event');
+      showToast('❌ Error adding timeline event');
     }
   };
 
@@ -276,9 +286,10 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
       setNewThoughtContent('');
       setNewThoughtTags('');
       setIsAddThoughtOpen(false);
+      showToast('💭 Thought stream published');
       loadProfile(viewerId);
     } catch (e) {
-      alert('Error publishing thought');
+      showToast('❌ Error publishing thought');
     }
   };
 
@@ -288,8 +299,9 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
     try {
       const res = await livingProfileClient.getAiAssistance(aiToolMode, aiDraftInput);
       setAiSuggestion(res.suggestion);
+      showToast('✨ AI suggestions generated');
     } catch (e) {
-      alert('AI assistant failed');
+      showToast('❌ AI assistant failed');
     } finally {
       setIsAiLoading(false);
     }
@@ -306,8 +318,9 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
       a.download = `living_identity_archive_${userId}.json`;
       a.click();
       URL.revokeObjectURL(url);
+      showToast('📦 Living Identity archive downloaded');
     } catch (e) {
-      alert('Export failed');
+      showToast('❌ Export failed');
     }
   };
 
@@ -1374,7 +1387,7 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(aiSuggestion);
-                      alert('Copied suggestion to clipboard!');
+                      showToast('📋 Copied AI suggestion to clipboard');
                     }}
                     className="px-3 py-1 rounded-lg glass-panel text-[10px] font-bold text-amber-300 hover:text-white cursor-pointer"
                   >
@@ -1384,6 +1397,13 @@ export const LivingIdentityProfileView: React.FC<LivingIdentityProfileViewProps>
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Floating In-App Toast */}
+      {profileToast && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-zinc-900/95 border border-white/20 text-xs text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 flex items-center gap-2">
+          <span>{profileToast}</span>
         </div>
       )}
 
