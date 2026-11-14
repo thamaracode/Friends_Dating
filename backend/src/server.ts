@@ -38,6 +38,7 @@ import { MATCHING_TERMINOLOGY_REGISTRY, CONNECTION_TYPES_METADATA } from './disc
 import { RelationshipVaultService } from './relationship-vault/service';
 import { RELATIONSHIP_LIFECYCLE_METADATA } from './relationship-vault/types';
 import { ContentEngineService } from './content-engine/service';
+import { SoulverseIntelligenceService } from './ai/featuresService';
 import {
   createRateLimiter,
   isUserSuspended,
@@ -8583,6 +8584,150 @@ app.get('/api/v1/content/export', (req, res) => {
     res.json({ success: true, export: exportData });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to export content data' });
+  }
+});
+
+// ===========================================================================
+// MASTER PROMPT 07: PERSONAL AI INTELLIGENCE & MULTI-PROVIDER AI FEATURES
+// ===========================================================================
+
+// 1. Personal Reflection Assistant
+app.post('/api/v1/ai/features/personal-reflection', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { topic, mood } = req.body;
+    if (!topic || !topic.trim()) return res.status(400).json({ error: 'topic is required' });
+    const result = await SoulverseIntelligenceService.runPersonalReflection(userId, topic.trim(), mood);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Reflection assistant failed' });
+  }
+});
+
+// 2. Relationship Assistant
+app.post('/api/v1/ai/features/relationship-assistant', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { personId, dilemma } = req.body;
+    if (!personId || !dilemma) return res.status(400).json({ error: 'personId and dilemma are required' });
+    const result = await SoulverseIntelligenceService.runRelationshipAssistant(userId, personId, dilemma);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Relationship assistant failed' });
+  }
+});
+
+// 3. Conversation Assistant
+app.post('/api/v1/ai/features/conversation-assistant', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { contextPrompt } = req.body;
+    if (!contextPrompt) return res.status(400).json({ error: 'contextPrompt is required' });
+    const result = await SoulverseIntelligenceService.runConversationAssistant(userId, contextPrompt);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Conversation assistant failed' });
+  }
+});
+
+// 4. Profile-Writing Assistant
+app.post('/api/v1/ai/features/profile-writer', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { identityType, traits, aspirations } = req.body;
+    const result = await SoulverseIntelligenceService.runProfileWritingAssistant(userId, identityType || 'personal', traits || [], aspirations || '');
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Profile writer failed' });
+  }
+});
+
+// 5. Question Generator
+app.post('/api/v1/ai/features/question-generator', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { category, depthLevel, context } = req.body;
+    const result = await SoulverseIntelligenceService.runQuestionGenerator(userId, category || 'deep_conversations', depthLevel || 'deep', context || 'couples');
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Question generator failed' });
+  }
+});
+
+// 6. Daily Content Generator
+app.post('/api/v1/ai/features/daily-content', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { domain } = req.body;
+    const result = await SoulverseIntelligenceService.runDailyContentGenerator(userId, domain || 'love');
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Daily content generator failed' });
+  }
+});
+
+// 7. Communication Analysis (Non-Diagnostic)
+app.post('/api/v1/ai/features/communication-analysis', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { messageExcerpts } = req.body;
+    if (!Array.isArray(messageExcerpts) || messageExcerpts.length === 0) {
+      return res.status(400).json({ error: 'messageExcerpts array is required' });
+    }
+    const result = await SoulverseIntelligenceService.runCommunicationAnalysis(userId, messageExcerpts);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Communication analysis failed' });
+  }
+});
+
+// 8. Personal Knowledge Retrieval (RAG over user's journal & values)
+app.post('/api/v1/ai/features/personal-rag', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { query } = req.body;
+    if (!query) return res.status(400).json({ error: 'query is required' });
+    const result = await SoulverseIntelligenceService.runPersonalKnowledgeRetrieval(userId, query);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Personal RAG failed' });
+  }
+});
+
+// 9. Relationship Memory Retrieval (RAG over relationship vault)
+app.post('/api/v1/ai/features/relationship-rag', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { personId, query } = req.body;
+    if (!personId || !query) return res.status(400).json({ error: 'personId and query are required' });
+    const result = await SoulverseIntelligenceService.runRelationshipMemoryRetrieval(userId, personId, query);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Relationship RAG failed' });
+  }
+});
+
+// 10. Educational Explanation
+app.post('/api/v1/ai/features/educational-explanation', async (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { concept } = req.body;
+    if (!concept) return res.status(400).json({ error: 'concept is required' });
+    const result = await SoulverseIntelligenceService.runEducationalExplanation(userId, concept);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Educational explanation failed' });
+  }
+});
+
+// 11. User AI Configuration & Intelligence Status
+app.get('/api/v1/ai/features/status', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const status = SoulverseIntelligenceService.getUserStatus(userId);
+    res.json({ success: true, status });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get AI status' });
   }
 });
 
