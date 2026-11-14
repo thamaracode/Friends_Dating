@@ -721,27 +721,25 @@ export const ProfileDetailSheet: React.FC<ProfileDetailSheetProps> = ({
       )}
 
       {/* Floating Bottom Action Bar */}
-      <div className="fixed bottom-0 inset-x-0 z-40 max-w-md mx-auto p-4 bg-gradient-to-t from-[#090A0E] via-[#090A0E]/90 to-transparent flex items-center gap-3">
+      <div className="fixed bottom-0 inset-x-0 z-40 max-w-md mx-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-gradient-to-t from-[#090A0E] via-[#090A0E]/95 to-transparent flex items-center gap-3">
         <button
           onClick={() => onSuperLike(profile)}
-          className="w-12 h-12 rounded-2xl dark-glass flex items-center justify-center text-zinc-300 border border-white/20 shadow-lg cursor-pointer hover:text-white hover:border-white/40 active:scale-95 transition-all"
+          className="w-12 h-12 rounded-2xl bg-[#12141B]/90 backdrop-blur-xl border border-amber-400/30 text-amber-300 flex items-center justify-center shadow-lg cursor-pointer hover:border-amber-400 active:scale-95 transition-all"
           title="Super Like"
         >
-          <Star className="w-5 h-5 fill-current" />
+          <Star className="w-5 h-5 fill-amber-300/20 text-amber-300" />
         </button>
 
-        <GlassButton
-          variant="default"
-          size="md"
-          icon={<MessageCircle className="w-4 h-4 text-white" />}
+        <button
           onClick={() => {
             onClose();
             onInitiateChat(profile);
           }}
-          className="flex-1"
+          className="sv-btn-primary flex-1 min-h-[48px] text-sm"
         >
-          Message {profile.name}
-        </GlassButton>
+          <MessageCircle className="w-4 h-4" />
+          <span>Message {profile.name}</span>
+        </button>
       </div>
 
       {/* Edit Profile Info Modal */}

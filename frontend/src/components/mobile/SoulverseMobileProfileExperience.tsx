@@ -305,7 +305,7 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
           </button>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+        <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
           {[
             { id: 'real' as const, label: '👤 Real Me', sub: 'Verified' },
             { id: 'cinematic' as const, label: '🎬 Cinematic Me', sub: 'Noir' },
@@ -315,9 +315,9 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
             <button
               key={p.id}
               onClick={() => setActivePersona(p.id)}
-              className={`h-10 px-4 rounded-full text-xs font-heading font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+              className={`h-11 px-4 rounded-full text-xs font-heading font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                 activePersona === p.id
-                  ? 'bg-white text-[#090A0E] shadow-md font-bold'
+                  ? 'bg-white text-[#090A0E] shadow-[0_4px_16px_rgba(255,255,255,0.25)] font-bold'
                   : 'bg-white/[0.04] text-zinc-300 hover:text-white hover:bg-white/[0.08] border border-white/10'
               }`}
             >
@@ -382,7 +382,7 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
                 setCopiedProfileLink(true);
                 setTimeout(() => setCopiedProfileLink(false), 2000);
               }}
-              className="h-10 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-heading font-bold border border-white/15 flex items-center gap-2 cursor-pointer transition-all"
+              className="sv-btn-secondary min-h-[44px] px-4 text-xs"
             >
               {copiedProfileLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
               <span>{copiedProfileLink ? 'Link Copied!' : 'Share Profile'}</span>
@@ -549,7 +549,7 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
                         toggleIntegration(integ.id);
                       }
                     }}
-                    className={`h-10 px-4 rounded-xl font-heading font-bold text-xs transition-all cursor-pointer ${
+                    className={`min-h-[44px] px-4 rounded-xl font-heading font-bold text-xs transition-all cursor-pointer ${
                       integ.enabled
                         ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20'
                         : 'bg-white/10 hover:bg-white/20 text-white border border-white/15'

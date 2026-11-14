@@ -134,10 +134,10 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
         </div>
 
         {/* View Mode Switcher: Swipe Stack vs Vertical Feed */}
-        <div className="flex items-center bg-white/[0.06] p-1 rounded-2xl border border-white/10 shrink-0 self-start sm:self-auto h-11">
+        <div className="flex items-center bg-white/[0.04] p-1 rounded-full border border-white/10 shrink-0 self-start sm:self-auto h-11 backdrop-blur-md">
           <button
             onClick={() => setViewMode('feed')}
-            className={`h-9 px-4 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            className={`h-9 px-4 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-2 ${
               viewMode === 'feed'
                 ? 'bg-white text-[#090A0E] shadow-sm'
                 : 'text-zinc-400 hover:text-white'
@@ -149,7 +149,7 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
           </button>
           <button
             onClick={() => setViewMode('swipe')}
-            className={`h-9 px-4 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            className={`h-9 px-4 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-2 ${
               viewMode === 'swipe'
                 ? 'bg-white text-[#090A0E] shadow-sm'
                 : 'text-zinc-400 hover:text-white'
@@ -197,10 +197,10 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
       />
 
       {/* 3. EMBEDDED DAILY HUMAN CONNECTION INTELLIGENCE CARD */}
-      <div className="sv-card relative overflow-hidden space-y-4">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-400/10 via-rose-500/5 to-transparent pointer-events-none" />
+      <div className="sv-card relative overflow-hidden space-y-5 border border-white/[0.12] shadow-2xl">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-amber-400/15 via-rose-500/5 to-transparent pointer-events-none" />
         
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B]" />
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-300">
@@ -209,7 +209,7 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
           </div>
           <button
             onClick={() => setIsDailyExpanded(!isDailyExpanded)}
-            className="text-xs font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer px-2 py-1 rounded-lg"
+            className="text-xs font-heading font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08]"
           >
             {isDailyExpanded ? 'Compact' : 'Expand'}
           </button>
@@ -217,11 +217,11 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
 
         {isDailyExpanded && (
           <div className="space-y-4 pt-1">
-            <blockquote className="font-editorial italic text-xl sm:text-2xl text-white leading-relaxed">
+            <blockquote className="font-editorial italic text-xl sm:text-2xl text-white leading-relaxed tracking-tight">
               "Love is not only about finding someone. It's about learning how to understand someone."
             </blockquote>
 
-            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1">
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] space-y-1.5">
               <span className="text-xs font-heading font-bold text-amber-300 block">Today's Relationship Thought</span>
               <p className="type-body text-zinc-300">
                 Sometimes the strongest relationships are built by people who are willing to listen, communicate and understand each other even when things become difficult.
@@ -229,11 +229,13 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
             </div>
 
             {/* Daily Introspective Question */}
-            <div className="p-4 rounded-2xl bg-white/[0.05] border border-white/10 flex items-start gap-3">
-              <HelpCircle className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
+            <div className="p-4 rounded-2xl bg-white/[0.05] border border-white/10 flex items-start gap-3.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                <HelpCircle className="w-4 h-4 text-amber-300" />
+              </div>
               <div className="space-y-1">
-                <span className="text-xs font-heading font-bold uppercase tracking-wider text-zinc-400">
-                  Today's Question
+                <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-zinc-400">
+                  Today's Introspective Question
                 </span>
                 <p className="type-body text-white font-medium">
                   Do you listen to understand someone, or do you listen just to prepare your response?
@@ -251,7 +253,7 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
               <div>
                 <button 
                   onClick={() => onOpenDailyHub?.()} 
-                  className="h-9 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-heading font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="sv-btn-secondary h-9 px-4 text-xs"
                 >
                   <span>Open Full Hub</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -352,10 +354,10 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
             </div>
 
             {/* Interaction Buttons Bar with 48px+ Touch Targets */}
-            <div className="flex items-center justify-around pt-2">
+            <div className="flex items-center justify-around pt-3">
               <button
                 onClick={() => handleSwipeAction('pass')}
-                className="w-14 h-14 rounded-full bg-black/75 border border-white/20 text-zinc-300 hover:text-red-400 hover:border-red-400/50 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xl"
+                className="w-14 h-14 rounded-full bg-[#12141B]/80 backdrop-blur-xl border border-white/15 text-zinc-400 hover:text-red-400 hover:border-red-400/50 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-[0_8px_24px_rgba(0,0,0,0.6)]"
                 title="Pass"
               >
                 <X className="w-6 h-6 stroke-[2.5]" />
@@ -363,7 +365,7 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
 
               <button
                 onClick={() => handleSwipeAction('superlike')}
-                className="w-12 h-12 rounded-full bg-black/75 border border-white/20 text-amber-300 hover:border-amber-400 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xl"
+                className="w-12 h-12 rounded-full bg-[#12141B]/80 backdrop-blur-xl border border-amber-400/30 text-amber-300 hover:border-amber-400 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-[0_8px_24px_rgba(245,158,11,0.2)]"
                 title="Super Like"
               >
                 <Star className="w-5 h-5 fill-amber-300/30 text-amber-300" />
@@ -371,7 +373,7 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
 
               <button
                 onClick={() => onInitiateChat(currentSwipeProfile)}
-                className="w-12 h-12 rounded-full bg-black/75 border border-white/20 text-emerald-400 hover:border-emerald-400 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xl"
+                className="w-12 h-12 rounded-full bg-[#12141B]/80 backdrop-blur-xl border border-emerald-400/30 text-emerald-400 hover:border-emerald-400 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-[0_8px_24px_rgba(16,185,129,0.2)]"
                 title="Direct Chat"
               >
                 <MessageCircle className="w-5 h-5" />
@@ -379,7 +381,7 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
 
               <button
                 onClick={() => handleSwipeAction('like')}
-                className="w-14 h-14 rounded-full bg-white text-[#090A0E] flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-[0_0_24px_rgba(255,255,255,0.45)] hover:bg-zinc-200"
+                className="w-14 h-14 rounded-full bg-white text-[#090A0E] flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-[0_0_28px_rgba(255,255,255,0.45)] hover:bg-zinc-200"
                 title="Like"
               >
                 <Heart className="w-7 h-7 fill-[#090A0E]" />
@@ -487,24 +489,22 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
                   </div>
 
                   {/* Action Buttons: 44px standard CTA buttons */}
-                  <div className="flex items-center justify-between pt-3 border-t border-white/[0.08] gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-4 border-t border-white/[0.08] gap-3">
                     <button
                       onClick={() => onOpenProfile(profile)}
-                      className="min-h-[44px] px-4 rounded-xl text-sm font-heading font-bold text-zinc-300 hover:text-white flex items-center gap-2 cursor-pointer transition-colors hover:bg-white/[0.05]"
+                      className="sv-btn-secondary flex-1 sm:flex-initial"
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-4 h-4 text-zinc-300" />
                       <span>Explore Personas & Bio</span>
                     </button>
 
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => onInitiateChat(profile)}
-                        className="sv-btn-primary"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        <span>Chat</span>
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => onInitiateChat(profile)}
+                      className="sv-btn-primary flex-1 sm:flex-initial"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Chat</span>
+                    </button>
                   </div>
                 </div>
               </div>

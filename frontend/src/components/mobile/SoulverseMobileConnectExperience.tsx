@@ -308,16 +308,16 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
       {/* SECTION 3: COMMUNITIES & DISCUSSION CIRCLES                            */}
       {/* ===================================================================== */}
       {(activeTab === 'all' || activeTab === 'communities') && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1 text-xs">
-            <span className="font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-zinc-300" />
-              <span>Dating & Friendship Communities</span>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <span className="type-card-heading font-bold text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-amber-300" />
+              <span>Dating &amp; Friendship Communities</span>
             </span>
-            <span className="text-[11px] text-zinc-400">Find your tribe</span>
+            <span className="type-supporting text-zinc-400">Find your tribe</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {[
               {
                 id: 'c_1',
@@ -354,32 +354,32 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
             ].map(comm => (
               <div
                 key={comm.id}
-                className="p-4 rounded-3xl dark-glass border border-white/[0.08] space-y-3 shadow-md flex flex-col justify-between"
+                className="sv-card p-5 space-y-3.5 flex flex-col justify-between hover:border-white/20 transition-all"
               >
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-2xl">{comm.icon}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 border border-white/15">
+                    <span className="text-[11px] font-heading font-bold px-2.5 py-0.5 rounded-full bg-white/10 text-zinc-300 border border-white/15">
                       {comm.badge}
                     </span>
                   </div>
-                  <h4 className="text-sm font-bold text-white tracking-tight mt-2">{comm.name}</h4>
-                  <p className="text-xs text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
+                  <h4 className="type-card-heading font-bold text-white tracking-tight mt-2.5">{comm.name}</h4>
+                  <p className="type-body text-zinc-300 text-xs sm:text-sm mt-1 line-clamp-2 leading-relaxed">
                     {comm.description}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-xs">
-                  <span className="text-[11px] text-zinc-500 font-medium">{comm.members}</span>
+                <div className="flex items-center justify-between pt-3 border-t border-white/[0.08]">
+                  <span className="type-supporting text-zinc-400 font-medium">{comm.members}</span>
                   <button
                     onClick={() => toggleJoinCommunity(comm.id)}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    className={`min-h-[40px] px-3.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer ${
                       joinedCommunities[comm.id]
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-white/10 hover:bg-white/20 text-white'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
                     }`}
                   >
-                    {joinedCommunities[comm.id] ? 'Joined ✓' : 'Join'}
+                    {joinedCommunities[comm.id] ? 'Joined ✓' : 'Join Community'}
                   </button>
                 </div>
               </div>

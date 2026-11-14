@@ -138,12 +138,12 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
 
         {/* TAB 1: ESSENTIALS & BASICS */}
         {activeTab === 'essentials' && (
-          <div className="space-y-3.5 animate-fadeIn max-h-[55vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="space-y-4 animate-fadeIn max-h-[55vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               {/* Height */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 flex items-center gap-1.5">
                   <span>📏 Height (cm)</span>
                 </label>
                 <input
@@ -153,13 +153,13 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                     ...attributes,
                     essentials: { ...attributes.essentials, heightCm: parseInt(e.target.value) || 0 }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-white text-xs focus:outline-none focus:border-white/30"
+                  className="w-full h-11 px-3.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all"
                 />
               </div>
 
               {/* Job */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 flex items-center gap-1.5">
                   <span>💼 Work / Title</span>
                 </label>
                 <input
@@ -169,13 +169,13 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                     ...attributes,
                     essentials: { ...attributes.essentials, job: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-white text-xs focus:outline-none focus:border-white/30"
+                  className="w-full h-11 px-3.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all"
                 />
               </div>
 
               {/* School / Company */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 flex items-center gap-1.5">
                   <span>🎓 College / Organization</span>
                 </label>
                 <input
@@ -185,13 +185,13 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                     ...attributes,
                     essentials: { ...attributes.essentials, schoolOrCompany: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-white text-xs focus:outline-none focus:border-white/30"
+                  className="w-full h-11 px-3.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all"
                 />
               </div>
 
               {/* City */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 flex items-center gap-1.5">
                   <span>🏠 Current Location</span>
                 </label>
                 <input
@@ -201,13 +201,13 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                     ...attributes,
                     essentials: { ...attributes.essentials, location: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-white text-xs focus:outline-none focus:border-white/30"
+                  className="w-full h-11 px-3.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all"
                 />
               </div>
 
               {/* Zodiac */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 flex items-center gap-1.5">
                   <span>✨ Zodiac Sign</span>
                 </label>
                 <select
@@ -216,7 +216,7 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                     ...attributes,
                     essentials: { ...attributes.essentials, zodiac: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#12141B] border border-white/10 text-white text-xs focus:outline-none focus:border-white/30"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#12141B] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all cursor-pointer"
                 >
                   {['♒ Aquarius', '♓ Pisces', '♈ Aries', '♉ Taurus', '♊ Gemini', '♋ Cancer', '♌ Leo', '♍ Virgo', '♎ Libra', '♏ Scorpio', '♐ Sagittarius', '♑ Capricorn'].map(z => (
                     <option key={z} value={z}>{z}</option>
@@ -225,8 +225,8 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
               </div>
 
               {/* Hometown */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 flex items-center gap-1.5">
                   <span>📍 Hometown</span>
                 </label>
                 <input
@@ -236,7 +236,7 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                     ...attributes,
                     essentials: { ...attributes.essentials, hometown: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-white text-xs focus:outline-none focus:border-white/30"
+                  className="w-full h-11 px-3.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all"
                 />
               </div>
 
@@ -290,18 +290,18 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
             </div>
 
             {/* Lifestyle Grid: Communication, Love Style, Pets, Drinking, Workout, Family Plans */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               {/* Communication Style */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400">💬 Communication Style</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 block">💬 Communication Style</label>
                 <select
                   value={attributes.lifestyle.communicationStyle}
                   onChange={e => setAttributes({
                     ...attributes,
                     lifestyle: { ...attributes.lifestyle, communicationStyle: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#12141B] border border-white/10 text-white text-xs"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#12141B] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all cursor-pointer"
                 >
                   <option value="Big time texter & late night voice notes">Big time texter & late night voice notes</option>
                   <option value="Phone caller over texting">Phone caller over texting</option>
@@ -311,15 +311,15 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
               </div>
 
               {/* Love Style */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400">💌 Love Style</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 block">💌 Love Style</label>
                 <select
                   value={attributes.lifestyle.loveStyle}
                   onChange={e => setAttributes({
                     ...attributes,
                     lifestyle: { ...attributes.lifestyle, loveStyle: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#12141B] border border-white/10 text-white text-xs"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#12141B] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all cursor-pointer"
                 >
                   <option value="Words of affirmation & Quality time">Words of affirmation & Quality time</option>
                   <option value="Quality time exclusively">Quality time exclusively</option>
@@ -330,15 +330,15 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
               </div>
 
               {/* Pets */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400">🐾 Pets</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 block">🐾 Pets</label>
                 <select
                   value={attributes.lifestyle.pets}
                   onChange={e => setAttributes({
                     ...attributes,
                     lifestyle: { ...attributes.lifestyle, pets: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#12141B] border border-white/10 text-white text-xs"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#12141B] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all cursor-pointer"
                 >
                   <option value="Dog lover & Cat friendly">Dog lover & Cat friendly</option>
                   <option value="Dog parent">Dog parent</option>
@@ -349,15 +349,15 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
               </div>
 
               {/* Drinking */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400">🍷 Drinking</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 block">🍷 Drinking</label>
                 <select
                   value={attributes.lifestyle.drinking}
                   onChange={e => setAttributes({
                     ...attributes,
                     lifestyle: { ...attributes.lifestyle, drinking: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#12141B] border border-white/10 text-white text-xs"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#12141B] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all cursor-pointer"
                 >
                   <option value="Socially on weekends">Socially on weekends</option>
                   <option value="Never / Teetotaler">Never / Teetotaler</option>
@@ -367,15 +367,15 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
               </div>
 
               {/* Smoking */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400">🚬 Smoking</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 block">🚬 Smoking</label>
                 <select
                   value={attributes.lifestyle.smoking}
                   onChange={e => setAttributes({
                     ...attributes,
                     lifestyle: { ...attributes.lifestyle, smoking: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#12141B] border border-white/10 text-white text-xs"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#12141B] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all cursor-pointer"
                 >
                   <option value="Non-smoker">Non-smoker</option>
                   <option value="Social smoker">Social smoker</option>
@@ -384,15 +384,15 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
               </div>
 
               {/* Workout */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400">🏋️ Workout</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 block">🏋️ Workout</label>
                 <select
                   value={attributes.lifestyle.workout}
                   onChange={e => setAttributes({
                     ...attributes,
                     lifestyle: { ...attributes.lifestyle, workout: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#12141B] border border-white/10 text-white text-xs"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#12141B] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all cursor-pointer"
                 >
                   <option value="Often (4x/week)">Often (4x/week)</option>
                   <option value="Every day">Every day</option>
@@ -410,8 +410,8 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
           <div className="space-y-4 animate-fadeIn max-h-[55vh] overflow-y-auto pr-1">
             
             {/* Green Flag Prompt (Image 12) */}
-            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-1.5">
-              <label className="text-xs font-bold text-white flex items-center gap-1.5">
+            <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2">
+              <label className="text-xs font-heading font-bold text-white flex items-center gap-1.5">
                 <span>💬 My biggest green flag is...</span>
               </label>
               <textarea
@@ -421,13 +421,13 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                   prompts: { ...attributes.prompts, greenFlag: e.target.value }
                 })}
                 rows={2}
-                className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs placeholder-zinc-500 focus:outline-none focus:border-white/30"
+                className="w-full p-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all"
               />
             </div>
 
             {/* Perks of Dating Me Prompt (Image 12) */}
-            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-1.5">
-              <label className="text-xs font-bold text-white flex items-center gap-1.5">
+            <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2">
+              <label className="text-xs font-heading font-bold text-white flex items-center gap-1.5">
                 <span>💬 Perks of dating me...</span>
               </label>
               <textarea
@@ -437,14 +437,14 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                   prompts: { ...attributes.prompts, perksOfDating: e.target.value }
                 })}
                 rows={2}
-                className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs placeholder-zinc-500 focus:outline-none focus:border-white/30"
+                className="w-full p-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-white/40 focus:bg-white/[0.06] transition-all"
               />
             </div>
 
             {/* Habit Prompts (Image 13) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400">I prefer receiving...</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 block">I prefer receiving...</label>
                 <input
                   type="text"
                   value={attributes.prompts.receivePreference}
@@ -452,12 +452,12 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                     ...attributes,
                     prompts: { ...attributes.prompts, receivePreference: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs"
+                  className="w-full h-10 px-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 transition-all"
                 />
               </div>
 
-              <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 space-y-1">
-                <label className="text-[11px] font-semibold text-zinc-400">My phone is always...</label>
+              <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-1.5">
+                <label className="text-xs font-heading font-medium text-zinc-300 block">My phone is always...</label>
                 <input
                   type="text"
                   value={attributes.prompts.phoneAlways}
@@ -465,20 +465,20 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                     ...attributes,
                     prompts: { ...attributes.prompts, phoneAlways: e.target.value }
                   })}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs"
+                  className="w-full h-10 px-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 transition-all"
                 />
               </div>
             </div>
 
             {/* My Weekends Prompts (Image 14) */}
-            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2.5">
-              <label className="text-xs font-bold text-white flex items-center gap-1.5">
+            <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-3">
+              <label className="text-xs font-heading font-bold text-white flex items-center gap-1.5">
                 <span>💬 My Weekends</span>
               </label>
               
-              <div className="space-y-2 text-xs">
+              <div className="space-y-2.5">
                 <div>
-                  <span className="text-[10px] text-zinc-400">Weekends are for...</span>
+                  <span className="text-xs font-heading font-medium text-zinc-300 block mb-1">Weekends are for...</span>
                   <input
                     type="text"
                     value={attributes.prompts.weekendsFor}
@@ -486,12 +486,12 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                       ...attributes,
                       prompts: { ...attributes.prompts, weekendsFor: e.target.value }
                     })}
-                    className="w-full px-3 py-1.5 mt-0.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs"
+                    className="w-full h-10 px-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 transition-all"
                   />
                 </div>
 
                 <div>
-                  <span className="text-[10px] text-zinc-400">Saturday night looks like...</span>
+                  <span className="text-xs font-heading font-medium text-zinc-300 block mb-1">Saturday night looks like...</span>
                   <input
                     type="text"
                     value={attributes.prompts.saturdayNight}
@@ -499,12 +499,12 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                       ...attributes,
                       prompts: { ...attributes.prompts, saturdayNight: e.target.value }
                     })}
-                    className="w-full px-3 py-1.5 mt-0.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs"
+                    className="w-full h-10 px-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 transition-all"
                   />
                 </div>
 
                 <div>
-                  <span className="text-[10px] text-zinc-400">A typical Sunday looks like...</span>
+                  <span className="text-xs font-heading font-medium text-zinc-300 block mb-1">A typical Sunday looks like...</span>
                   <input
                     type="text"
                     value={attributes.prompts.typicalSunday}
@@ -512,7 +512,7 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                       ...attributes,
                       prompts: { ...attributes.prompts, typicalSunday: e.target.value }
                     })}
-                    className="w-full px-3 py-1.5 mt-0.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs"
+                    className="w-full h-10 px-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 transition-all"
                   />
                 </div>
               </div>
@@ -564,9 +564,9 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
               </div>
 
               {/* Edit Anthem Fields */}
-              <div className="space-y-2 pt-2">
+              <div className="space-y-3 pt-2">
                 <div>
-                  <label className="text-[10px] text-zinc-400 font-semibold block">Track Title</label>
+                  <label className="text-xs font-heading font-medium text-zinc-300 block">Track Title</label>
                   <input
                     type="text"
                     value={attributes.anthem.title}
@@ -574,11 +574,11 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                       ...attributes,
                       anthem: { ...attributes.anthem, title: e.target.value }
                     })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs"
+                    className="w-full h-10 px-3 mt-1 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-zinc-400 font-semibold block">Artist Name</label>
+                  <label className="text-xs font-heading font-medium text-zinc-300 block">Artist Name</label>
                   <input
                     type="text"
                     value={attributes.anthem.artist}
@@ -586,11 +586,11 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                       ...attributes,
                       anthem: { ...attributes.anthem, artist: e.target.value }
                     })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs"
+                    className="w-full h-10 px-3 mt-1 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/40 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-zinc-400 font-semibold block">Spotify Link or URI</label>
+                  <label className="text-xs font-heading font-medium text-zinc-300 block">Spotify Link or URI</label>
                   <input
                     type="text"
                     value={attributes.anthem.spotifyUrl}
@@ -598,7 +598,7 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
                       ...attributes,
                       anthem: { ...attributes.anthem, spotifyUrl: e.target.value }
                     })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs font-mono"
+                    className="w-full h-10 px-3 mt-1 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-white/40 transition-all"
                   />
                 </div>
               </div>

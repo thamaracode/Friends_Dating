@@ -364,11 +364,11 @@ export const SoulverseWebsiteShell: React.FC = () => {
         </div>
 
         {/* Right Actions: Clean, Spacious Action Cluster */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           {/* Unopened Letter Easter Egg Button */}
           <button
             onClick={() => setIsLetterOpen(true)}
-            className="h-10 px-3.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/25 text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 relative"
+            className="hidden sm:flex h-10 px-3.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/25 text-xs font-semibold transition-all cursor-pointer items-center gap-2 relative"
             title="You found an unopened letter in the universe..."
           >
             <Mail className="w-4 h-4 text-amber-300" />
@@ -379,7 +379,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
           {/* The Unspoken Sanctuary Quick Button */}
           <button
             onClick={() => setIsUnspokenOpen(true)}
-            className="h-10 px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 border border-white/10 text-xs font-semibold transition-all cursor-pointer flex items-center gap-2"
+            className="hidden sm:flex h-10 px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 border border-white/10 text-xs font-semibold transition-all cursor-pointer items-center gap-2"
             title="Open The Unspoken Sanctuary"
           >
             <Sparkles className="w-4 h-4 text-amber-300" />
@@ -389,7 +389,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
           {/* User Control Center Quick Launcher */}
           <button
             onClick={() => setIsControlCenterOpen(true)}
-            className="h-10 px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 border border-white/10 text-xs font-semibold transition-all cursor-pointer flex items-center gap-2"
+            className="h-10 px-2.5 sm:px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 border border-white/10 text-xs font-semibold transition-all cursor-pointer flex items-center gap-2"
             title="Open My App Control Center"
           >
             <Sliders className="w-4 h-4 text-zinc-300" />
@@ -423,10 +423,10 @@ export const SoulverseWebsiteShell: React.FC = () => {
           {/* 1926 NIMH Mental Health Support Button */}
           <button
             onClick={() => setIsCrisisModalOpen(true)}
-            className="h-10 px-3.5 sm:px-4 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/25 text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+            className="h-10 px-2.5 sm:px-4 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/25 text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
             title="1926 Safe NIMH Crisis Support"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10B981]" />
             <span className="hidden sm:inline">1926 Safe</span>
           </button>
 
@@ -811,13 +811,15 @@ export const SoulverseWebsiteShell: React.FC = () => {
       {/* ===================================================================== */}
       {/* 3. PERSISTENT FLOATING 5-DESTINATION MOBILE NAVIGATION DOCK            */}
       {/* ===================================================================== */}
-      <SoulverseMobileNavbar
-        activeTab={getActiveMobileTab()}
-        onSelectTab={handleMobileTabSelect}
-        onTriggerCreate={() => setIsCreateSheetOpen(true)}
-        unreadMessagesCount={3}
-        userAvatar={profile.avatar}
-      />
+      <div className={devicePreviewMode === 'fluid' ? 'lg:hidden' : 'block'}>
+        <SoulverseMobileNavbar
+          activeTab={getActiveMobileTab()}
+          onSelectTab={handleMobileTabSelect}
+          onTriggerCreate={() => setIsCreateSheetOpen(true)}
+          unreadMessagesCount={3}
+          userAvatar={profile.avatar}
+        />
+      </div>
 
       {/* ===================================================================== */}
       {/* 4. MODALS & ACTION SHEETS                                            */}
