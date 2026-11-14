@@ -480,10 +480,10 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
     : [activeProfile.avatar];
 
   return (
-    <div className="relative w-full max-w-sm sm:max-w-md mx-auto flex flex-col items-center select-none pt-2">
+    <div className="relative w-full max-w-sm sm:max-w-md mx-auto flex flex-col items-center select-none pt-1">
       
       {/* ── TINDER CARD STACK CONTAINER ────────────────────────── */}
-      <div className="relative w-full aspect-[3/4.6] sm:aspect-[3/4.4] max-h-[640px]">
+      <div className="relative w-full h-[calc(100dvh-270px)] min-h-[390px] max-h-[540px] sm:max-h-[600px]">
         
         {/* Next Card in Stack (Sits underneath at scale(0.95), smoothly enters) */}
         {nextProfile && (
@@ -648,7 +648,7 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
       </div>
 
       {/* ── TINDER FLOATING ACTION BUTTONS BAR ───────────────────── */}
-      <div className="flex items-center justify-center gap-3 sm:gap-4.5 pt-5 pb-2 z-30">
+      <div className="flex items-center justify-center gap-3 sm:gap-4.5 pt-3 pb-1 z-30">
         
         {/* Rewind / Undo Button (Z or Backspace) */}
         <button

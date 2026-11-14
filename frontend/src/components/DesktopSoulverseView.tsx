@@ -59,7 +59,7 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
   onOpenWorld,
   onOpenReadme,
   isEmbeddedInShell = true,
-  brandLogoVariant = (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'infinity',
+  brandLogoVariant = (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'official_neon',
   onOpenLogoModal
 }) => {
   const [profile] = useState(CURRENT_USER);
@@ -528,8 +528,8 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
           className="flex items-center gap-2.5 cursor-pointer group w-64 shrink-0"
           title="Customize Heart Brand Logo"
         >
-          <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-[0_0_12px_rgba(255,255,255,0.1)] group-hover:border-amber-400/50 group-hover:scale-105 transition-all">
-            <SoulverseBrandLogo variant={brandLogoVariant} size={20} showGlow={true} />
+          <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-[0_0_12px_rgba(255,255,255,0.1)] group-hover:border-pink-500/50 group-hover:scale-105 transition-all overflow-hidden">
+            <SoulverseBrandLogo variant={brandLogoVariant} size={brandLogoVariant === 'official_neon' ? 30 : 20} showGlow={true} />
           </div>
           <span className="font-extrabold text-sm tracking-widest text-white font-sans">
             Soulverse <span className="text-amber-400">✧</span>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type HeartLogoVariant = 'infinity' | 'compass' | 'twin_souls' | 'crystal' | 'resonance';
+export type HeartLogoVariant = 'official_neon' | 'infinity' | 'compass' | 'twin_souls' | 'crystal' | 'resonance';
 
 interface HeartLogoProps {
   size?: number | string;
@@ -8,6 +8,34 @@ interface HeartLogoProps {
   showGlow?: boolean;
   animated?: boolean;
 }
+
+/**
+ * OFFICIAL FLAGSHIP BRAND LOGO: Neon Ribbon Infinity Heart
+ * Uploaded official master brand identity with glowing violet-to-pink gradient loop.
+ */
+export const OfficialNeonHeartLogo: React.FC<HeartLogoProps> = ({
+  size = 40,
+  className = '',
+  showGlow = true,
+  animated = false
+}) => {
+  const numSize = typeof size === 'number' ? size : parseInt(size as string, 10) || 40;
+  return (
+    <div
+      className={`relative inline-flex items-center justify-center shrink-0 rounded-xl overflow-hidden select-none ${animated ? 'animate-pulse' : ''} ${className}`}
+      style={{ width: numSize, height: numSize }}
+    >
+      {showGlow && (
+        <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/40 via-pink-500/30 to-transparent blur-md -z-10 rounded-xl scale-125 pointer-events-none" />
+      )}
+      <img
+        src="/images/soulverse_logo.png"
+        alt="Soulverse Heart"
+        className="w-full h-full object-cover rounded-xl drop-shadow-[0_0_12px_rgba(236,72,153,0.45)]"
+      />
+    </div>
+  );
+};
 
 /**
  * CONCEPT 1: The Cosmic Infinity Heart (Resonance & Eternity)
@@ -377,7 +405,7 @@ export interface SoulverseBrandLogoProps extends HeartLogoProps {
 }
 
 export const SoulverseBrandLogo: React.FC<SoulverseBrandLogoProps> = ({
-  variant = 'infinity',
+  variant = 'official_neon',
   size = 40,
   className = '',
   showGlow = true,
@@ -388,6 +416,8 @@ export const SoulverseBrandLogo: React.FC<SoulverseBrandLogoProps> = ({
 }) => {
   const renderLogo = () => {
     switch (variant) {
+      case 'official_neon':
+        return <OfficialNeonHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
       case 'infinity':
         return <InfinityOrbitHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
       case 'compass':
@@ -399,7 +429,7 @@ export const SoulverseBrandLogo: React.FC<SoulverseBrandLogoProps> = ({
       case 'resonance':
         return <ResonanceWaveHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
       default:
-        return <InfinityOrbitHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+        return <OfficialNeonHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
     }
   };
 

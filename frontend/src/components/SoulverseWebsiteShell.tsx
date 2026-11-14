@@ -137,7 +137,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const [isConfessionModalOpen, setIsConfessionModalOpen] = useState(false);
   const [isControlCenterOpen, setIsControlCenterOpen] = useState(false);
   const [brandLogoVariant, setBrandLogoVariant] = useState<HeartLogoVariant>(() => {
-    return (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'infinity';
+    return (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'official_neon';
   });
   const [isHeartLogoModalOpen, setIsHeartLogoModalOpen] = useState(false);
   const [isGlinShowcaseOpen, setIsGlinShowcaseOpen] = useState(false);

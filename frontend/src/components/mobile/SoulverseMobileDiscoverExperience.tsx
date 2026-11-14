@@ -40,8 +40,8 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
   onOpenDailyHub,
   onOpenUnspoken
 }) => {
-  // Discovery View Mode: 'engine' (comprehensive multi-intention resonance) vs 'feed' vs 'swipe'
-  const [viewMode, setViewMode] = useState<'engine' | 'feed' | 'swipe'>('engine');
+  // Discovery View Mode: 'swipe' (flagship Tinder-style deck) vs 'feed' vs 'engine'
+  const [viewMode, setViewMode] = useState<'swipe' | 'feed' | 'engine'>('swipe');
   
   // Category filter
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -123,35 +123,39 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
   };
 
   return (
-    <div className="w-full space-y-8 pb-32 max-w-2xl mx-auto animate-fadeIn px-1 sm:px-2">
+    <div className={`w-full max-w-2xl mx-auto animate-fadeIn px-1 sm:px-2 ${viewMode === 'swipe' ? 'space-y-2.5 pb-20' : 'space-y-8 pb-32'}`}>
       
       {/* 1. TOP DISCOVERY BAR & VIEW MODE SWITCHER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${viewMode === 'swipe' ? 'pt-1 pb-0.5' : 'pt-2'}`}>
         <div>
-          <h1 className="type-page-heading flex items-center gap-2.5">
-            <Compass className="w-6 h-6 text-amber-300" />
-            <span>Discover Humans</span>
-          </h1>
-          <p className="type-supporting mt-1">Ontological chemistry, shared values, and deep multi-world identity</p>
+          <div className="flex items-center gap-2">
+            <Compass className="w-5 h-5 text-amber-300" />
+            <h1 className={`${viewMode === 'swipe' ? 'text-lg sm:text-xl font-bold' : 'type-page-heading'} text-white font-heading`}>
+              Discover Humans
+            </h1>
+          </div>
+          {viewMode !== 'swipe' && (
+            <p className="type-supporting mt-1">Ontological chemistry, shared values, and deep multi-world identity</p>
+          )}
         </div>
 
-        {/* View Mode Switcher: Resonance Engine vs Vertical Feed vs Swipe Stack */}
-        <div className="flex items-center bg-white/[0.04] p-1 rounded-full border border-white/10 shrink-0 self-start sm:self-auto h-11 backdrop-blur-md">
+        {/* View Mode Switcher: Swipe Stack vs Vertical Feed vs Resonance Engine */}
+        <div className="flex items-center bg-white/[0.04] p-1 rounded-full border border-white/10 shrink-0 self-start sm:self-auto h-10 backdrop-blur-md">
           <button
-            onClick={() => setViewMode('engine')}
-            className={`h-9 px-3.5 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              viewMode === 'engine'
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+            onClick={() => setViewMode('swipe')}
+            className={`h-8 px-3.5 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              viewMode === 'swipe'
+                ? 'bg-gradient-to-r from-amber-400 to-rose-500 text-zinc-950 font-black shadow-md shadow-amber-400/20'
                 : 'text-zinc-400 hover:text-white'
             }`}
-            title="Complete Social Discovery & Resonance Engine"
+            title="Tinder-Style Stack Swiping"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Resonance Engine</span>
+            <Layers className="w-3.5 h-3.5" />
+            <span>Swipe</span>
           </button>
           <button
             onClick={() => setViewMode('feed')}
-            className={`h-9 px-3.5 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`h-8 px-3 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               viewMode === 'feed'
                 ? 'bg-white text-[#090A0E] shadow-sm'
                 : 'text-zinc-400 hover:text-white'
@@ -162,16 +166,16 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
             <span>Feed</span>
           </button>
           <button
-            onClick={() => setViewMode('swipe')}
-            className={`h-9 px-3.5 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              viewMode === 'swipe'
-                ? 'bg-white text-[#090A0E] shadow-sm'
+            onClick={() => setViewMode('engine')}
+            className={`h-8 px-3 rounded-full text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              viewMode === 'engine'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
                 : 'text-zinc-400 hover:text-white'
             }`}
-            title="Stack Swiping Mode"
+            title="Complete Social Discovery & Resonance Engine"
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Swipe</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>Resonance Engine</span>
           </button>
         </div>
       </div>

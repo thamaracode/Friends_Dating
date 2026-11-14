@@ -14,6 +14,7 @@ import {
 import { 
   HeartLogoVariant, 
   SoulverseBrandLogo, 
+  OfficialNeonHeartLogo,
   InfinityOrbitHeartLogo, 
   CelestialCompassHeartLogo, 
   TwinSoulsEmbraceLogo, 
@@ -38,6 +39,14 @@ interface LogoDetail {
 }
 
 const LOGO_CONCEPTS: LogoDetail[] = [
+  {
+    id: 'official_neon',
+    title: 'Official Neon Ribbon Heart',
+    tagline: 'Luminous Möbius Loop of Infinite Chemistry',
+    symbolism: 'A continuous glowing ultraviolet and magenta ribbon forming an unbroken heart within a dark sanctuary.',
+    palette: 'Neon Violet to Vivid Rose Magenta with Ultraviolet Ambient Radiance',
+    component: OfficialNeonHeartLogo
+  },
   {
     id: 'infinity',
     title: 'Cosmic Infinity Heart',
