@@ -1,0 +1,235 @@
+/**
+ * GlinUI Liquid Glass Theme System (adapted from @glinui/tokens)
+ * Open-source Liquid Glass aesthetic for React / Tailwind CSS
+ * Source: https://github.com/glincker/glinui
+ *
+ * Core Principles:
+ * - saturate(180%) paired with backdrop-blur for vibrant optic depth
+ * - Top border brighter than sides (light refraction edge: --glass-refraction-top)
+ * - Layered physical elevation: sheen + solid face + gradient ring
+ * - Concentric corner radii and tactile microinteractions
+ */
+
+:root {
+  /* ── GlinUI Glass Primitives ────────────────────────── */
+  --glass-blur-sm: 8px;
+  --glass-blur-md: 16px;
+  --glass-blur-lg: 24px;
+  --glass-blur-xl: 40px;
+
+  --glass-saturate-base: 180%;
+  --glass-saturate-subtle: 140%;
+
+  --glass-surface-alpha: 0.22;
+  --glass-border-alpha: 0.16;
+  --glass-border-strong-alpha: 0.28;
+  --glass-refraction-top-alpha: 0.38;
+
+  /* ── GlinUI Refraction & Rim Lighting ───────────────── */
+  --glass-refraction-top: rgba(255, 255, 255, 0.38);
+  --glass-refraction-brand: linear-gradient(90deg, rgba(255, 255, 255, 0.4), rgba(246, 193, 56, 0.6) 50%, rgba(255, 255, 255, 0.2));
+  --glass-border-color: rgba(255, 255, 255, 0.12);
+  --glass-border-subtle: rgba(255, 255, 255, 0.07);
+
+  /* ── GlinUI Elevation Tokens (Sheen + Edge Ring) ────── */
+  --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 60%, transparent 100%);
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --hairline: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18) 50%, transparent);
+  --ring: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.06) 42%, rgba(255, 255, 255, 0.10));
+  --ring-hot: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.12) 45%, rgba(255, 255, 255, 0.18));
+  --ring-brand: linear-gradient(180deg, rgba(246, 193, 56, 0.7), rgba(246, 193, 56, 0.2) 42%, rgba(246, 193, 56, 0.35));
+
+  /* ── Drops & Elevation Tiers ────────────────────────── */
+  --drop-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 3px 8px -2px rgba(0, 0, 0, 0.5);
+  --drop-2: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 20px -4px rgba(0, 0, 0, 0.55), 0 24px 48px -12px rgba(0, 0, 0, 0.65);
+  --drop-3: 0 2px 4px rgba(0, 0, 0, 0.5), 0 14px 28px -6px rgba(0, 0, 0, 0.6), 0 40px 80px -16px rgba(0, 0, 0, 0.75);
+  --elev-1: var(--highlight), var(--drop-1);
+  --elev-2: var(--highlight), var(--drop-2);
+  --elev-3: var(--highlight), var(--drop-3);
+  --elev-inset: inset 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  /* ── Concentric Corners ─────────────────────────────── */
+  --lift-pad: 0.5rem;
+  --lift-r-outer: 1.25rem;
+  --lift-r-inner: calc(var(--lift-r-outer) - var(--lift-pad));
+
+  /* ── Glass 5-Tier Opacity Surfaces ──────────────────── */
+  --glass-1-surface: rgba(20, 24, 33, 0.35);
+  --glass-2-surface: rgba(20, 24, 33, 0.48);
+  --glass-3-surface: rgba(20, 24, 33, 0.62);
+  --glass-4-surface: rgba(20, 24, 33, 0.75);
+  --glass-5-surface: rgba(20, 24, 33, 0.88);
+
+  /* ── Shimmer & Grain Radiance ───────────────────────── */
+  --glow-a: rgba(182, 171, 255, 0.35);
+  --glow-b: rgba(0, 203, 170, 0.28);
+  --glow-c: rgba(246, 193, 56, 0.32);
+}
+
+/* ========================================================================= */
+/* GLINUI LIQUID GLASS UTILITY CLASSES                                       */
+/* ========================================================================= */
+
+/* 1. GlinUI Frosted Glass (Ultra-diffuse Apple visionOS aesthetic) */
+.glin-glass-frosted {
+  backdrop-filter: blur(var(--glass-blur-xl)) saturate(200%);
+  -webkit-backdrop-filter: blur(var(--glass-blur-xl)) saturate(200%);
+  background: 
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12), transparent 55%),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(16, 19, 28, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--glass-refraction-top);
+  box-shadow: 
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 20px rgba(255, 255, 255, 0.04),
+    var(--drop-2);
+}
+
+/* 2. GlinUI Liquid Glass (High optical refraction & fluid specular highlights) */
+.glin-glass-liquid {
+  backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate-base));
+  -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturate-base));
+  background: 
+    radial-gradient(circle at 18% 15%, rgba(255, 255, 255, 0.22), transparent 45%),
+    linear-gradient(165deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03)),
+    rgba(14, 17, 24, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-top-color: var(--glass-refraction-top);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 0 16px rgba(255, 255, 255, 0.06),
+    var(--drop-2);
+}
+
+/* 3. GlinUI Lift (Gradient hairline ring + solid face + sheen pad) */
+.glin-glass-lift {
+  border: 1px solid transparent;
+  background: 
+    var(--sheen) padding-box,
+    linear-gradient(rgba(20, 24, 34, 0.85), rgba(20, 24, 34, 0.85)) padding-box,
+    var(--ring) border-box;
+  box-shadow: var(--elev-2);
+  transition: transform 0.2s cubic-bezier(0.2, 0.0, 0.0, 1.0), box-shadow 0.2s cubic-bezier(0.2, 0.0, 0.0, 1.0);
+}
+
+.glin-glass-lift:hover {
+  transform: translateY(-2px);
+  background: 
+    var(--sheen) padding-box,
+    linear-gradient(rgba(24, 29, 41, 0.88), rgba(24, 29, 41, 0.88)) padding-box,
+    var(--ring-hot) border-box;
+  box-shadow: var(--elev-3);
+}
+
+/* 4. GlinUI Recessed Well (Sits below the surface with depth shadow) */
+.glin-glass-well {
+  background: rgba(8, 10, 14, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  box-shadow: var(--elev-inset);
+}
+
+/* 5. GlinUI Refraction Top Hairline */
+.glin-refraction-top {
+  position: relative;
+}
+.glin-refraction-top::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--hairline);
+  pointer-events: none;
+}
+
+/* 6. GlinUI Shimmer Sweep Animation */
+@keyframes glinSkeletonShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.glin-shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.glin-shimmer-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  animation: glinSkeletonShimmer 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* 7. GlinUI Shine Border Animation (adapted from Magic UI / GlinUI) */
+@keyframes glinShineDrift {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+.glin-shine-border {
+  position: relative;
+  isolation: isolate;
+}
+
+.glin-shine-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: radial-gradient(circle at center, rgba(246, 193, 56, 0.9), rgba(255, 255, 255, 0.8) 40%, transparent 70%);
+  background-size: 300% 300%;
+  animation: glinShineDrift 10s linear infinite;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+/* ========================================================================= */
+/* GLOBAL GLASS THEME OVERRIDES ([data-glin-theme="glass"])                  */
+/* ========================================================================= */
+
+[data-glin-theme="glass"] {
+  --bg-primary: #07080C;
+  --bg-secondary: #0D0F16;
+}
+
+[data-glin-theme="glass"] header,
+[data-glin-theme="glass"] .dark-glass {
+  backdrop-filter: blur(32px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
+  background: 
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.14), transparent 50%),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(12, 14, 21, 0.65) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  border-top-color: rgba(255, 255, 255, 0.38) !important;
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.22),
+    0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-glin-theme="glass"] .chat-bubble-received {
+  backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(24, 28, 38, 0.72) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-top-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-glin-theme="glass"] .chat-bubble-sent {
+  backdrop-filter: blur(20px) saturate(180%);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.85), rgba(217, 119, 6, 0.9)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-top-color: rgba(255, 255, 255, 0.55) !important;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
+}

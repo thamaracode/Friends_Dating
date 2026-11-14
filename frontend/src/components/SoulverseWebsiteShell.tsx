@@ -73,6 +73,7 @@ import { DesktopSoulverseView } from './DesktopSoulverseView';
 import { ProfileWorldsHub } from './ProfileWorldsHub';
 import { YearLifeTimelineView } from './YearLifeTimelineView';
 import { GitHubMarkdownEditor } from './GitHubMarkdownEditor';
+import { GlinThemeToggle, GlinGlassShowcaseModal } from './glinui';
 import { ProfileDetailSheet } from './ProfileDetailSheet';
 import { EditProfileInfoModal } from './EditProfileInfoModal';
 import { CrisisSupportModal } from './CrisisSupportModal';
@@ -139,6 +140,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
     return (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'infinity';
   });
   const [isHeartLogoModalOpen, setIsHeartLogoModalOpen] = useState(false);
+  const [isGlinShowcaseOpen, setIsGlinShowcaseOpen] = useState(false);
 
   const handleSelectLogoVariant = (variant: HeartLogoVariant) => {
     setBrandLogoVariant(variant);
@@ -396,6 +398,9 @@ export const SoulverseWebsiteShell: React.FC = () => {
             <Sliders className="w-4 h-4 text-zinc-300" />
             <span className="hidden lg:inline">Control Center</span>
           </button>
+
+          {/* GlinUI Liquid Glass Theme Switcher & Showcase */}
+          <GlinThemeToggle onOpenShowcase={() => setIsGlinShowcaseOpen(true)} />
 
           {/* Desktop Only: Toggle Mobile Device Frame Preview vs Fluid Canvas */}
           <div className="hidden xl:flex items-center bg-white/[0.06] p-1 rounded-xl border border-white/10 h-10">
@@ -983,6 +988,12 @@ export const SoulverseWebsiteShell: React.FC = () => {
       {/* 5. SPOTIFY MODALS & INTEGRATIONS                                      */}
       {/* ===================================================================== */}
       <LinkSpotifyModal />
+
+      {/* GlinUI Liquid Glass Engine Interactive Showcase */}
+      <GlinGlassShowcaseModal
+        isOpen={isGlinShowcaseOpen}
+        onClose={() => setIsGlinShowcaseOpen(false)}
+      />
     </div>
   );
 };
