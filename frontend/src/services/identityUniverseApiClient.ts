@@ -8,7 +8,7 @@ import type {
   RelationshipMetrics
 } from '../types/identityUniverse';
 
-const API_BASE = 'http://127.0.0.1:3001/api/v1';
+import { API_BASE_V1 as API_BASE } from './apiConfig';
 
 class IdentityUniverseApiClient {
   // 1. Identities

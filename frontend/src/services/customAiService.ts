@@ -8,7 +8,7 @@ import {
   AiProvider
 } from '../types/customAi';
 
-const API_BASE = 'http://127.0.0.1:3001/api';
+import { API_BASE } from './apiConfig';
 
 export class CustomAiService {
   private static config: CustomAiConfig = loadCustomAiConfig();

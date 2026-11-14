@@ -8,7 +8,7 @@ import type {
   FeatureAdoptionStat
 } from '../types/featureControl';
 
-const API_BASE = 'http://127.0.0.1:3001/api';
+import { API_BASE } from './apiConfig';
 const STORAGE_KEY_FEATURES = 'soulverse_evaluated_features_v1';
 const STORAGE_KEY_PRESET = 'soulverse_active_preset_v1';
 

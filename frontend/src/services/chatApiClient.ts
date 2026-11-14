@@ -1,5 +1,4 @@
-const API_BASE = 'http://127.0.0.1:3001/api/v1';
-const WS_BASE = 'ws://127.0.0.1:3001';
+import { API_BASE_V1 as API_BASE, WS_BASE } from './apiConfig';
 
 export class ChatApiClient {
   private ws: WebSocket | null = null;

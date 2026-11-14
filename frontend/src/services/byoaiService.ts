@@ -12,7 +12,7 @@ import {
   AIAssistantMessage
 } from '../types/byoai';
 
-const API_BASE = 'http://127.0.0.1:3001/api';
+import { API_BASE } from './apiConfig';
 
 class BYOAIService {
   private listeners: Set<() => void> = new Set();

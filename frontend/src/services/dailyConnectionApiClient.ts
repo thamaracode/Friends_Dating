@@ -7,7 +7,8 @@ import type {
   DailyTodayResponse
 } from '../types/dailyConnection';
 
-const BASE_URL = 'http://127.0.0.1:3001/api/v1/daily-content';
+import { API_BASE_V1 } from './apiConfig';
+const BASE_URL = `${API_BASE_V1}/daily-content`;
 
 class DailyConnectionApiClient {
   async getToday(userId: string = 'usr_me', date?: string, tab?: DailyTab): Promise<DailyTodayResponse> {

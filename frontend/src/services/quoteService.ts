@@ -8,7 +8,7 @@ import {
   QUOTE_CATEGORIES
 } from '../types/quotes';
 
-const API_BASE = 'http://127.0.0.1:3001/api';
+import { API_BASE } from './apiConfig';
 const OFFLINE_CACHE_KEY = 'soulverse_quote_cache_v1';
 const SAVED_OFFLINE_KEY = 'soulverse_saved_quotes_v1';
 

@@ -5,7 +5,7 @@ import type {
   ProfileWorldRelation 
 } from '../types/profileWorlds';
 
-const API_BASE = 'http://127.0.0.1:3001/api/v1';
+import { API_BASE_V1 as API_BASE } from './apiConfig';
 
 class ProfileWorldsApiClient {
   async getWorlds(userId: string, viewerId: string = 'usr_me'): Promise<ProfileWorld[]> {

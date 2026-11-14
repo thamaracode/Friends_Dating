@@ -1,6 +1,6 @@
 import type { ProfileMarkdown, MarkdownVisibility } from '../types/markdownProfile';
 
-const API_BASE = 'http://127.0.0.1:3001/api/v1';
+import { API_BASE_V1 as API_BASE } from './apiConfig';
 
 class MarkdownProfileApiClient {
   async getMarkdown(userId: string, viewerId: string = 'usr_me'): Promise<{

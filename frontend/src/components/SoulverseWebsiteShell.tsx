@@ -808,7 +808,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
                   Target Domain: <span className="text-gold-400 font-bold">admin.soulverse.im</span> (Port 5174)
                 </div>
                 <a
-                  href="http://127.0.0.1:5174"
+                  href={`http://${typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1'}:5174`}
                   target="_blank"
                   rel="noreferrer"
                   className="sv-btn-gold inline-flex items-center gap-2 px-6"

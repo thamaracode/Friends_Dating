@@ -13,7 +13,7 @@ import type {
   ThoughtType
 } from '../types/livingProfile';
 
-const API_BASE = 'http://127.0.0.1:3001/api/v1';
+import { API_BASE_V1 as API_BASE } from './apiConfig';
 
 class LivingProfileApiClient {
   async getProfile(userId: string, viewerId: string = 'usr_me'): Promise<LivingProfileData> {
