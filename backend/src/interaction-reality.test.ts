@@ -142,9 +142,17 @@ describe('Exhaustive Interaction Reality & Persistence Test Suite', () => {
       VALUES (?, ?, ?)
     `).run(testConvId, purgeUserId, Date.now());
 
-    // Execute DELETE endpoint
+    // 1. Verify unauthorized third-party IDOR deletion attempt is blocked with 403
+    const resUnauthorized = await fetch(`${API_URL}/users/${purgeUserId}`, {
+      method: 'DELETE',
+      headers: { 'x-user-id': 'usr_unauthorized_attacker' }
+    });
+    expect(resUnauthorized.status).toBe(403);
+
+    // 2. Execute authorized self-deletion
     const res = await fetch(`${API_URL}/users/${purgeUserId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: { 'x-user-id': purgeUserId }
     });
 
     expect(res.status).toBe(200);

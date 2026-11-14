@@ -5,6 +5,7 @@ import {
   QuoteCategoryKey,
   QuoteUserPreferences,
   DailyQuotePayload,
+  CategoryMetadata,
   QUOTE_CATEGORIES
 } from './types';
 import { QuoteProviderRegistry, normalizeQuoteText, normalizeAuthor } from './registry';

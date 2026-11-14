@@ -31,12 +31,26 @@ import {
 import { QuoteDiscoveryService } from './quotes/service';
 import { QuoteProviderRegistry } from './quotes/registry';
 import { QUOTE_CATEGORIES, QuoteCategoryKey } from './quotes/types';
+import {
+  createRateLimiter,
+  isUserSuspended,
+  checkUserBlocked,
+  isConversationMember,
+  getCallerUserId,
+  isAuthorizedUserOrAdmin
+} from './security';
 
 initDatabase();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: true,
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-user-id', 'x-admin-id']
+}));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+app.use(createRateLimiter({ windowMs: 60 * 1000, maxRequests: 500 }));
 
 // Serve uploaded media statically
 const uploadsDir = path.resolve(__dirname, '../uploads');
@@ -409,13 +423,21 @@ app.post('/api/v1/conversations/:id/messages', (req, res) => {
     return res.status(400).json({ error: 'Missing clientMessageId or message payload' });
   }
 
-  // Security Check: Is sender blocked by recipient or vice-versa?
+  // Security Check 1: Account suspension enforcement
+  if (isUserSuspended(senderId)) {
+    return res.status(403).json({ error: 'Forbidden: Account is suspended by moderation team', code: 'ACCOUNT_SUSPENDED' });
+  }
+
+  // Security Check 2: Conversation enrollment verification
+  if (!isConversationMember(id, senderId)) {
+    return res.status(403).json({ error: 'Forbidden: Sender is not an enrolled participant in this conversation', code: 'NOT_CONVERSATION_MEMBER' });
+  }
+
+  // Security Check 3: Bidirectional block verification
   const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?').all(id) as { user_id: string }[];
-  const recipient = members.find(m => m.user_id !== senderId);
-  if (recipient) {
-    const isBlocked = db.prepare('SELECT 1 FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?').get(recipient.user_id, senderId);
-    if (isBlocked) {
-      return res.status(403).json({ error: 'Cannot send message: conversation is blocked' });
+  for (const m of members) {
+    if (m.user_id !== senderId && checkUserBlocked(senderId, m.user_id)) {
+      return res.status(403).json({ error: 'Cannot send message: relationship is blocked', code: 'RELATIONSHIP_BLOCKED' });
     }
   }
 
@@ -499,20 +521,21 @@ app.post('/api/v1/conversations/:id/messages', (req, res) => {
 // 4. Edit message (with audit history)
 app.patch('/api/v1/messages/:id', (req, res) => {
   const { id } = req.params;
-  const { text, editorId = 'usr_me' } = req.body;
+  const requesterId = (req.headers['x-user-id'] as string) || req.body.editorId || 'usr_me';
+  const { text } = req.body;
 
   if (!text) return res.status(400).json({ error: 'New text is required' });
 
   const msg = db.prepare('SELECT sender_id, text_content, conversation_id FROM messages WHERE id = ?').get(id) as any;
   if (!msg) return res.status(404).json({ error: 'Message not found' });
-  if (msg.sender_id !== editorId) return res.status(403).json({ error: 'Only author can edit this message' });
+  if (msg.sender_id !== requesterId) return res.status(403).json({ error: 'Only author can edit this message' });
 
   db.transaction(() => {
     // Record edit history
     db.prepare(`
       INSERT INTO message_edit_history (id, message_id, editor_id, previous_content, edited_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(`ed_${uuidv4().slice(0, 8)}`, id, editorId, msg.text_content, Date.now());
+    `).run(`ed_${uuidv4().slice(0, 8)}`, id, requesterId, msg.text_content, Date.now());
 
     // Update message
     db.prepare('UPDATE messages SET text_content = ?, is_edited = 1 WHERE id = ?').run(text, id);
@@ -532,12 +555,20 @@ app.patch('/api/v1/messages/:id', (req, res) => {
 // 5. Delete message (Delete for me vs Delete for everyone)
 app.delete('/api/v1/messages/:id', (req, res) => {
   const { id } = req.params;
+  const requesterId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || req.body?.userId || 'usr_me';
   const forEveryone = req.query.forEveryone === 'true';
 
   const msg = db.prepare('SELECT conversation_id, sender_id FROM messages WHERE id = ?').get(id) as any;
   if (!msg) return res.status(404).json({ error: 'Message not found' });
 
+  if (!isConversationMember(msg.conversation_id, requesterId)) {
+    return res.status(403).json({ error: 'Forbidden: Requester is not an enrolled participant in this conversation' });
+  }
+
   if (forEveryone) {
+    if (msg.sender_id !== requesterId) {
+      return res.status(403).json({ error: 'Forbidden: Only the message author can delete this message for everyone' });
+    }
     db.prepare('UPDATE messages SET is_deleted_for_everyone = 1, text_content = ? WHERE id = ?').run('This message was deleted', id);
   } else {
     db.prepare('DELETE FROM messages WHERE id = ?').run(id);
@@ -714,6 +745,10 @@ app.post('/api/v1/blocks', (req, res) => {
   const { blockerId = 'usr_me', blockedId } = req.body;
   if (!blockedId) return res.status(400).json({ error: 'blockedId is required' });
 
+  if (blockerId === blockedId) {
+    return res.status(400).json({ error: 'Cannot block yourself' });
+  }
+
   try {
     db.prepare('INSERT OR IGNORE INTO user_blocks (blocker_id, blocked_id, created_at) VALUES (?, ?, ?)')
       .run(blockerId, blockedId, Date.now());
@@ -734,6 +769,20 @@ app.delete('/api/v1/users/:id/block', (req, res) => {
 // 13b. Permanent Account Deletion (GDPR / PDPA compliance purge)
 app.delete('/api/v1/users/:id', (req, res) => {
   const { id } = req.params;
+  const requesterId = (req.headers['x-user-id'] as string) || (req.query.requesterId as string) || (req.query.userId as string) || req.body?.userId;
+  const adminId = (req.headers['x-admin-id'] as string);
+
+  // Authorization check: Requester must delete their own account or have admin credentials
+  const isSelf = requesterId ? (requesterId === id) : (id === 'usr_me');
+  const isAdmin = Boolean(adminId && (adminId === 'adm_system' || adminId.startsWith('adm_')));
+
+  if (!isSelf && !isAdmin) {
+    return res.status(403).json({
+      error: 'Forbidden: You cannot delete another user account without administrative authorization',
+      code: 'FORBIDDEN_USER_DELETE'
+    });
+  }
+
   try {
     const purgeTx = db.transaction(() => {
       db.prepare('DELETE FROM conversation_members WHERE user_id = ?').run(id);
@@ -1307,15 +1356,6 @@ function getAllowedVisibilities(viewerId: string, targetUserId: string): string[
     return ['public', 'matches'];
   }
   return ['public'];
-}
-
-function checkUserBlocked(userA: string, userB: string): boolean {
-  if (!userA || !userB || userA === userB) return false;
-  const blocked = db.prepare(`
-    SELECT 1 FROM user_blocks 
-    WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)
-  `).get(userA, userB, userB, userA);
-  return !!blocked;
 }
 
 // 1. Get Complete Living Identity Profile with Privacy Enforcement
@@ -4224,6 +4264,11 @@ app.get('/api/v1/confessions/my', (req, res) => {
 
 app.post('/api/v1/confessions', (req, res) => {
   const currentUserId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+
+  if (isUserSuspended(currentUserId)) {
+    return res.status(403).json({ error: 'Forbidden: Suspended accounts cannot post confessions', code: 'ACCOUNT_SUSPENDED' });
+  }
+
   const {
     title,
     story,
@@ -4377,6 +4422,7 @@ app.post('/api/v1/confessions/:id/react', (req, res) => {
 
 app.delete('/api/v1/confessions/:id', (req, res) => {
   const currentUserId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+  const adminId = (req.headers['x-admin-id'] as string);
   const { id } = req.params;
 
   const confession = db.prepare('SELECT user_id FROM confessions WHERE id = ?').get(id) as { user_id: string } | undefined;
@@ -4384,8 +4430,11 @@ app.delete('/api/v1/confessions/:id', (req, res) => {
     return res.status(404).json({ error: 'Confession not found' });
   }
 
-  if (confession.user_id !== currentUserId && currentUserId !== 'usr_me') {
-    return res.status(403).json({ error: 'Forbidden: You can only delete your own confessions' });
+  const isOwner = confession.user_id === currentUserId;
+  const isAdmin = Boolean(adminId && (adminId === 'adm_system' || checkAdminPermission(adminId, 'content', 'delete')));
+
+  if (!isOwner && !isAdmin) {
+    return res.status(403).json({ error: 'Forbidden: You can only delete your own confessions', code: 'FORBIDDEN_CONFESSION_DELETE' });
   }
 
   db.prepare('DELETE FROM confessions WHERE id = ?').run(id);
@@ -6959,6 +7008,7 @@ app.get('/api/v1/users', (req, res) => {
   try {
     const q = ((req.query.q as string) || '').trim().toLowerCase();
     const limit = Math.min(50, parseInt((req.query.limit as string) || '20', 10));
+    const currentUserId = (req.headers['x-user-id'] as string) || (req.query.currentUserId as string) || (req.query.userId as string);
 
     let users = db.prepare(`
       SELECT u.id, u.name, u.username, u.avatar_url, u.is_verified, u.last_seen_at, u.status_text,
@@ -6966,6 +7016,14 @@ app.get('/api/v1/users', (req, res) => {
       FROM users u
       LEFT JOIN user_identities ui ON u.id = ui.user_id AND (ui.is_primary = 1 OR ui.classification = 'real_identity')
     `).all() as any[];
+
+    // 1. Exclude suspended accounts from public discovery
+    users = users.filter(u => !u.status_text || !u.status_text.startsWith('[SUSPENDED'));
+
+    // 2. Exclude accounts with bidirectional block relationships
+    if (currentUserId) {
+      users = users.filter(u => !checkUserBlocked(currentUserId, u.id));
+    }
 
     if (q) {
       users = users.filter(u => 
@@ -7002,6 +7060,12 @@ app.get('/api/v1/users', (req, res) => {
 app.get('/api/v1/users/:id', (req, res) => {
   try {
     const { id } = req.params;
+    const viewerId = (req.headers['x-user-id'] as string) || (req.query.viewerId as string) || (req.query.userId as string);
+
+    if (viewerId && checkUserBlocked(viewerId, id)) {
+      return res.status(403).json({ error: 'Access denied: relationship blocked', code: 'RELATIONSHIP_BLOCKED' });
+    }
+
     const u = db.prepare(`
       SELECT u.id, u.name, u.username, u.avatar_url, u.is_verified, u.last_seen_at, u.status_text,
              ui.display_title, ui.description, ui.personality_traits, ui.interests, ui.skills, ui.cover_image_url
@@ -7012,6 +7076,10 @@ app.get('/api/v1/users/:id', (req, res) => {
 
     if (!u) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (u.status_text && u.status_text.startsWith('[SUSPENDED')) {
+      return res.status(403).json({ error: 'This user account is suspended by moderation team', code: 'ACCOUNT_SUSPENDED' });
     }
 
     res.json({
@@ -7038,7 +7106,19 @@ app.get('/api/v1/users/:id', (req, res) => {
   }
 });
 
+// Global 404 handler for unmatched routes
+app.use((_req, res) => {
+  res.status(404).json({ error: 'Endpoint not found', code: 'NOT_FOUND' });
+});
 
+// Global Error Handler for graceful recovery
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[Unhandled Server Error]', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+    code: err.code || 'INTERNAL_ERROR'
+  });
+});
 
 const PORT = 3001;
 server.listen(PORT, () => {
