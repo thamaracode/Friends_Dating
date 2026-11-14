@@ -105,14 +105,14 @@ export const CouplePlayHubView: React.FC<CouplePlayHubViewProps> = ({
   const [diceMode, setDiceMode] = useState<2 | 3>(3);
   const [isDiceRolling, setIsDiceRolling] = useState(false);
   const [lockedDice, setLockedDice] = useState<[boolean, boolean, boolean]>([false, false, false]);
-  const [diceResult, setDiceResult] = useState<DiceRollResult>({
+  const [diceResult, setDiceResult] = useState<DiceRollResult>(() => ({
     action: 'Kiss softly',
     bodyPart: 'Neck',
     durationOrStyle: 'For 45 Seconds',
     tier: 'pg',
     diceValues: [3, 4, 2],
     rolledAt: Date.now()
-  });
+  }));
   const [diceHistory, setDiceHistory] = useState<string[]>([]);
 
   const rollDice = () => {
