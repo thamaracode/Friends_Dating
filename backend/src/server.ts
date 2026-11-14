@@ -805,8 +805,8 @@ app.post('/api/v1/scheduled-messages', (req, res) => {
 
 // 13. Privacy & Safety: Block and Unblock User with Boundary Reasons & Parting Words
 app.post(['/api/v1/users/:id/block', '/api/users/:id/block'], (req, res) => {
-  const { id: blockedId } = req.params;
   const { blockerId = 'usr_me', reason, partingMessage } = req.body;
+  const blockedId = req.body?.blockedId || req.params.id;
 
   try {
     SafetyService.blockUser(blockerId, blockedId, reason, partingMessage);
@@ -833,8 +833,8 @@ app.post(['/api/v1/blocks', '/api/blocks'], (req, res) => {
 });
 
 app.delete(['/api/v1/users/:id/block', '/api/users/:id/block'], (req, res) => {
-  const { id: blockedId } = req.params;
   const blockerId = (req.headers['x-user-id'] as string) || req.body?.blockerId || (req.query.blockerId as string) || 'usr_me';
+  const blockedId = req.body?.blockedId || (req.query.blockedId as string) || req.params.id;
 
   SafetyService.unblockUser(blockerId, blockedId);
   res.json({ success: true, blocked: false });

@@ -109,6 +109,13 @@ export class SafetyService {
     const now = Date.now();
     try {
       db.prepare(`
+        INSERT OR IGNORE INTO users (id, name, username, avatar_url, last_seen_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(blockedId, 'User ' + blockedId, 'user_' + blockedId, '', now);
+    } catch {}
+
+    try {
+      db.prepare(`
         INSERT OR REPLACE INTO user_blocks (blocker_id, blocked_id, reason, parting_message, created_at)
         VALUES (?, ?, ?, ?, ?)
       `).run(blockerId, blockedId, reason || null, partingMessage || null, now);
