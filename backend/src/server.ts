@@ -39,6 +39,12 @@ import { RelationshipVaultService } from './relationship-vault/service';
 import { RELATIONSHIP_LIFECYCLE_METADATA } from './relationship-vault/types';
 import { ContentEngineService } from './content-engine/service';
 import { SoulverseIntelligenceService } from './ai/featuresService';
+import { initCommunicationSchema } from './communication/schema';
+import { MessagingService } from './communication/messagingService';
+import { InteractiveGamesEngine } from './communication/gamesEngine';
+import { SocialActivitiesService } from './communication/socialActivitiesService';
+import { SafetyService } from './communication/safetyService';
+import { RealtimeGateway } from './communication/realtimeGateway';
 import {
   createRateLimiter,
   isUserSuspended,
@@ -49,6 +55,7 @@ import {
 } from './security';
 
 initDatabase();
+initCommunicationSchema();
 SoulPromptsService.initTables();
 ContentEngineService.ensureTables();
 
@@ -84,6 +91,7 @@ const upload = multer({
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
+RealtimeGateway.init(wss);
 
 // Map of userId -> Set of active WebSockets (Multi-device support)
 const userSockets = new Map<string, Set<WebSocket>>();
@@ -8728,6 +8736,445 @@ app.get('/api/v1/ai/features/status', (req, res) => {
     res.json({ success: true, status });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to get AI status' });
+  }
+});
+
+// =========================================================================
+// MASTER PROMPT 08: COMPLETE REAL-TIME COMMUNICATION AND SOCIAL INTERACTION
+// =========================================================================
+
+// 1. Group & Direct Conversation Endpoints
+app.post('/api/v1/communication/conversations/group', (req, res) => {
+  try {
+    const creatorId = (req.headers['x-user-id'] as string) || req.body.creatorId || 'usr_me';
+    const { title, description, avatarUrl, memberIds = [] } = req.body;
+    if (!title) return res.status(400).json({ error: 'Title is required for group chat' });
+    const conv = MessagingService.createGroupConversation({ creatorId, title, description, avatarUrl, memberIds });
+    res.status(201).json({ success: true, conversation: conv });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to create group' });
+  }
+});
+
+app.post('/api/v1/communication/conversations/direct', (req, res) => {
+  try {
+    const userA = (req.headers['x-user-id'] as string) || req.body.userA || 'usr_me';
+    const { userB } = req.body;
+    if (!userB) return res.status(400).json({ error: 'Target userB is required' });
+    const conv = MessagingService.getOrCreateDirectConversation(userA, userB);
+    res.json({ success: true, conversation: conv });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to get/create direct conversation' });
+  }
+});
+
+app.get('/api/v1/communication/conversations', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const filter = req.query.filter as string;
+    const conversations = MessagingService.getUserConversations(userId, filter);
+    res.json({ success: true, conversations });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch conversations' });
+  }
+});
+
+app.get('/api/v1/communication/conversations/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const conv = MessagingService.getConversationById(req.params.id, userId);
+    if (!conv) return res.status(404).json({ error: 'Conversation not found' });
+    res.json({ success: true, conversation: conv });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch conversation' });
+  }
+});
+
+// 2. Messaging, Offline Sync, Reactions, Edit & Delete
+app.post('/api/v1/communication/conversations/:id/messages', (req, res) => {
+  try {
+    const senderId = (req.headers['x-user-id'] as string) || req.body.senderId || 'usr_me';
+    const { clientMessageId, type, text, mediaUrl, voiceDuration, voiceWaveform, attachments, replyToMessageId, threadId } = req.body;
+    if (!clientMessageId) return res.status(400).json({ error: 'clientMessageId is required' });
+    const result = MessagingService.sendMessage({
+      conversationId: req.params.id,
+      senderId,
+      clientMessageId,
+      type,
+      text,
+      mediaUrl,
+      voiceDuration,
+      voiceWaveform,
+      attachments,
+      replyToMessageId,
+      threadId
+    });
+    res.status(result.deduplicated ? 200 : 201).json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to send message' });
+  }
+});
+
+app.get('/api/v1/communication/conversations/:id/messages', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+    const beforeSequence = req.query.beforeSequence ? parseInt(req.query.beforeSequence as string) : undefined;
+    const messages = MessagingService.getMessages({ conversationId: req.params.id, userId, limit, beforeSequence });
+    res.json({ success: true, messages });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch messages' });
+  }
+});
+
+app.get('/api/v1/communication/conversations/:id/sync', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const sinceSequence = parseInt((req.query.sinceSequence as string) || '0');
+    const messages = MessagingService.syncMessages(req.params.id, sinceSequence, userId);
+    res.json({ success: true, messages, count: messages.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to sync messages' });
+  }
+});
+
+app.patch('/api/v1/communication/messages/:id', (req, res) => {
+  try {
+    const editorId = (req.headers['x-user-id'] as string) || req.body.editorId || 'usr_me';
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ error: 'text is required' });
+    const updated = MessagingService.editMessage(req.params.id, editorId, text);
+    res.json({ success: true, message: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to edit message' });
+  }
+});
+
+app.delete('/api/v1/communication/messages/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const mode = (req.query.mode as string) === 'for_everyone' ? 'for_everyone' : 'for_me';
+    MessagingService.deleteMessage(req.params.id, userId, mode);
+    res.json({ success: true, deleted: true, mode });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to delete message' });
+  }
+});
+
+app.post('/api/v1/communication/messages/:id/reactions', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { emoji } = req.body;
+    if (!emoji) return res.status(400).json({ error: 'emoji is required' });
+    const result = MessagingService.toggleReaction(req.params.id, userId, emoji);
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to toggle reaction' });
+  }
+});
+
+app.post('/api/v1/communication/conversations/:id/read', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const sequenceNumber = req.body.sequenceNumber ? parseInt(req.body.sequenceNumber) : undefined;
+    MessagingService.markAsRead(req.params.id, userId, sequenceNumber);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to mark as read' });
+  }
+});
+
+app.get('/api/v1/communication/messages/search', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const query = (req.query.q as string) || '';
+    if (!query) return res.status(400).json({ error: 'Query parameter q is required' });
+    const messages = MessagingService.searchMessages({
+      userId,
+      query,
+      conversationId: req.query.conversationId as string,
+      senderId: req.query.senderId as string,
+      type: req.query.type as string,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : 50
+    });
+    res.json({ success: true, messages, count: messages.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Search failed' });
+  }
+});
+
+// 3. Interactive Mini-Games Architecture
+app.post('/api/v1/communication/games/start', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { conversationId, gameType } = req.body;
+    if (!conversationId || !gameType) return res.status(400).json({ error: 'conversationId and gameType are required' });
+    const session = InteractiveGamesEngine.startGameSession(conversationId, gameType, userId);
+    res.status(201).json({ success: true, session });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to start game' });
+  }
+});
+
+app.post('/api/v1/communication/games/:id/turn', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const session = InteractiveGamesEngine.submitGameTurn(req.params.id, userId, req.body.actionPayload || req.body);
+    res.json({ success: true, session });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to process game turn' });
+  }
+});
+
+app.get('/api/v1/communication/games/tod-draw', (req, res) => {
+  try {
+    const type = (req.query.type as 'truth' | 'dare') || 'truth';
+    const tier = (req.query.tier as 'pg' | 'romantic' | 'deep' | 'spicy') || 'romantic';
+    const card = InteractiveGamesEngine.drawTruthOrDareCard(type, tier);
+    res.json({ success: true, card });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to draw card' });
+  }
+});
+
+app.post('/api/v1/communication/games/dice-roll', (req, res) => {
+  try {
+    const count = parseInt(((req.body && req.body.count) || (req.query && req.query.count) || 2) as string);
+    const result = InteractiveGamesEngine.rollDice(count);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Dice roll failed' });
+  }
+});
+
+app.post('/api/v1/communication/games/coin-flip', (_req, res) => {
+  try {
+    const result = InteractiveGamesEngine.flipCoin();
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Coin flip failed' });
+  }
+});
+
+// 4. Social Activities & Watch Party Coordination
+app.post('/api/v1/communication/watch-party', (req, res) => {
+  try {
+    const hostId = (req.headers['x-user-id'] as string) || req.body.hostId || 'usr_me';
+    const { title, videoUrl, videoType, conversationId } = req.body;
+    if (!title || !videoUrl) return res.status(400).json({ error: 'title and videoUrl are required' });
+    const party = SocialActivitiesService.createWatchParty({ title, hostId, videoUrl, videoType, conversationId });
+    res.status(201).json({ success: true, watchParty: party });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to create watch party' });
+  }
+});
+
+app.get('/api/v1/communication/watch-party/:id', (req, res) => {
+  try {
+    const party = SocialActivitiesService.getWatchParty(req.params.id);
+    if (!party) return res.status(404).json({ error: 'Watch party not found' });
+    res.json({ success: true, watchParty: party });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get watch party' });
+  }
+});
+
+app.post('/api/v1/communication/watch-party/:id/sync', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { position, isPlaying } = req.body;
+    if (typeof position !== 'number') return res.status(400).json({ error: 'Numeric position required' });
+    const party = SocialActivitiesService.syncWatchPartyPlayback(req.params.id, userId, position, Boolean(isPlaying));
+    res.json({ success: true, watchParty: party });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Sync failed' });
+  }
+});
+
+app.get('/api/v1/communication/social-rooms', (_req, res) => {
+  try {
+    const rooms = SocialActivitiesService.getSocialRooms();
+    res.json({ success: true, rooms });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get rooms' });
+  }
+});
+
+app.post('/api/v1/communication/social-rooms', (req, res) => {
+  try {
+    const hostId = (req.headers['x-user-id'] as string) || req.body.hostId || 'usr_me';
+    const { title, topic, category, roomType, maxParticipants, tags } = req.body;
+    if (!title || !topic || !category) return res.status(400).json({ error: 'title, topic, and category required' });
+    const room = SocialActivitiesService.createSocialRoom({ title, topic, category, roomType, hostId, maxParticipants, tags });
+    res.status(201).json({ success: true, room });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to create room' });
+  }
+});
+
+app.post('/api/v1/communication/social-rooms/:id/join', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    SocialActivitiesService.joinRoom(req.params.id, userId);
+    res.json({ success: true, joined: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to join room' });
+  }
+});
+
+app.post('/api/v1/communication/social-rooms/:id/leave', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    SocialActivitiesService.leaveRoom(req.params.id, userId);
+    res.json({ success: true, left: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to leave room' });
+  }
+});
+
+app.post('/api/v1/communication/social-rooms/:id/hand-raise', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const isRaised = Boolean(req.body.isRaised);
+    SocialActivitiesService.toggleHandRaise(req.params.id, userId, isRaised);
+    res.json({ success: true, isRaised });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to update hand raise' });
+  }
+});
+
+app.post('/api/v1/communication/invitations', (req, res) => {
+  try {
+    const inviterId = (req.headers['x-user-id'] as string) || req.body.inviterId || 'usr_me';
+    const { inviteeId, activityType, activityId, title } = req.body;
+    if (!inviteeId || !activityType || !activityId || !title) {
+      return res.status(400).json({ error: 'inviteeId, activityType, activityId, and title required' });
+    }
+    const inv = SocialActivitiesService.sendInvitation({ inviterId, inviteeId, activityType, activityId, title });
+    res.status(201).json({ success: true, invitation: inv });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to send invitation' });
+  }
+});
+
+app.get('/api/v1/communication/invitations', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const invitations = SocialActivitiesService.getUserInvitations(userId);
+    res.json({ success: true, invitations });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get invitations' });
+  }
+});
+
+app.post('/api/v1/communication/invitations/:id/respond', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const response = req.body.response as 'accepted' | 'declined';
+    if (!['accepted', 'declined'].includes(response)) return res.status(400).json({ error: 'Response must be accepted or declined' });
+    const success = SocialActivitiesService.respondInvitation(req.params.id, userId, response);
+    res.json({ success });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to respond to invitation' });
+  }
+});
+
+// 5. Safety, Moderation & Privacy Endpoints
+app.post('/api/v1/communication/safety/moderate', (req, res) => {
+  try {
+    const { text } = req.body;
+    const result = SafetyService.moderateContent(text || '');
+    res.json({ success: true, moderation: result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Moderation check failed' });
+  }
+});
+
+app.post('/api/v1/communication/safety/validate-attachment', (req, res) => {
+  try {
+    const { fileName, fileSize, mimeType } = req.body;
+    if (!fileName || typeof fileSize !== 'number' || !mimeType) {
+      return res.status(400).json({ error: 'fileName, fileSize, and mimeType required' });
+    }
+    const validation = SafetyService.validateAttachment(fileName, fileSize, mimeType);
+    res.json({ success: true, ...validation });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Validation failed' });
+  }
+});
+
+app.post('/api/v1/communication/safety/block', (req, res) => {
+  try {
+    const blockerId = (req.headers['x-user-id'] as string) || req.body.blockerId || 'usr_me';
+    const { blockedId, reason } = req.body;
+    if (!blockedId) return res.status(400).json({ error: 'blockedId is required' });
+    SafetyService.blockUser(blockerId, blockedId, reason);
+    res.json({ success: true, blocked: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Block failed' });
+  }
+});
+
+app.delete('/api/v1/communication/safety/block', (req, res) => {
+  try {
+    const blockerId = (req.headers['x-user-id'] as string) || req.body.blockerId || 'usr_me';
+    const { blockedId } = req.body;
+    if (!blockedId) return res.status(400).json({ error: 'blockedId is required' });
+    SafetyService.unblockUser(blockerId, blockedId);
+    res.json({ success: true, unblocked: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Unblock failed' });
+  }
+});
+
+app.get('/api/v1/communication/safety/blocks', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const blocks = SafetyService.getBlockedUsers(userId);
+    res.json({ success: true, blocks });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get blocks' });
+  }
+});
+
+app.post('/api/v1/communication/safety/report', (req, res) => {
+  try {
+    const reporterId = (req.headers['x-user-id'] as string) || req.body.reporterId || 'usr_me';
+    const { reportedUserId, messageId, conversationId, reason, details } = req.body;
+    if (!reportedUserId || !reason) return res.status(400).json({ error: 'reportedUserId and reason are required' });
+    const report = SafetyService.submitReport({ reporterId, reportedUserId, messageId, conversationId, reason, details });
+    res.status(201).json({ success: true, report });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Report failed' });
+  }
+});
+
+app.get('/api/v1/communication/safety/privacy', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const privacy = SafetyService.getPrivacySettings(userId);
+    res.json({ success: true, privacy });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get privacy settings' });
+  }
+});
+
+app.patch('/api/v1/communication/safety/privacy', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const updated = SafetyService.updatePrivacySettings(userId, req.body);
+    res.json({ success: true, privacy: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to update privacy settings' });
+  }
+});
+
+app.get('/api/v1/communication/safety/transparency', (_req, res) => {
+  try {
+    const disclosure = SafetyService.getSecurityTransparencyStatement();
+    res.json({ success: true, disclosure });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get disclosure' });
   }
 });
 
