@@ -227,7 +227,17 @@ export const SpotifyMusicProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.embedUrl) return parsed;
+        if (
+          parsed &&
+          parsed.embedUrl &&
+          !parsed.title?.toLowerCase().includes('nightcore') &&
+          parsed.id !== '4cOdK2wGLETKBW3PvgPWqT'
+        ) {
+          return parsed;
+        } else {
+          // Permanently purge legacy Nightcore Dreams ambient data
+          localStorage.removeItem(STORAGE_KEY);
+        }
       }
     } catch {
       // fallback

@@ -42,10 +42,8 @@ export const SpotifyPlayerWidget: React.FC<SpotifyPlayerWidgetProps> = ({
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  // Persistent floating bottom-right mini-dock and popups are completely disabled
-  if (variant !== 'card') {
-    return null;
-  }
+  // Permanently disabled: Intrusive floating mini-docks and legacy ambient popups are completely removed.
+  return null;
 
   return (
     <div className={`p-4 rounded-3xl dark-glass border border-white/[0.08] space-y-3 shadow-xl relative overflow-hidden transition-all ${className}`}>

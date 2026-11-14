@@ -812,7 +812,7 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
 
                     <div className="flex items-center justify-between pt-3 border-t border-white/[0.08]">
                       <div>
-                        <span className="text-sm font-bold text-white block">Spotify Ambient World Soundtrack</span>
+                        <span className="text-sm font-bold text-white block">Spotify Embed Sanctuary & Presets</span>
                         <span className="text-xs text-zinc-400">Stream ambient audio presets when visitors enter your profile worlds</span>
                       </div>
                       <button

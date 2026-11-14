@@ -35,6 +35,8 @@ import { SoulPromptsService } from './soul-prompts/service';
 import { psychologyService } from './psychology/service';
 import { SocialDiscoveryService } from './discovery/service';
 import { MATCHING_TERMINOLOGY_REGISTRY, CONNECTION_TYPES_METADATA } from './discovery/types';
+import { RelationshipVaultService } from './relationship-vault/service';
+import { RELATIONSHIP_LIFECYCLE_METADATA } from './relationship-vault/types';
 import {
   createRateLimiter,
   isUserSuspended,
@@ -8024,6 +8026,332 @@ app.post('/api/v1/discovery/passes/reset', (req, res) => {
     res.json({ success: true, clearedCount });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to reset passes' });
+  }
+});
+
+// ============================================================================
+// MASTER PROMPT 05: RELATIONSHIP MANAGEMENT, PERSONAL MEMORY AND CONTEXT ENGINE
+// ============================================================================
+
+// 1. Vault Metadata (Lifecycle Phases & Categories)
+app.get('/api/v1/vault/metadata', (_req, res) => {
+  res.json({
+    success: true,
+    lifecyclePhases: RELATIONSHIP_LIFECYCLE_METADATA
+  });
+});
+
+// 2. List Managed Persons (Strict Account-Level Data Isolation)
+app.get('/api/v1/vault/persons', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const { category, status } = req.query;
+
+    const persons = RelationshipVaultService.listPersons(
+      userId,
+      category as any,
+      status as any
+    );
+    res.json({ success: true, persons });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to list managed relationships' });
+  }
+});
+
+// 3. Get Single Person
+app.get('/api/v1/vault/persons/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const person = RelationshipVaultService.getPerson(userId, req.params.id);
+    if (!person) {
+      return res.status(404).json({ error: 'Person record not found in your relationship vault' });
+    }
+    res.json({ success: true, person });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get person record' });
+  }
+});
+
+// 4. Get Full Dossier (Person + Timeline + Memories + Promises + Reminders + Briefing)
+app.get('/api/v1/vault/persons/:id/dossier', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const dossier = RelationshipVaultService.getFullDossier(userId, req.params.id);
+    if (!dossier) {
+      return res.status(404).json({ error: 'Relationship dossier not found' });
+    }
+    res.json({ success: true, dossier });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to load relationship dossier' });
+  }
+});
+
+// 5. Create Person Record
+app.post('/api/v1/vault/persons', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    if (!req.body.name || !req.body.name.trim()) {
+      return res.status(400).json({ error: 'Name is required to create a relationship record' });
+    }
+
+    const created = RelationshipVaultService.createPerson(userId, req.body);
+    res.json({ success: true, person: created });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to create relationship record' });
+  }
+});
+
+// 6. Update Person Record
+app.put('/api/v1/vault/persons/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const updated = RelationshipVaultService.updatePerson(userId, req.params.id, req.body);
+    if (!updated) {
+      return res.status(404).json({ error: 'Person record not found to update' });
+    }
+    res.json({ success: true, person: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to update relationship record' });
+  }
+});
+
+// 7. Delete Person Record (Cascading Purge)
+app.delete('/api/v1/vault/persons/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body?.userId || (req.query.userId as string) || 'usr_me';
+    const deleted = RelationshipVaultService.deletePerson(userId, req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Person record not found or already deleted' });
+    }
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to delete relationship record' });
+  }
+});
+
+// 8. "Before You Talk" Context Briefing
+app.get('/api/v1/vault/persons/:id/briefing', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const dossier = RelationshipVaultService.getFullDossier(userId, req.params.id);
+    if (!dossier) {
+      return res.status(404).json({ error: 'Person not found' });
+    }
+    res.json({ success: true, briefing: dossier.briefing });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to generate briefing' });
+  }
+});
+
+// 9. AI Relationship Insights (Starters, Patterns, Drafts)
+app.get('/api/v1/vault/persons/:id/ai-insights', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const insights = RelationshipVaultService.getAiInsights(userId, req.params.id);
+    if (!insights) {
+      return res.status(404).json({ error: 'Person not found to generate insights' });
+    }
+    res.json({ success: true, insights });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to generate AI insights' });
+  }
+});
+
+// 10. Log Interaction Timeline Event (Past Timestamps Supported)
+app.post('/api/v1/vault/persons/:id/interactions', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    if (!req.body.interaction_type || !req.body.notes) {
+      return res.status(400).json({ error: 'interaction_type and notes are required' });
+    }
+
+    const interaction = RelationshipVaultService.logInteraction(userId, req.params.id, req.body);
+    res.json({ success: true, interaction });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to log interaction' });
+  }
+});
+
+// 11. Get Interaction History
+app.get('/api/v1/vault/persons/:id/interactions', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const interactions = RelationshipVaultService.getInteractions(userId, req.params.id);
+    res.json({ success: true, interactions });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to get interactions' });
+  }
+});
+
+// 12. Add Personal Memory, Quote, or Reflection
+app.post('/api/v1/vault/persons/:id/memories', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    if (!req.body.content) {
+      return res.status(400).json({ error: 'content is required for memory' });
+    }
+
+    const memory = RelationshipVaultService.addMemory(userId, req.params.id, {
+      memory_type: req.body.memory_type || 'quote',
+      title: req.body.title,
+      content: req.body.content,
+      emotional_significance: req.body.emotional_significance,
+      occurred_at: req.body.occurred_at,
+      tags: req.body.tags,
+      is_unresolved: Boolean(req.body.is_unresolved)
+    });
+    res.json({ success: true, memory });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to add memory' });
+  }
+});
+
+// 13. Update Memory (e.g. Resolve Discussion)
+app.put('/api/v1/vault/memories/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const updated = RelationshipVaultService.updateMemory(userId, req.params.id, req.body);
+    if (!updated) {
+      return res.status(404).json({ error: 'Memory not found to update' });
+    }
+    res.json({ success: true, memory: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to update memory' });
+  }
+});
+
+// 14. Add Commitment / Promise
+app.post('/api/v1/vault/persons/:id/commitments', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    if (!req.body.title) {
+      return res.status(400).json({ error: 'title is required for commitment' });
+    }
+
+    const commitment = RelationshipVaultService.addCommitment(userId, req.params.id, {
+      made_by: req.body.made_by || 'me',
+      title: req.body.title,
+      description: req.body.description,
+      due_date: req.body.due_date,
+      notes: req.body.notes
+    });
+    res.json({ success: true, commitment });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to add commitment' });
+  }
+});
+
+// 15. Update Commitment Status (fulfilled, broken, renegotiated)
+app.put('/api/v1/vault/commitments/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const updated = RelationshipVaultService.updateCommitment(userId, req.params.id, req.body);
+    if (!updated) {
+      return res.status(404).json({ error: 'Commitment not found to update' });
+    }
+    res.json({ success: true, commitment: updated });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to update commitment' });
+  }
+});
+
+// 16. Add Reminder
+app.post('/api/v1/vault/persons/:id/reminders', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    if (!req.body.title || !req.body.due_date) {
+      return res.status(400).json({ error: 'title and due_date are required for reminder' });
+    }
+
+    const reminder = RelationshipVaultService.addReminder(userId, req.params.id, {
+      title: req.body.title,
+      category: req.body.category || 'custom',
+      due_date: req.body.due_date,
+      reminder_timing: req.body.reminder_timing,
+      notes: req.body.notes
+    });
+    res.json({ success: true, reminder });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to add reminder' });
+  }
+});
+
+// 17. Update Reminder Status
+app.put('/api/v1/vault/reminders/:id', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const status = req.body.status || 'completed';
+    const updated = RelationshipVaultService.updateReminder(userId, req.params.id, status);
+    if (!updated) {
+      return res.status(404).json({ error: 'Reminder not found to update' });
+    }
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to update reminder' });
+  }
+});
+
+// 18. Export Relationship Dossier (JSON / Markdown)
+app.get('/api/v1/vault/persons/:id/export', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const format = req.query.format === 'markdown' ? 'markdown' : 'json';
+    const dossier = RelationshipVaultService.getFullDossier(userId, req.params.id);
+
+    if (!dossier) {
+      return res.status(404).json({ error: 'Relationship not found to export' });
+    }
+
+    if (format === 'markdown') {
+      const p = dossier.person;
+      let md = `# Relationship Dossier: ${p.name} (${p.nickname || ''})\n\n`;
+      md += `- **Category:** ${p.relationship_category}\n`;
+      md += `- **Lifecycle Status:** ${p.relationship_status} (${p.custom_status_label || ''})\n`;
+      md += `- **First Met:** ${p.first_met_date || 'N/A'} (${p.first_met_location || ''})\n`;
+      md += `- **Birthday:** ${p.birthday_date || 'N/A'}\n`;
+      md += `- **Love Language:** ${p.love_language || 'N/A'}\n\n`;
+
+      md += `## 💬 Things They Appreciate & Boundaries\n`;
+      md += `### Loves & Preferences:\n`;
+      p.things_they_love.forEach(l => { md += `- ${l}\n`; });
+      md += `\n### Boundaries to Respect:\n`;
+      p.boundaries.forEach(b => { md += `- ${b}\n`; });
+
+      md += `\n## 🤝 Promises & Commitments\n`;
+      dossier.commitments.forEach(c => {
+        md += `- [${c.status.toUpperCase()}] (${c.made_by.toUpperCase()}) ${c.title} (Due: ${c.due_date || 'N/A'})\n`;
+      });
+
+      md += `\n## 💡 Memories & Quotes\n`;
+      dossier.memories.forEach(m => {
+        md += `### [${m.memory_type.toUpperCase()}] ${m.title || 'Note'}\n"${m.content}"\n\n`;
+      });
+
+      md += `\n## 📅 Interaction Timeline\n`;
+      dossier.interactions.forEach(i => {
+        md += `- **${new Date(i.timestamp).toLocaleDateString()}:** [${i.interaction_type}] ${i.title || ''} — ${i.notes}\n`;
+      });
+
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${p.name.replace(/\\s+/g, '_')}_dossier.md"`);
+      return res.send(md);
+    }
+
+    res.json({ success: true, dossier, exportedAt: Date.now() });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to export dossier' });
+  }
+});
+
+// 19. Export All Vault Relationships
+app.get('/api/v1/vault/export-all', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+    const persons = RelationshipVaultService.listPersons(userId);
+    const dossiers = persons.map(p => RelationshipVaultService.getFullDossier(userId, p.id));
+    res.json({ success: true, count: dossiers.length, dossiers, exportedAt: Date.now() });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to export vault' });
   }
 });
 

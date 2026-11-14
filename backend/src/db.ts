@@ -1222,6 +1222,7 @@ export function initDatabase() {
   seedConfessions();
   seedPsychologyFramework();
   seedSocialDiscoveryEngine();
+  seedRelationshipVault();
 }
 
 function seedInitialData() {
@@ -3865,5 +3866,14 @@ function seedSocialDiscoveryEngine() {
     SocialDiscoveryService.seedDiscoveryProfiles();
   } catch (err) {
     console.warn('Could not seed social discovery engine:', err);
+  }
+}
+
+function seedRelationshipVault() {
+  try {
+    const { RelationshipVaultService } = require('./relationship-vault/service');
+    RelationshipVaultService.seedVaultData();
+  } catch (err) {
+    console.warn('Could not seed relationship vault:', err);
   }
 }

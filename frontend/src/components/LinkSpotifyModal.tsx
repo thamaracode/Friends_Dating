@@ -70,7 +70,7 @@ export const LinkSpotifyModal: React.FC = () => {
     setCustomTitle('');
     setCustomArtist('');
     setErrorMessage(null);
-    setSuccessMessage('Reset to default Soulverse ambient soundscape.');
+    setSuccessMessage('Reset to default curated Spotify soundscape.');
   };
 
   return (
