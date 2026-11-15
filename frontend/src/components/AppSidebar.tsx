@@ -22,13 +22,13 @@ import type { ExperienceTab } from '../types';
 interface AppSidebarProps {
   activeTab: ExperienceTab;
   onSelectTab: (tab: ExperienceTab) => void;
-  onOpenCrisisModal: () => void;
+  onOpenCrisisModal?: () => void;
 }
 
 export const AppSidebar: React.FC<AppSidebarProps> = ({
   activeTab,
   onSelectTab,
-  onOpenCrisisModal
+  onOpenCrisisModal: _onOpenCrisisModal
 }) => {
   const NAV_ITEMS = [
     {
@@ -133,17 +133,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         ))}
       </div>
 
-      {/* Bottom Emergency Triage & User Identity Card */}
+      {/* Bottom User Identity Card */}
       <div className="p-4 border-t border-[#302B22] space-y-3 bg-[#090909]">
-        {/* 24/7 Crisis Hotline Button */}
-        <button
-          onClick={onOpenCrisisModal}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 text-rose-300 text-xs font-bold transition-colors cursor-pointer"
-        >
-          <HeartHandshake className="w-4 h-4 text-rose-400" />
-          <span>24/7 Crisis Support (1926)</span>
-        </button>
-
         {/* Current Active User Preview */}
         <div 
           onClick={() => onSelectTab('my_world')}

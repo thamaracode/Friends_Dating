@@ -26,7 +26,8 @@ import {
   ChevronRight, 
   Sparkles, 
   AlertTriangle,
-  ShieldAlert
+  ShieldAlert,
+  ShieldCheck
 } from 'lucide-react';
 import { 
   loadDiscoverySettings, 
@@ -45,6 +46,7 @@ import {
 import { SOULVERSE_ALL_LOGOS, type HeartLogoVariant } from './brand/SoulverseHeartLogos';
 import { GlassModal, GlassButton, GlassPrimaryButton } from './klyven';
 import { LifestyleSelectModal, LifestyleCategoryKey } from './control/LifestyleSelectModal';
+import { SafetyAndSupportCenter } from './safety/SafetyAndSupportCenter';
 
 export const SoulverseSettingsPage: React.FC = () => {
   // State loaded from localStorage with rich defaults
@@ -59,6 +61,19 @@ export const SoulverseSettingsPage: React.FC = () => {
   const [activeBrandLogo, setActiveBrandLogo] = useState<HeartLogoVariant>(() => {
     return (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'open_heart';
   });
+
+  // Deep-linking hash support for settings tabs (e.g. #settings/safety, #safety)
+  React.useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash.includes('safety') || hash.includes('helpline') || hash.includes('crisis') || hash.includes('document')) {
+        setActiveTab('safety');
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   // Modals & Feedback
   const [savedToast, setSavedToast] = useState(false);
@@ -221,10 +236,10 @@ export const SoulverseSettingsPage: React.FC = () => {
       <div className="flex items-center gap-2 p-1.5 rounded-2xl dark-glass border border-white/10 overflow-x-auto no-scrollbar text-xs">
         {[
           { id: 'discovery', label: 'Discovery Settings', icon: Compass },
-          { id: 'visibility', label: 'Visibility & Safety', icon: Eye },
+          { id: 'visibility', label: 'Visibility Boundaries', icon: Eye },
+          { id: 'safety', label: 'Safety, Documents & Helplines', icon: ShieldCheck },
           { id: 'account', label: 'Account & Membership', icon: CreditCard },
-          { id: 'preferences', label: 'Appearance & Alerts', icon: Palette },
-          { id: 'safety', label: 'Legal & Actions', icon: Shield }
+          { id: 'preferences', label: 'Appearance & Alerts', icon: Palette }
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1011,40 +1026,12 @@ export const SoulverseSettingsPage: React.FC = () => {
       )}
 
       {/* ===================================================================== */}
-      {/* TAB 5: LEGAL & ACTIONS (Images 9, 10)                                 */}
+      {/* TAB 5: SAFETY, DOCUMENTS & GLOBAL CRISIS HELPLINES                    */}
       {/* ===================================================================== */}
       {activeTab === 'safety' && (
-        <div className="space-y-4 animate-fadeIn">
-          
-          {/* HELP & SUPPORT (Image 9) */}
-          <div className="p-5 rounded-3xl dark-glass border border-white/[0.08] space-y-3 shadow-lg">
-            <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider block">
-              Help & Support
-            </span>
-            <a
-              href="mailto:support@soulverse.im"
-              className="p-3.5 rounded-2xl dark-glass-card border border-white/[0.06] flex items-center justify-between hover:bg-white/[0.06] transition-colors"
-            >
-              <span className="text-xs font-bold text-white">Help & Support</span>
-              <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
-            </a>
-          </div>
-
-          {/* SAFETY (Image 9) */}
-          <div className="p-5 rounded-3xl dark-glass border border-white/[0.08] space-y-2 shadow-lg">
-            <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider block">
-              Safety
-            </span>
-            {['Community Guidelines', 'Safety & Policy', 'Safety Tips'].map(item => (
-              <div 
-                key={item}
-                className="p-3 rounded-2xl dark-glass-card border border-white/[0.06] flex items-center justify-between cursor-pointer hover:bg-white/[0.06] transition-colors"
-              >
-                <span className="text-xs font-semibold text-white">{item}</span>
-                <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
-              </div>
-            ))}
-          </div>
+        <div className="space-y-6 animate-fadeIn">
+          {/* Safety Articles, Suicide Prevention & Global Helplines Center */}
+          <SafetyAndSupportCenter />
 
           {/* ACCESSIBILITY: KEYBOARD SHORTCUTS (Image 10) */}
           <div className="p-5 rounded-3xl dark-glass border border-white/[0.08] space-y-3 shadow-lg">

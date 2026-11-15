@@ -317,7 +317,7 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
     { id: 'notifications' as ControlSection, label: 'Notifications & Quiet', icon: Bell },
     { id: 'appearance' as ControlSection, label: 'Appearance & Glass', icon: Palette },
     { id: 'ai' as ControlSection, label: 'AI & Intelligence', icon: Cpu },
-    { id: 'safety' as ControlSection, label: 'Safety & 1926 Safe', icon: Lock },
+    { id: 'safety' as ControlSection, label: 'Safety & Documents', icon: Lock },
     { id: 'accessibility' as ControlSection, label: 'Accessibility', icon: Info },
     { id: 'data' as ControlSection, label: 'Data & Architecture', icon: Download }
   ];
@@ -1190,10 +1190,10 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
                 <div className="space-y-4 animate-fadeIn">
                   <div>
                     <h3 className="text-lg font-serif font-bold text-white tracking-tight">
-                      Safety, Moderation & Crisis Resources
+                      Safety, Privacy & Contact Controls
                     </h3>
                     <p className="text-xs text-zinc-400 leading-relaxed mt-0.5">
-                      Manage blocked contacts and access 1926 mental health crisis resources.
+                      Manage blocked contacts and review privacy controls. For full safety articles and global crisis helplines, visit the dedicated Safety Center.
                     </p>
                   </div>
 
@@ -1244,20 +1244,22 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Safety Policy Links (Screenshot 9) */}
-                  <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-2 text-xs">
-                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Safety & Policy</h4>
-                    {[
-                      'Community Guidelines',
-                      'Safety & Policy',
-                      'Safety Tips',
-                      '1926 Safe NIMH Crisis Support Hotline'
-                    ].map(link => (
-                      <div key={link} className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] transition-colors cursor-pointer">
-                        <span className="font-semibold text-white">{link}</span>
-                        <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
-                      </div>
-                    ))}
+                  {/* Safety Documents & Crisis Directory Link */}
+                  <div className="p-5 rounded-3xl dark-glass border border-white/10 space-y-3 text-xs">
+                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Safety Documents & Crisis Helplines</h4>
+                    <p className="text-xs text-zinc-400">
+                      Access verified safe dating protocols, boundary standards, and our complete 24/7 global suicide prevention directory in Settings.
+                    </p>
+                    <button
+                      onClick={() => {
+                        onClose();
+                        window.location.hash = '#settings/safety';
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/10 transition-colors flex items-center justify-between cursor-pointer"
+                    >
+                      <span>Open Safety & Helplines Center</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                    </button>
                   </div>
                 </div>
               )}

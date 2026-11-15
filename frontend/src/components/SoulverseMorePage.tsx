@@ -50,11 +50,13 @@ export const SoulverseMorePage: React.FC<SoulverseMorePageProps> = ({
       action: onOpenDigitalLife
     },
     {
-      title: 'Crisis & Emotional Support (1926)',
-      desc: 'Immediate, confidential crisis intervention and mental health support resources.',
+      title: 'Safety Articles & Helplines',
+      desc: 'Browse verified safety protocols, real-world dating checklists, and global crisis directories.',
       icon: ShieldAlert,
-      badge: '24/7 Hotline',
-      action: onOpenCrisis
+      badge: 'Support',
+      action: () => {
+        window.location.hash = '#settings/safety';
+      }
     },
     {
       title: 'Safety & Moderation Triage',

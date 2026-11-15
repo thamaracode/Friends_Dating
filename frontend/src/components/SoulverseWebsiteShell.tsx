@@ -426,16 +426,6 @@ export const SoulverseWebsiteShell: React.FC = () => {
             </button>
           </div>
 
-          {/* 1926 NIMH Mental Health Support Button */}
-          <button
-            onClick={() => setIsCrisisModalOpen(true)}
-            className="h-10 px-2.5 sm:px-4 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/25 text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-            title="1926 Safe NIMH Crisis Support"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10B981]" />
-            <span className="hidden sm:inline">1926 Safe</span>
-          </button>
-
           {/* User Avatar Action */}
           <div 
             onClick={() => navigateTo('profile')}
