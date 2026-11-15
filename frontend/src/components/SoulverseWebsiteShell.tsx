@@ -136,6 +136,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const [isLetterOpen, setIsLetterOpen] = useState(false);
   const [isConfessionModalOpen, setIsConfessionModalOpen] = useState(false);
   const [isControlCenterOpen, setIsControlCenterOpen] = useState(false);
+  const [isMobileChatActive, setIsMobileChatActive] = useState(false);
   const [brandLogoVariant, setBrandLogoVariant] = useState<HeartLogoVariant>(() => {
     return (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'official_neon';
   });
@@ -346,19 +347,20 @@ export const SoulverseWebsiteShell: React.FC = () => {
           </button>
 
           <div 
-            onClick={() => setIsHeartLogoModalOpen(true)}
-            className="flex items-center gap-3 cursor-pointer group select-none py-1"
-            title="Click to view & customize Soulverse Heart Logos"
+            onClick={() => navigateTo('discover')}
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none py-1"
+            title="Soulverse — Home"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-white/10 to-white/20 border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:border-amber-400/50 transition-colors relative">
-              <SoulverseBrandLogo variant={brandLogoVariant} size={24} showGlow={true} />
-              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-400/20 border border-amber-400 text-[9px] font-bold text-amber-300 flex items-center justify-center shadow-sm">
-                ✧
-              </span>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-rose-500/15 via-purple-500/15 to-white/5 border border-white/20 flex items-center justify-center shadow-md group-hover:border-rose-400/50 transition-all relative overflow-hidden">
+              <img 
+                src="/images/soulverse_logo.png" 
+                alt="Soulverse Heart" 
+                className="w-7 h-7 sm:w-8 sm:h-8 object-contain drop-shadow-[0_0_8px_rgba(244,63,94,0.5)] group-hover:scale-105 transition-transform" 
+              />
             </div>
             <div className="flex items-center gap-2">
               <span className="font-heading font-extrabold tracking-tight text-white text-lg sm:text-xl">Soulverse</span>
-              <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B]" />
+              <span className="w-2 h-2 rounded-full bg-gradient-to-tr from-rose-500 to-amber-400 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
             </div>
           </div>
         </div>
@@ -399,8 +401,10 @@ export const SoulverseWebsiteShell: React.FC = () => {
             <span className="hidden lg:inline">Control Center</span>
           </button>
 
-          {/* GlinUI Liquid Glass Theme Switcher & Showcase */}
-          <GlinThemeToggle onOpenShowcase={() => setIsGlinShowcaseOpen(true)} />
+          {/* GlinUI Liquid Glass Theme Switcher & Showcase (Desktop / Tablet) */}
+          <div className="hidden sm:inline-flex">
+            <GlinThemeToggle onOpenShowcase={() => setIsGlinShowcaseOpen(true)} />
+          </div>
 
           {/* Desktop Only: Toggle Mobile Device Frame Preview vs Fluid Canvas */}
           <div className="hidden xl:flex items-center bg-white/[0.06] p-1 rounded-xl border border-white/10 h-10">
@@ -453,7 +457,9 @@ export const SoulverseWebsiteShell: React.FC = () => {
       <div className={`flex-1 flex w-full mx-auto relative z-10 ${
         devicePreviewMode === 'mobile_frame'
           ? 'py-8 px-3 justify-center items-start'
-          : 'px-4 sm:px-8 py-6 max-w-[1520px] gap-8'
+          : (currentRoute === 'messages' || currentRoute === 'inbox') && isMobileChatActive
+            ? 'px-1 sm:px-8 py-1 sm:py-6 max-w-[1520px] gap-8 h-[calc(100dvh-4rem)] sm:h-auto'
+            : 'px-4 sm:px-8 py-6 max-w-[1520px] gap-8'
       }`}>
         
         {/* DESKTOP SIDEBAR: SPACIOUS, CATEGORIZED NAVIGATION */}
@@ -631,7 +637,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
           )}
 
           {/* Scrollable View Area with responsive bottom clearance for mobile dock */}
-          <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar pb-28 lg:pb-8">
+          <main className={`flex-1 min-w-0 ${(currentRoute === 'messages' || currentRoute === 'inbox') && isMobileChatActive ? 'h-full overflow-hidden pb-0' : 'overflow-y-auto no-scrollbar pb-28 lg:pb-8'}`}>
             
             {/* DESTINATION 1: DISCOVER (Dating, Friends, Recommendations, Daily Inspiration) */}
             {currentRoute === 'discover' && (
@@ -656,12 +662,13 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
             {/* DESTINATION 4: INBOX / MESSAGES (Chats, Voice Notes, Calls, Mini Games) */}
             {(currentRoute === 'messages' || currentRoute === 'inbox') && (
-              <div className="h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass">
+              <div className="h-[calc(100dvh-5rem)] sm:h-[calc(100vh-6.5rem)] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl glass-primary flex flex-col">
                 <MessagingInboxView
                   onOpenProfileDetail={(p) => setInspectedProfile(p)}
                   activeProfileOverride={activeChatProfileOverride}
                   onClearActiveProfileOverride={() => setActiveChatProfileOverride(null)}
                   onOpenGame={() => navigateTo('mini_games')}
+                  onActiveChatChange={(isActive) => setIsMobileChatActive(isActive)}
                 />
               </div>
             )}
@@ -885,7 +892,11 @@ export const SoulverseWebsiteShell: React.FC = () => {
       {/* ===================================================================== */}
       {/* 3. PERSISTENT FLOATING 5-DESTINATION MOBILE NAVIGATION DOCK            */}
       {/* ===================================================================== */}
-      <div className={devicePreviewMode === 'fluid' ? 'lg:hidden' : 'block'}>
+      <div className={`${devicePreviewMode === 'fluid' ? 'lg:hidden' : 'block'} ${
+        isMobileChatActive && (currentRoute === 'messages' || currentRoute === 'inbox')
+          ? 'hidden pointer-events-none'
+          : 'block'
+      }`}>
         <SoulverseMobileNavbar
           activeTab={getActiveMobileTab()}
           onSelectTab={handleMobileTabSelect}

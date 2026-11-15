@@ -79,6 +79,7 @@ interface MessagingInboxViewProps {
   onOpenLuckyDice?: () => void;
   activeProfileOverride?: UserProfile | null;
   onClearActiveProfileOverride?: () => void;
+  onActiveChatChange?: (isActive: boolean) => void;
 }
 
 export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
@@ -86,12 +87,18 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   onOpenGame,
   onOpenLuckyDice,
   activeProfileOverride,
-  onClearActiveProfileOverride
+  onClearActiveProfileOverride,
+  onActiveChatChange
 }) => {
   const [activeFolder, setActiveFolder] = useState<ChatFolderType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+
+  // Notify parent shell when active conversation changes
+  useEffect(() => {
+    onActiveChatChange?.(Boolean(activeConversationId));
+  }, [activeConversationId, onActiveChatChange]);
   const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isBriefingOpen, setIsBriefingOpen] = useState(false);
@@ -1001,143 +1008,176 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             </div>
           </div>
 
-          {/* Calling, Search & Settings Options */}
-          <div className="flex items-center gap-2">
-            {/* Group Info Pill for Group Chats */}
-            {currentConv.type === 'group' && (
-              <button
-                onClick={handleOpenGroupInfo}
-                className="h-9 px-3 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/25 text-xs font-heading font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
-                title="Group Members & Settings"
-              >
-                <Info className="w-3.5 h-3.5 text-pink-300" />
-                <span className="hidden sm:inline">Group Info</span>
-              </button>
-            )}
-
-            {/* Before You Talk / Relationship Memory Briefing Pill */}
-            <button
-              onClick={() => setIsBriefingOpen(true)}
-              className="h-9 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/25 text-xs font-heading font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
-              title="Before You Talk Instant Briefing"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span className="hidden sm:inline">Before You Talk</span>
-            </button>
-            {/* One Question, Two People Mutual Game Pill */}
+          {/* Right Action Controls: Simple Heart Design + Three Dots Menu */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Simple Heart Design Button (Two-Person Deep Question Game) */}
             <button
               onClick={() => setIsTwoPersonOpen(true)}
-              className="px-2.5 py-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-sm"
-              title="One Question, Two People Mutual Game"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center text-rose-400 hover:text-rose-300 cursor-pointer transition-all shadow-sm active:scale-95 group"
+              title="Connection Heart (2-Person Question Game)"
             >
-              <Heart className="w-3 h-3 text-purple-300" />
-              <span className="hidden sm:inline">2-Person Q</span>
+              <Heart className="w-4 h-4 fill-rose-500/30 group-hover:fill-rose-500/70 text-rose-400 transition-all" />
             </button>
-            {/* Unified AI Assistant Pill */}
-            <button
-              onClick={() => setIsAiAssistantOpen(true)}
-              className="px-2.5 py-1 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-sm"
-              title="Soulverse AI Assistant & Intelligence"
-            >
-              <Cpu className="w-3 h-3 text-indigo-400" />
-              <span className="hidden sm:inline">AI Helper</span>
-            </button>
-            {/* Fullscreen / Edge-to-Edge Web Toggle */}
-            <button
-              onClick={() => setIsEdgeToEdge(!isEdgeToEdge)}
-              className="w-8 h-8 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer transition-colors"
-              title={isEdgeToEdge ? "Exit Fullscreen Web View" : "Fullscreen Telegram Web View"}
-            >
-              {isEdgeToEdge ? <Minimize2 className="w-4 h-4 text-white" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
-            <button
-              onClick={() => setIsSearchActive(!isSearchActive)}
-              className="w-8 h-8 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer transition-colors"
-              title="Search Messages (Ctrl+F)"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => startCall('voice')}
-              className="w-8 h-8 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer transition-colors"
-              title="Encrypted Voice Call"
-            >
-              <Phone className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => startCall('video')}
-              className="w-8 h-8 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer transition-colors"
-              title="Encrypted Video Call"
-            >
-              <Video className="w-4 h-4" />
-            </button>
+
+            {/* Three Dots Menu Button */}
             <button
               onClick={() => setIsChatSettingsOpen(!isChatSettingsOpen)}
-              className="w-8 h-8 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer transition-colors"
-              title="Chat Options & Privacy"
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-zinc-300 hover:text-white cursor-pointer transition-all active:scale-95 ${
+                isChatSettingsOpen 
+                  ? 'bg-white/20 text-white border border-white/30' 
+                  : 'bg-white/[0.05] hover:bg-white/[0.1] border border-white/10'
+              }`}
+              title="Chat Options & More"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Chat Settings & Privacy Drawer */}
+        {/* Chat Settings, AI & Feature Options Drawer (Three-Dots Menu) */}
         {isChatSettingsOpen && (
-          <div className="absolute right-4 top-14 w-60 rounded-3xl glass-panel-elevated p-3 border border-[rgba(255,255,255,0.20)]/30 z-40 shadow-2xl space-y-1 animate-fadeIn text-xs">
-            <button
-              onClick={async () => {
-                if (currentConv) {
-                  await chatClient.muteConversation(currentConv.id, true);
-                  loadConversations();
-                  showToast("Notifications muted for 8 hours.");
-                }
-                setIsChatSettingsOpen(false);
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
-            >
-              <VolumeX className="w-4 h-4 text-[#9CA3AF]" />
-              <span>Mute Notifications (8h)</span>
-            </button>
+          <>
+            <div 
+              className="fixed inset-0 z-40" 
+              onClick={() => setIsChatSettingsOpen(false)} 
+            />
+            <div className="absolute right-3 sm:right-4 top-14 sm:top-16 w-64 rounded-3xl glass-deep p-2 border border-white/15 z-50 shadow-2xl space-y-1 animate-fadeIn text-xs backdrop-blur-2xl">
+              {/* Group Info for Group Chats */}
+              {currentConv.type === 'group' && (
+                <button
+                  onClick={() => {
+                    handleOpenGroupInfo();
+                    setIsChatSettingsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-zinc-200 hover:bg-white/10 cursor-pointer transition-colors"
+                >
+                  <Info className="w-4 h-4 text-pink-400" />
+                  <span className="font-medium">Group Members & Info</span>
+                </button>
+              )}
 
-            <button
-              onClick={async () => {
-                if (currentConv) {
-                  await chatClient.archiveConversation(currentConv.id, true);
-                  loadConversations();
-                  showToast("Conversation moved to Archive.");
-                }
-                setIsChatSettingsOpen(false);
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
-            >
-              <Archive className="w-4 h-4 text-[#9CA3AF]" />
-              <span>Archive Conversation</span>
-            </button>
+              {/* In-Chat Search */}
+              <button
+                onClick={() => {
+                  setIsSearchActive(true);
+                  setIsChatSettingsOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-zinc-200 hover:bg-white/10 cursor-pointer transition-colors"
+              >
+                <Search className="w-4 h-4 text-sky-400" />
+                <span className="font-medium">Search in Conversation</span>
+              </button>
 
-            <button
-              onClick={async () => {
-                if (currentConv) {
-                  await chatClient.setAutoDeleteTtl(currentConv.id, 24);
-                  showToast("Auto-delete message timer set to 24 hours.");
-                }
-                setIsChatSettingsOpen(false);
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#F3F4F6] hover:bg-white/5 cursor-pointer"
-            >
-              <Clock className="w-4 h-4 text-amber-300" />
-              <span>Auto-Delete (24h)</span>
-            </button>
+              {/* Before You Talk Briefing */}
+              <button
+                onClick={() => {
+                  setIsBriefingOpen(true);
+                  setIsChatSettingsOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-zinc-200 hover:bg-white/10 cursor-pointer transition-colors"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span className="font-medium">Before You Talk Briefing</span>
+              </button>
 
-            <button
-              onClick={() => {
-                handleOpenBlockModal();
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-950/20 cursor-pointer"
-            >
-              <UserX className="w-4 h-4" />
-              <span>Block User</span>
-            </button>
-          </div>
+              {/* AI Relationship Assistant */}
+              <button
+                onClick={() => {
+                  setIsAiAssistantOpen(true);
+                  setIsChatSettingsOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-zinc-200 hover:bg-white/10 cursor-pointer transition-colors"
+              >
+                <Cpu className="w-4 h-4 text-indigo-400" />
+                <span className="font-medium">AI Relationship Assistant</span>
+              </button>
+
+              {/* Two-Person Question Game */}
+              <button
+                onClick={() => {
+                  setIsTwoPersonOpen(true);
+                  setIsChatSettingsOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-zinc-200 hover:bg-white/10 cursor-pointer transition-colors"
+              >
+                <Heart className="w-4 h-4 text-rose-400" />
+                <span className="font-medium">2-Person Question Game</span>
+              </button>
+
+              {/* Fullscreen Chat View Toggle */}
+              <button
+                onClick={() => {
+                  setIsEdgeToEdge(!isEdgeToEdge);
+                  setIsChatSettingsOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-zinc-200 hover:bg-white/10 cursor-pointer transition-colors"
+              >
+                {isEdgeToEdge ? <Minimize2 className="w-4 h-4 text-zinc-400" /> : <Maximize2 className="w-4 h-4 text-zinc-400" />}
+                <span className="font-medium">{isEdgeToEdge ? "Exit Fullscreen" : "Fullscreen Chat View"}</span>
+              </button>
+
+              <div className="h-px bg-white/10 my-1" />
+
+              {/* Mute Notifications */}
+              <button
+                onClick={async () => {
+                  if (currentConv) {
+                    await chatClient.muteConversation(currentConv.id, true);
+                    loadConversations();
+                    showToast("Notifications muted for 8 hours.");
+                  }
+                  setIsChatSettingsOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-zinc-300 hover:bg-white/10 cursor-pointer transition-colors"
+              >
+                <VolumeX className="w-4 h-4 text-zinc-400" />
+                <span>Mute Notifications (8h)</span>
+              </button>
+
+              {/* Archive Conversation */}
+              <button
+                onClick={async () => {
+                  if (currentConv) {
+                    await chatClient.archiveConversation(currentConv.id, true);
+                    loadConversations();
+                    showToast("Conversation moved to Archive.");
+                  }
+                  setIsChatSettingsOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-zinc-300 hover:bg-white/10 cursor-pointer transition-colors"
+              >
+                <Archive className="w-4 h-4 text-zinc-400" />
+                <span>Archive Conversation</span>
+              </button>
+
+              {/* Auto-Delete */}
+              <button
+                onClick={async () => {
+                  if (currentConv) {
+                    await chatClient.setAutoDeleteTtl(currentConv.id, 24);
+                    showToast("Auto-delete message timer set to 24 hours.");
+                  }
+                  setIsChatSettingsOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-zinc-300 hover:bg-white/10 cursor-pointer transition-colors"
+              >
+                <Clock className="w-4 h-4 text-amber-300" />
+                <span>Auto-Delete (24h)</span>
+              </button>
+
+              {/* Block User */}
+              <button
+                onClick={() => {
+                  handleOpenBlockModal();
+                  setIsChatSettingsOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-rose-400 hover:bg-rose-950/20 cursor-pointer transition-colors"
+              >
+                <UserX className="w-4 h-4" />
+                <span>Block User</span>
+              </button>
+            </div>
+          </>
         )}
 
         {/* In-Chat Search Bar */}
@@ -1661,7 +1701,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         ? 'fixed inset-0 z-50 flex bg-[#090A0E]' 
         : isDesktopLayout 
           ? 'max-w-[1700px] h-[calc(100vh-4.5rem)] flex rounded-2xl lg:rounded-3xl overflow-hidden bg-[#090A0E] border border-white/10 shadow-2xl' 
-          : 'max-w-md min-h-[calc(100dvh-5rem)] flex flex-col'
+          : 'w-full max-w-md h-full flex flex-col overflow-hidden'
     }`}>
       
       {/* DESKTOP 2-COLUMN VIEW */}

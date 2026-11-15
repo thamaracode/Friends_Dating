@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./styles/glinui-theme.css";
+@import "./styles/liquid-glass.css";
 
 :root {
   /* Centralized Typography Families */

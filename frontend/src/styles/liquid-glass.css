@@ -1,0 +1,276 @@
+/**
+ * LIQUID GLASS DESIGN SYSTEM (Inspired by visionOS & Premium Liquid Obsidian Interfaces)
+ * Master Design System Tokens & Glass Material Classes
+ */
+
+:root {
+  /* ── 1. Color Palette: Deep Obsidian Void & Ambient Aurora ── */
+  --obsidian-base: #07080D;
+  --obsidian-surface: #0E1017;
+  --obsidian-elevated: #151824;
+  --obsidian-card: #12141D;
+
+  /* Ambient Aurora Lights (Plum, Magenta, Violet, Ice Blue) */
+  --aurora-plum: rgba(217, 70, 239, 0.16);
+  --aurora-magenta: rgba(244, 63, 94, 0.14);
+  --aurora-violet: rgba(168, 85, 247, 0.18);
+  --aurora-ice: rgba(56, 189, 248, 0.12);
+  --aurora-amber: rgba(245, 158, 11, 0.12);
+
+  /* Specular Light Refraction Edges */
+  --specular-top-light: rgba(255, 255, 255, 0.35);
+  --specular-top-bright: rgba(255, 255, 255, 0.55);
+  --specular-rim: inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
+  --specular-rim-subtle: inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.14);
+  --specular-rim-glow: inset 0 1px 2px 0 rgba(255, 255, 255, 0.45);
+
+  /* Refraction Ring Gradients */
+  --ring-crystal: linear-gradient(135deg, rgba(236, 72, 153, 0.7), rgba(168, 85, 247, 0.4) 50%, rgba(255, 255, 255, 0.3));
+  --ring-liquid: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0.12) 100%);
+}
+
+/* ========================================================================= */
+/* 2. THE 5 CORE GLASS MATERIALS                                             */
+/* ========================================================================= */
+
+/**
+ * 1. PRIMARY GLASS: Main floating surfaces & cards
+ * Optimal for: Content cards, main floating panels, modal bodies
+ */
+.glass-primary {
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 60%),
+              rgba(14, 16, 24, 0.72);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--specular-top-light);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.65), var(--specular-rim);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-primary-interactive {
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 60%),
+              rgba(14, 16, 24, 0.72);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--specular-top-light);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.65), var(--specular-rim);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.glass-primary-interactive:hover {
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 60%),
+              rgba(20, 23, 34, 0.82);
+  border-color: rgba(255, 255, 255, 0.22);
+  border-top-color: var(--specular-top-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.8), var(--specular-rim-glow), 0 0 24px -4px rgba(217, 70, 239, 0.18);
+}
+
+.glass-primary-interactive:active {
+  transform: scale(0.985);
+}
+
+/**
+ * 2. SECONDARY GLASS: Supporting panels & nested elements
+ * Optimal for: Nested lists, sidebars, secondary controls, input wrappers
+ */
+.glass-secondary {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4), var(--specular-rim-subtle);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-secondary-interactive:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  border-top-color: rgba(255, 255, 255, 0.30);
+  box-shadow: 0 8px 24px -2px rgba(0, 0, 0, 0.5), var(--specular-rim);
+}
+
+/**
+ * 3. DEEP GLASS: Modals, overlays, drawers & floating dock
+ * Optimal for: Action sheets, full-screen dialogs, bottom floating dock
+ */
+.glass-deep {
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 50%),
+              rgba(10, 12, 18, 0.88);
+  backdrop-filter: blur(40px) saturate(210%);
+  -webkit-backdrop-filter: blur(40px) saturate(210%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--specular-top-bright);
+  box-shadow: 0 32px 80px -12px rgba(0, 0, 0, 0.95), var(--specular-rim-glow);
+}
+
+/**
+ * 4. CRYSTAL GLASS: Luminous interactive & active pill highlights
+ * Optimal for: Active segment tabs, primary buttons, match indicators
+ */
+.glass-crystal {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.38) 0%, rgba(168, 85, 247, 0.28) 50%, rgba(99, 102, 241, 0.18) 100%);
+  backdrop-filter: blur(20px) saturate(220%);
+  -webkit-backdrop-filter: blur(20px) saturate(220%);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  border-top-color: #FFFFFF;
+  box-shadow: 0 8px 30px -4px rgba(236, 72, 153, 0.35), var(--specular-rim-glow);
+  color: #FFFFFF;
+}
+
+/**
+ * 5. AMBIENT GLASS: Atmospheric background panels & pill tags
+ * Optimal for: Counter chips, inactive pills, subtle badge overlays
+ */
+.glass-ambient {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-top-color: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* ========================================================================= */
+/* 3. SIGNATURE LIQUID COMPONENTS (From Creative Direction Mockup)           */
+/* ========================================================================= */
+
+/**
+ * LIQUID FLOATING DOCK (The centerpiece floating navigation pill)
+ */
+.liquid-dock {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(0, 0, 0, 0.2) 100%),
+              rgba(14, 16, 25, 0.82);
+  backdrop-filter: blur(36px) saturate(220%);
+  -webkit-backdrop-filter: blur(36px) saturate(220%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-top-color: var(--specular-top-bright);
+  border-radius: 9999px;
+  box-shadow: 0 20px 50px -4px rgba(0, 0, 0, 0.9), 
+              0 0 30px -2px rgba(217, 70, 239, 0.12),
+              var(--specular-rim-glow);
+}
+
+/**
+ * LIQUID SEARCH BAR (Translucent pill search bar with specular rim)
+ */
+.liquid-search-bar {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-top-color: rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-search-bar:focus-within {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(236, 72, 153, 0.5);
+  border-top-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 24px -2px rgba(236, 72, 153, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.25);
+}
+
+/**
+ * LIQUID PILL SWITCHER BUTTONS
+ */
+.liquid-pill-active {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.40) 0%, rgba(168, 85, 247, 0.32) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-top-color: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.30), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.liquid-pill-inactive {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top-color: rgba(255, 255, 255, 0.18);
+  color: #9CA3AF;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.liquid-pill-inactive:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/**
+ * LIQUID CARD (Screen 1 & 2 aesthetic from image)
+ */
+.liquid-card {
+  position: relative;
+  border-radius: 1.5rem; /* 24px */
+  overflow: hidden;
+  background: rgba(14, 16, 24, 0.70);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--specular-top-light);
+  box-shadow: 0 14px 36px -6px rgba(0, 0, 0, 0.65), var(--specular-rim);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease;
+}
+
+.liquid-card:hover {
+  transform: translateY(-3px) scale(1.01);
+  border-color: rgba(255, 255, 255, 0.25);
+  border-top-color: var(--specular-top-bright);
+  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.8), 
+              0 0 30px -4px rgba(217, 70, 239, 0.22),
+              var(--specular-rim-glow);
+}
+
+/**
+ * LIQUID AVATAR RING (Instagram / Story aura ring)
+ */
+.liquid-avatar-ring {
+  padding: 2.5px;
+  background: linear-gradient(135deg, #EC4899 0%, #A855F7 50%, #6366F1 100%);
+  border-radius: 9999px;
+  box-shadow: 0 0 16px -2px rgba(236, 72, 153, 0.4);
+  transition: all 0.25s ease;
+}
+
+.liquid-avatar-ring:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 24px 0 rgba(236, 72, 153, 0.6);
+}
+
+/**
+ * LIQUID CENTER PLUS BUTTON
+ */
+.liquid-btn-create {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #EC4899 0%, #A855F7 100%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 28px rgba(236, 72, 153, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-btn-create:hover {
+  transform: scale(1.08) rotate(90deg);
+  box-shadow: 0 0 36px rgba(236, 72, 153, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.liquid-btn-create:active {
+  transform: scale(0.92);
+}
