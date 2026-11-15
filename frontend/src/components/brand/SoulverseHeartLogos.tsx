@@ -1,16 +1,424 @@
 import React from 'react';
 
-export type HeartLogoVariant = 'official_neon' | 'infinity' | 'compass' | 'twin_souls' | 'crystal' | 'resonance';
+export type HeartLogoVariant = 
+  | 'open_heart' 
+  | 'the_flow' 
+  | 'the_pulse' 
+  | 'the_connection' 
+  | 'the_orbit' 
+  | 'the_infinite' 
+  | 'the_spark' 
+  | 'the_sanctuary'
+  | 'official_neon'
+  | 'infinity' 
+  | 'compass' 
+  | 'twin_souls' 
+  | 'crystal' 
+  | 'resonance';
 
-interface HeartLogoProps {
+export interface HeartLogoProps {
   size?: number | string;
   className?: string;
   showGlow?: boolean;
   animated?: boolean;
 }
 
+/* ========================================================================= */
+/* 1. THE 8 SUITE ALTERNATIVES (from Creative Direction Design System)       */
+/* ========================================================================= */
+
 /**
- * OFFICIAL FLAGSHIP BRAND LOGO: Neon Ribbon Infinity Heart
+ * 01. THE OPEN HEART
+ * "Thin, elegant, minimal outline."
+ */
+export const OpenHeartLogo: React.FC<HeartLogoProps> = ({
+  size = 40,
+  className = '',
+  showGlow = true,
+  animated = false
+}) => {
+  const id = React.useId().replace(/:/g, '_');
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`${animated ? 'animate-pulse' : ''} ${className}`}
+    >
+      <defs>
+        <linearGradient id={`${id}_open`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#F472B6" />
+          <stop offset="50%" stopColor="#C084FC" />
+          <stop offset="100%" stopColor="#60A5FA" />
+        </linearGradient>
+      </defs>
+      {showGlow && (
+        <circle cx="50" cy="48" r="30" fill="#C084FC" opacity="0.22" filter="blur(14px)" />
+      )}
+      <path
+        d="M 50 82 C 24 62, 14 42, 14 28 C 14 16, 24 10, 36 10 C 44 10, 48 14, 50 18 C 52 14, 56 10, 64 10 C 76 10, 86 16, 86 28 C 86 42, 76 62, 50 82 Z"
+        stroke={`url(#${id}_open)`}
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+/**
+ * 02. THE FLOW
+ * "A flowing heart-inspired symbol."
+ */
+export const FlowHeartLogo: React.FC<HeartLogoProps> = ({
+  size = 40,
+  className = '',
+  showGlow = true,
+  animated = false
+}) => {
+  const id = React.useId().replace(/:/g, '_');
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`${animated ? 'animate-pulse' : ''} ${className}`}
+    >
+      <defs>
+        <linearGradient id={`${id}_flow`} x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FB7185" />
+          <stop offset="60%" stopColor="#A855F7" />
+          <stop offset="100%" stopColor="#38BDF8" />
+        </linearGradient>
+      </defs>
+      {showGlow && (
+        <circle cx="50" cy="50" r="30" fill="#A855F7" opacity="0.22" filter="blur(14px)" />
+      )}
+      <path
+        d="M 38 78 C 30 76, 22 66, 22 46 C 22 26, 34 14, 46 14 C 54 14, 58 20, 60 28 C 62 20, 66 14, 74 14 C 84 14, 90 24, 90 40 C 90 62, 72 74, 58 76 C 50 78, 44 80, 48 88"
+        stroke={`url(#${id}_flow)`}
+        strokeWidth="6.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+/**
+ * 03. THE PULSE
+ * "Heart with a subtle energy line."
+ */
+export const PulseHeartLogo: React.FC<HeartLogoProps> = ({
+  size = 40,
+  className = '',
+  showGlow = true,
+  animated = false
+}) => {
+  const id = React.useId().replace(/:/g, '_');
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`${animated ? 'animate-pulse' : ''} ${className}`}
+    >
+      <defs>
+        <linearGradient id={`${id}_pulse`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#F43F5E" />
+          <stop offset="50%" stopColor="#EC4899" />
+          <stop offset="100%" stopColor="#8B5CF6" />
+        </linearGradient>
+      </defs>
+      {showGlow && (
+        <circle cx="50" cy="48" r="32" fill="#F43F5E" opacity="0.25" filter="blur(15px)" />
+      )}
+      {/* Outer Heart */}
+      <path
+        d="M 50 82 C 26 62, 14 42, 14 28 C 14 16, 24 10, 36 10 C 44 10, 48 14, 50 18 C 52 14, 56 10, 64 10 C 76 10, 86 16, 86 28 C 86 42, 74 62, 50 82 Z"
+        stroke={`url(#${id}_pulse)`}
+        strokeWidth="5.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Pulse ECG Line */}
+      <path
+        d="M 22 50 L 36 50 L 41 40 L 46 62 L 52 28 L 58 68 L 63 45 L 68 50 L 78 50"
+        stroke={`url(#${id}_pulse)`}
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+/**
+ * 04. THE CONNECTION
+ * "A symbol of human connection."
+ */
+export const ConnectionHeartLogo: React.FC<HeartLogoProps> = ({
+  size = 40,
+  className = '',
+  showGlow = true,
+  animated = false
+}) => {
+  const id = React.useId().replace(/:/g, '_');
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`${animated ? 'animate-pulse' : ''} ${className}`}
+    >
+      <defs>
+        <linearGradient id={`${id}_conn`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#38BDF8" />
+          <stop offset="50%" stopColor="#818CF8" />
+          <stop offset="100%" stopColor="#F472B6" />
+        </linearGradient>
+      </defs>
+      {showGlow && (
+        <circle cx="50" cy="48" r="30" fill="#818CF8" opacity="0.22" filter="blur(14px)" />
+      )}
+      {/* Heart Contour */}
+      <path
+        d="M 50 82 C 26 62, 14 42, 14 28 C 14 16, 24 10, 36 10 C 44 10, 48 14, 50 18 C 52 14, 56 10, 64 10 C 76 10, 86 16, 86 28 C 86 42, 74 62, 50 82 Z"
+        stroke={`url(#${id}_conn)`}
+        strokeWidth="5.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Clasping Interlock Handshake Lines */}
+      <path
+        d="M 33 42 L 48 54 C 52 57, 58 55, 61 51 L 67 43"
+        stroke={`url(#${id}_conn)`}
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M 67 42 L 52 54 C 48 57, 42 55, 39 51 L 33 43"
+        stroke={`url(#${id}_conn)`}
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+/**
+ * 05. THE ORBIT
+ * "A universe-inspired symbol surrounding a heart."
+ */
+export const OrbitHeartLogo: React.FC<HeartLogoProps> = ({
+  size = 40,
+  className = '',
+  showGlow = true,
+  animated = false
+}) => {
+  const id = React.useId().replace(/:/g, '_');
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`${animated ? 'animate-pulse' : ''} ${className}`}
+    >
+      <defs>
+        <linearGradient id={`${id}_orbit`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#38BDF8" />
+          <stop offset="50%" stopColor="#A855F7" />
+          <stop offset="100%" stopColor="#EC4899" />
+        </linearGradient>
+      </defs>
+      {showGlow && (
+        <circle cx="50" cy="50" r="32" fill="#A855F7" opacity="0.25" filter="blur(16px)" />
+      )}
+      {/* Inner Heart Core */}
+      <path
+        d="M 50 68 C 36 56, 28 44, 28 35 C 28 27, 34 23, 41 23 C 46 23, 49 26, 50 28 C 51 26, 54 23, 59 23 C 66 23, 72 27, 72 35 C 72 44, 64 56, 50 68 Z"
+        fill={`url(#${id}_orbit)`}
+        opacity="0.9"
+      />
+      {/* Planetary Orbit Ring */}
+      <ellipse
+        cx="50"
+        cy="50"
+        rx="38"
+        ry="18"
+        transform="rotate(-28 50 50)"
+        stroke={`url(#${id}_orbit)`}
+        strokeWidth="4.5"
+        strokeLinecap="round"
+      />
+      {/* Orbiting Planetary Nodes */}
+      <circle cx="78" cy="36" r="4.5" fill="#38BDF8" />
+      <circle cx="22" cy="64" r="4" fill="#EC4899" />
+    </svg>
+  );
+};
+
+/**
+ * 06. THE INFINITE
+ * "An elegant symbol for endless identities and connections."
+ */
+export const InfiniteHeartLogo: React.FC<HeartLogoProps> = ({
+  size = 40,
+  className = '',
+  showGlow = true,
+  animated = false
+}) => {
+  const id = React.useId().replace(/:/g, '_');
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`${animated ? 'animate-pulse' : ''} ${className}`}
+    >
+      <defs>
+        <linearGradient id={`${id}_inf`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#C084FC" />
+          <stop offset="50%" stopColor="#F43F5E" />
+          <stop offset="100%" stopColor="#FB923C" />
+        </linearGradient>
+      </defs>
+      {showGlow && (
+        <circle cx="50" cy="50" r="30" fill="#F43F5E" opacity="0.22" filter="blur(14px)" />
+      )}
+      {/* Möbius Infinity Symbol */}
+      <path
+        d="M 32 36 C 42 36, 58 64, 68 64 C 76 64, 82 58, 82 50 C 82 42, 76 36, 68 36 C 58 36, 42 64, 32 64 C 24 64, 18 58, 18 50 C 18 42, 24 36, 32 36 Z"
+        stroke={`url(#${id}_inf)`}
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="50" cy="50" r="2.5" fill="#FFFFFF" />
+    </svg>
+  );
+};
+
+/**
+ * 07. THE SPARK (Celestial Compass & North Star)
+ * "A luminous celestial spark uniting two searching souls."
+ */
+export const SparkHeartLogo: React.FC<HeartLogoProps> = ({
+  size = 40,
+  className = '',
+  showGlow = true,
+  animated = false
+}) => {
+  const id = React.useId().replace(/:/g, '_');
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`${animated ? 'animate-pulse' : ''} ${className}`}
+    >
+      <defs>
+        <linearGradient id={`${id}_spark`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FDE68A" />
+          <stop offset="50%" stopColor="#F59E0B" />
+          <stop offset="100%" stopColor="#F43F5E" />
+        </linearGradient>
+      </defs>
+      {showGlow && (
+        <circle cx="50" cy="50" r="32" fill="#F59E0B" opacity="0.25" filter="blur(16px)" />
+      )}
+      {/* Outer Heart Arc */}
+      <path
+        d="M 50 82 C 26 62, 16 42, 16 28 C 16 16, 26 10, 38 10 C 45 10, 48 14, 50 18 C 52 14, 55 10, 62 10 C 74 10, 84 16, 84 28 C 84 42, 74 62, 50 82 Z"
+        stroke={`url(#${id}_spark)`}
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* 4-Point Radiant Center Star */}
+      <path
+        d="M 50 28 L 53 45 L 70 48 L 53 51 L 50 68 L 47 51 L 30 48 L 47 45 Z"
+        fill={`url(#${id}_spark)`}
+      />
+      <circle cx="50" cy="48" r="2.5" fill="#FFFBEB" />
+    </svg>
+  );
+};
+
+/**
+ * 08. THE PRISM (Sanctuary Crystal)
+ * "Faceted multidimensional diamond heart of intimate authenticity."
+ */
+export const SanctuaryHeartLogo: React.FC<HeartLogoProps> = ({
+  size = 40,
+  className = '',
+  showGlow = true,
+  animated = false
+}) => {
+  const id = React.useId().replace(/:/g, '_');
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`${animated ? 'animate-pulse' : ''} ${className}`}
+    >
+      <defs>
+        <linearGradient id={`${id}_prism`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFFBEB" />
+          <stop offset="40%" stopColor="#F59E0B" />
+          <stop offset="80%" stopColor="#D97706" />
+          <stop offset="100%" stopColor="#EC4899" />
+        </linearGradient>
+      </defs>
+      {showGlow && (
+        <circle cx="50" cy="50" r="32" fill="#F59E0B" opacity="0.22" filter="blur(16px)" />
+      )}
+      {/* Faceted Geometric Heart Silhouette */}
+      <path
+        d="M 50 86 L 20 52 L 20 28 L 36 14 L 50 24 L 64 14 L 80 28 L 80 52 Z"
+        stroke={`url(#${id}_prism)`}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Internal Facet Intersection Lines */}
+      <path
+        d="M 20 28 L 50 50 L 80 28 M 36 14 L 50 50 L 64 14 M 50 50 L 50 86 M 20 52 L 50 50 L 80 52"
+        stroke={`url(#${id}_prism)`}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.8"
+      />
+    </svg>
+  );
+};
+
+/* ========================================================================= */
+/* 2. OFFICIAL MASTER FLAGSHIP BRAND LOGO (Uploaded Master)                   */
+/* ========================================================================= */
+
+/**
+ * 00. OFFICIAL MASTER BRAND LOGO: Neon Ribbon Infinity Heart
  * Uploaded official master brand identity with glowing violet-to-pink gradient loop.
  */
 export const OfficialNeonHeartLogo: React.FC<HeartLogoProps> = ({
@@ -22,381 +430,140 @@ export const OfficialNeonHeartLogo: React.FC<HeartLogoProps> = ({
   const numSize = typeof size === 'number' ? size : parseInt(size as string, 10) || 40;
   return (
     <div
-      className={`relative inline-flex items-center justify-center shrink-0 rounded-xl overflow-hidden select-none ${animated ? 'animate-pulse' : ''} ${className}`}
+      className={`relative inline-flex items-center justify-center shrink-0 rounded-2xl overflow-hidden select-none ${animated ? 'animate-pulse' : ''} ${className}`}
       style={{ width: numSize, height: numSize }}
     >
       {showGlow && (
-        <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/40 via-pink-500/30 to-transparent blur-md -z-10 rounded-xl scale-125 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/40 via-pink-500/30 to-transparent blur-md -z-10 rounded-2xl scale-125 pointer-events-none" />
       )}
       <img
         src="/images/soulverse_logo.png"
         alt="Soulverse Heart"
-        className="w-full h-full object-cover rounded-xl drop-shadow-[0_0_12px_rgba(236,72,153,0.45)]"
+        className="w-full h-full object-cover rounded-2xl drop-shadow-[0_0_12px_rgba(236,72,153,0.45)]"
       />
     </div>
   );
 };
 
-/**
- * CONCEPT 1: The Cosmic Infinity Heart (Resonance & Eternity)
- * Continuous ribbon loop weaving infinity (∞) into an unbroken heart contour.
- */
-export const InfinityOrbitHeartLogo: React.FC<HeartLogoProps> = ({
-  size = 40,
-  className = '',
-  showGlow = true,
-  animated = false
-}) => {
-  const idPrefix = 'inf_heart_' + Math.random().toString(36).substring(2, 7);
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={`${animated ? 'animate-pulse' : ''} ${className}`}
-    >
-      <defs>
-        <linearGradient id={`${idPrefix}_gold`} x1="10%" y1="10%" x2="90%" y2="90%">
-          <stop offset="0%" stopColor="#FDE68A" />
-          <stop offset="35%" stopColor="#F59E0B" />
-          <stop offset="70%" stopColor="#D97706" />
-          <stop offset="100%" stopColor="#F43F5E" />
-        </linearGradient>
-        <linearGradient id={`${idPrefix}_rose`} x1="85%" y1="15%" x2="15%" y2="85%">
-          <stop offset="0%" stopColor="#FB7185" />
-          <stop offset="50%" stopColor="#EC4899" />
-          <stop offset="100%" stopColor="#D97706" />
-        </linearGradient>
-        <filter id={`${idPrefix}_glow`} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="3.5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
+// Aliases for backwards compatibility
+export const InfinityOrbitHeartLogo = InfiniteHeartLogo;
+export const CelestialCompassHeartLogo = SparkHeartLogo;
+export const TwinSoulsEmbraceLogo = ConnectionHeartLogo;
+export const PrismCrystalHeartLogo = SanctuaryHeartLogo;
+export const ResonanceWaveHeartLogo = PulseHeartLogo;
 
-      {showGlow && (
-        <circle cx="50" cy="50" r="32" fill="#F59E0B" opacity="0.18" filter="blur(14px)" />
-      )}
+/* ========================================================================= */
+/* 3. SOULVERSE LOGO REGISTRY & METADATA (For Easter Eggs & Showcases)       */
+/* ========================================================================= */
 
-      {/* Primary Outer Heart Contour */}
-      <path
-        d="M 50 84 C 44 78 16 54 16 34 C 16 20 26 12 38 12 C 45 12 49 15 50 19 C 51 15 55 12 62 12 C 74 12 84 20 84 34 C 84 54 56 78 50 84 Z"
-        stroke={`url(#${idPrefix}_gold)`}
-        strokeWidth="5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        filter={showGlow ? `url(#${idPrefix}_glow)` : undefined}
-      />
+export interface SoulverseLogoInfo {
+  id: HeartLogoVariant;
+  number: string;
+  title: string;
+  tagline: string;
+  description: string;
+  symbolism: string;
+  palette: string;
+  component: React.FC<HeartLogoProps>;
+}
 
-      {/* Internal Infinity Harmonic Flow */}
-      <path
-        d="M 32 38 C 32 50 68 46 68 58 C 68 66 60 70 50 70 C 40 70 32 66 32 58 C 32 46 68 50 68 38 C 68 30 60 26 50 26 C 42 26 34 30 32 38 Z"
-        stroke={`url(#${idPrefix}_rose)`}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeDasharray="4 2"
-        opacity="0.9"
-      />
+export const SOULVERSE_ALL_LOGOS: SoulverseLogoInfo[] = [
+  {
+    id: 'open_heart',
+    number: '01',
+    title: 'The Open Heart',
+    tagline: 'Minimalist Vulnerability',
+    description: 'Thin, elegant, minimal outline.',
+    symbolism: 'The courage to remain unarmored in a guarded world. Pure openness without performance.',
+    palette: 'Rose Quartz & Ice Violet (#F472B6 → #C084FC)',
+    component: OpenHeartLogo
+  },
+  {
+    id: 'the_flow',
+    number: '02',
+    title: 'The Flow',
+    tagline: 'Unbroken Organic Grace',
+    description: 'A flowing heart-inspired symbol.',
+    symbolism: 'The fluidity of emotional connection, twisting freely between two minds like cursive ribbon.',
+    palette: 'Aurora Rose & Electric Sky (#FB7185 → #A855F7 → #38BDF8)',
+    component: FlowHeartLogo
+  },
+  {
+    id: 'the_pulse',
+    number: '03',
+    title: 'The Pulse',
+    tagline: 'Living Biometric Rhythm',
+    description: 'Heart with a subtle energy line.',
+    symbolism: 'Synchronized heartbeats across space and time. Emotional resonance measured in vital sparks.',
+    palette: 'Crimson Ember & Neon Pink (#F43F5E → #EC4899)',
+    component: PulseHeartLogo
+  },
+  {
+    id: 'the_connection',
+    number: '04',
+    title: 'The Connection',
+    tagline: 'Human Interlock & Trust',
+    description: 'A symbol of human connection.',
+    symbolism: 'Two independent hands clasping inside an unbroken heart. Unspoken safety and alliance.',
+    palette: 'Celestial Sky & Orchid Blush (#38BDF8 → #818CF8 → #F472B6)',
+    component: ConnectionHeartLogo
+  },
+  {
+    id: 'the_orbit',
+    number: '05',
+    title: 'The Orbit',
+    tagline: 'Cosmic Gravitational Pull',
+    description: 'A universe-inspired symbol surrounding a heart.',
+    symbolism: 'Two celestial bodies held in mutual orbit around an emotional core. Cosmic chemistry.',
+    palette: 'Electric Cyan & Deep Magenta (#38BDF8 → #A855F7 → #EC4899)',
+    component: OrbitHeartLogo
+  },
+  {
+    id: 'the_infinite',
+    number: '06',
+    title: 'The Infinite',
+    tagline: 'Eternal Identity Loop',
+    description: 'An elegant symbol for endless identities and connections.',
+    symbolism: 'A continuous Möbius ribbon weaving multidimensional identities into infinite connection.',
+    palette: 'Amethyst Violet & Sunset Tangerine (#C084FC → #F43F5E → #FB923C)',
+    component: InfiniteHeartLogo
+  },
+  {
+    id: 'the_spark',
+    number: '07',
+    title: 'The Spark',
+    tagline: 'Supernova Encounter',
+    description: 'A luminous celestial spark uniting two searching souls.',
+    symbolism: 'The exact microsecond of instant chemistry when two universes collide into light.',
+    palette: 'Solar Amber & Starlight Gold (#FDE68A → #F59E0B)',
+    component: SparkHeartLogo
+  },
+  {
+    id: 'the_sanctuary',
+    number: '08',
+    title: 'The Prism',
+    tagline: 'Multidimensional Architecture',
+    description: 'Faceted multidimensional diamond heart of intimate authenticity.',
+    symbolism: 'Refracting the many facets of human personality into a single harmonic sanctuary.',
+    palette: 'Diamond Rose & Golden Amber (#FFFBEB → #B45309)',
+    component: SanctuaryHeartLogo
+  },
+  {
+    id: 'official_neon',
+    number: '00',
+    title: 'Official Neon Ribbon',
+    tagline: 'The Master Flagship Identity',
+    description: 'Official master Möbius loop of continuous ultraviolet and magenta radiance.',
+    symbolism: 'The official master Soulverse identity, glowing in a deep obsidian void.',
+    palette: 'Neon Violet to Vivid Rose Magenta',
+    component: OfficialNeonHeartLogo
+  }
+];
 
-      {/* Luminous Core Star */}
-      <circle cx="50" cy="48" r="2.8" fill="#FFFBEB" filter="drop-shadow(0 0 6px #F59E0B)" />
-    </svg>
-  );
-};
+/* ========================================================================= */
+/* 4. MASTER BRAND LOGO COMPONENT                                            */
+/* ========================================================================= */
 
-/**
- * CONCEPT 2: The Celestial Compass Heart (Love as Your True North)
- * Fuses the heart contour with an ascending 4-point celestial star.
- */
-export const CelestialCompassHeartLogo: React.FC<HeartLogoProps> = ({
-  size = 40,
-  className = '',
-  showGlow = true,
-  animated = false
-}) => {
-  const idPrefix = 'comp_heart_' + Math.random().toString(36).substring(2, 7);
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={`${animated ? 'animate-pulse' : ''} ${className}`}
-    >
-      <defs>
-        <linearGradient id={`${idPrefix}_grad`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FDE68A" />
-          <stop offset="40%" stopColor="#F59E0B" />
-          <stop offset="75%" stopColor="#D97706" />
-          <stop offset="100%" stopColor="#6366F1" />
-        </linearGradient>
-        <filter id={`${idPrefix}_glow`} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {showGlow && (
-        <circle cx="50" cy="48" r="30" fill="#F59E0B" opacity="0.22" filter="blur(16px)" />
-      )}
-
-      {/* Left Sweeping Heart Wing */}
-      <path
-        d="M 50 84 C 28 66 16 48 16 32 C 16 18 26 12 37 12 C 44 12 48 15 50 20"
-        stroke={`url(#${idPrefix}_grad)`}
-        strokeWidth="5"
-        strokeLinecap="round"
-        filter={showGlow ? `url(#${idPrefix}_glow)` : undefined}
-      />
-
-      {/* Right Sweeping Heart Wing with Star Anchor */}
-      <path
-        d="M 50 20 C 52 15 56 12 63 12 C 74 12 84 18 84 32 C 84 48 72 66 50 84"
-        stroke={`url(#${idPrefix}_grad)`}
-        strokeWidth="5"
-        strokeLinecap="round"
-        filter={showGlow ? `url(#${idPrefix}_glow)` : undefined}
-      />
-
-      {/* Celestial 4-Point Compass Star in Center Sanctuary */}
-      <path
-        d="M 50 26 L 52.5 35.5 L 62 38 L 52.5 40.5 L 50 50 L 47.5 40.5 L 38 38 L 47.5 35.5 Z"
-        fill="#FFFBEB"
-        filter="drop-shadow(0 0 8px #F59E0B)"
-      />
-
-      {/* Micro Orbital Ring */}
-      <circle
-        cx="50"
-        cy="38"
-        r="14"
-        stroke="#FDE68A"
-        strokeWidth="1.2"
-        strokeDasharray="2 3"
-        opacity="0.6"
-      />
-    </svg>
-  );
-};
-
-/**
- * CONCEPT 3: Twin Souls Embrace (Two Interlocking Crescents)
- * Two individual souls meeting in a mutual heart embrace with a luminous nexus.
- */
-export const TwinSoulsEmbraceLogo: React.FC<HeartLogoProps> = ({
-  size = 40,
-  className = '',
-  showGlow = true,
-  animated = false
-}) => {
-  const idPrefix = 'twin_' + Math.random().toString(36).substring(2, 7);
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={`${animated ? 'animate-pulse' : ''} ${className}`}
-    >
-      <defs>
-        <linearGradient id={`${idPrefix}_left`} x1="0%" y1="10%" x2="90%" y2="100%">
-          <stop offset="0%" stopColor="#FDE68A" />
-          <stop offset="50%" stopColor="#F59E0B" />
-          <stop offset="100%" stopColor="#D97706" />
-        </linearGradient>
-        <linearGradient id={`${idPrefix}_right`} x1="100%" y1="10%" x2="10%" y2="100%">
-          <stop offset="0%" stopColor="#F43F5E" />
-          <stop offset="50%" stopColor="#E11D48" />
-          <stop offset="100%" stopColor="#F59E0B" />
-        </linearGradient>
-        <filter id={`${idPrefix}_glow`} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="3.5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {showGlow && (
-        <circle cx="50" cy="48" r="30" fill="#F59E0B" opacity="0.2" filter="blur(16px)" />
-      )}
-
-      {/* Left Soul Crescent */}
-      <path
-        d="M 50 82 C 34 70 18 52 18 34 C 18 18 30 12 40 12 C 46 12 49 15 50 20 C 47 28 41 40 41 52 C 41 64 46 75 50 82 Z"
-        fill={`url(#${idPrefix}_left)`}
-        opacity="0.9"
-        filter={showGlow ? `url(#${idPrefix}_glow)` : undefined}
-      />
-
-      {/* Right Soul Crescent */}
-      <path
-        d="M 50 82 C 66 70 82 52 82 34 C 82 18 70 12 60 12 C 54 12 51 15 50 20 C 53 28 59 40 59 52 C 59 64 54 75 50 82 Z"
-        fill={`url(#${idPrefix}_right)`}
-        opacity="0.85"
-        filter={showGlow ? `url(#${idPrefix}_glow)` : undefined}
-      />
-
-      {/* Heart Center Diamond Spark */}
-      <polygon
-        points="50,42 54,49 61,50 54,51 50,58 46,51 39,50 46,49"
-        fill="#FFFFFF"
-        filter="drop-shadow(0 0 6px #F59E0B)"
-      />
-    </svg>
-  );
-};
-
-/**
- * CONCEPT 4: Prism Crystal Heart (Faceted Luxury Origami Jewel)
- * High-end architectural faceted heart with shimmering golden planes.
- */
-export const PrismCrystalHeartLogo: React.FC<HeartLogoProps> = ({
-  size = 40,
-  className = '',
-  showGlow = true,
-  animated = false
-}) => {
-  const idPrefix = 'prism_' + Math.random().toString(36).substring(2, 7);
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={`${animated ? 'animate-pulse' : ''} ${className}`}
-    >
-      <defs>
-        <linearGradient id={`${idPrefix}_light`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFFBEB" />
-          <stop offset="100%" stopColor="#F59E0B" />
-        </linearGradient>
-        <linearGradient id={`${idPrefix}_mid`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#F59E0B" />
-          <stop offset="100%" stopColor="#D97706" />
-        </linearGradient>
-        <linearGradient id={`${idPrefix}_dark`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#B45309" />
-          <stop offset="100%" stopColor="#78350F" />
-        </linearGradient>
-      </defs>
-
-      {showGlow && (
-        <circle cx="50" cy="50" r="32" fill="#F59E0B" opacity="0.25" filter="blur(16px)" />
-      )}
-
-      {/* Top Left Facet */}
-      <polygon points="50,26 28,14 16,32" fill={`url(#${idPrefix}_mid)`} opacity="0.9" />
-      {/* Top Right Facet */}
-      <polygon points="50,26 72,14 84,32" fill={`url(#${idPrefix}_light)`} opacity="0.95" />
-      {/* Center Top Diamond */}
-      <polygon points="50,26 64,48 50,62 36,48" fill={`url(#${idPrefix}_light)`} />
-      {/* Left Upper Flank */}
-      <polygon points="16,32 28,14 50,26 36,48" fill={`url(#${idPrefix}_dark)`} opacity="0.85" />
-      {/* Right Upper Flank */}
-      <polygon points="84,32 72,14 50,26 64,48" fill={`url(#${idPrefix}_mid)`} opacity="0.9" />
-      {/* Left Mid Flank */}
-      <polygon points="16,32 36,48 26,66" fill={`url(#${idPrefix}_mid)`} opacity="0.8" />
-      {/* Right Mid Flank */}
-      <polygon points="84,32 64,48 74,66" fill={`url(#${idPrefix}_dark)`} opacity="0.85" />
-      {/* Bottom Left Apex */}
-      <polygon points="36,48 50,62 50,84 26,66" fill={`url(#${idPrefix}_dark)`} />
-      {/* Bottom Right Apex */}
-      <polygon points="64,48 50,62 50,84 74,66" fill={`url(#${idPrefix}_mid)`} />
-
-      {/* Golden Contour Overlay */}
-      <path
-        d="M 50 84 L 26 66 L 16 32 L 28 14 L 50 26 L 72 14 L 84 32 L 74 66 Z"
-        stroke="#FEF3C7"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-        opacity="0.8"
-      />
-    </svg>
-  );
-};
-
-/**
- * CONCEPT 5: Resonance Wave Heart (Living Pulse & Emotional Sync)
- * Minimalist fluid heart enclosing a synchronized emotional heartbeat frequency.
- */
-export const ResonanceWaveHeartLogo: React.FC<HeartLogoProps> = ({
-  size = 40,
-  className = '',
-  showGlow = true,
-  animated = false
-}) => {
-  const idPrefix = 'wave_' + Math.random().toString(36).substring(2, 7);
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={`${animated ? 'animate-pulse' : ''} ${className}`}
-    >
-      <defs>
-        <linearGradient id={`${idPrefix}_grad`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FDE68A" />
-          <stop offset="50%" stopColor="#F59E0B" />
-          <stop offset="100%" stopColor="#F43F5E" />
-        </linearGradient>
-        <filter id={`${idPrefix}_glow`} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {showGlow && (
-        <circle cx="50" cy="50" r="30" fill="#F43F5E" opacity="0.2" filter="blur(16px)" />
-      )}
-
-      {/* Ambient Heart Boundary */}
-      <path
-        d="M 50 84 C 44 78 16 54 16 34 C 16 20 26 12 38 12 C 45 12 49 15 50 19 C 51 15 55 12 62 12 C 74 12 84 20 84 34 C 84 54 56 78 50 84 Z"
-        stroke={`url(#${idPrefix}_grad)`}
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity="0.85"
-        filter={showGlow ? `url(#${idPrefix}_glow)` : undefined}
-      />
-
-      {/* Internal Biometric Pulse / Soundwave Line */}
-      <path
-        d="M 22 48 L 36 48 L 40 38 L 45 58 L 49 30 L 53 66 L 57 42 L 61 52 L 65 48 L 78 48"
-        stroke="#FFFBEB"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        filter="drop-shadow(0 0 6px #F59E0B)"
-      />
-
-      {/* Pulse Peak Spark */}
-      <circle cx="49" cy="30" r="2.4" fill="#F43F5E" filter="drop-shadow(0 0 5px #F43F5E)" />
-    </svg>
-  );
-};
-
-/**
- * MASTER SOULVERSE BRAND LOGO COMPONENT
- * Allows seamless switching between all 5 heart logo variants across the entire application.
- */
 export interface SoulverseBrandLogoProps extends HeartLogoProps {
   variant?: HeartLogoVariant;
   showWordmark?: boolean;
@@ -416,18 +583,28 @@ export const SoulverseBrandLogo: React.FC<SoulverseBrandLogoProps> = ({
 }) => {
   const renderLogo = () => {
     switch (variant) {
-      case 'official_neon':
-        return <OfficialNeonHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
-      case 'infinity':
-        return <InfinityOrbitHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
-      case 'compass':
-        return <CelestialCompassHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
-      case 'twin_souls':
-        return <TwinSoulsEmbraceLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
-      case 'crystal':
-        return <PrismCrystalHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+      case 'open_heart':
+        return <OpenHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+      case 'the_flow':
+        return <FlowHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+      case 'the_pulse':
       case 'resonance':
-        return <ResonanceWaveHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+        return <PulseHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+      case 'the_connection':
+      case 'twin_souls':
+        return <ConnectionHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+      case 'the_orbit':
+        return <OrbitHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+      case 'the_infinite':
+      case 'infinity':
+        return <InfiniteHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+      case 'the_spark':
+      case 'compass':
+        return <SparkHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+      case 'the_sanctuary':
+      case 'crystal':
+        return <SanctuaryHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
+      case 'official_neon':
       default:
         return <OfficialNeonHeartLogo size={size} className={className} showGlow={showGlow} animated={animated} />;
     }

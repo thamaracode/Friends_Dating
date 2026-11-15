@@ -42,6 +42,7 @@ import {
   AccountPreferences,
   FullUserAttributes
 } from '../types/tinderFeatures';
+import { SOULVERSE_ALL_LOGOS, type HeartLogoVariant } from './brand/SoulverseHeartLogos';
 import { GlassModal, GlassButton, GlassPrimaryButton } from './klyven';
 import { LifestyleSelectModal, LifestyleCategoryKey } from './control/LifestyleSelectModal';
 
@@ -55,6 +56,9 @@ export const SoulverseSettingsPage: React.FC = () => {
 
   // Active section tab
   const [activeTab, setActiveTab] = useState<'discovery' | 'visibility' | 'account' | 'preferences' | 'safety'>('discovery');
+  const [activeBrandLogo, setActiveBrandLogo] = useState<HeartLogoVariant>(() => {
+    return (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'open_heart';
+  });
 
   // Modals & Feedback
   const [savedToast, setSavedToast] = useState(false);
@@ -821,6 +825,55 @@ export const SoulverseSettingsPage: React.FC = () => {
       {activeTab === 'preferences' && (
         <div className="space-y-4 animate-fadeIn">
           
+          {/* 8 LOGOS BRAND IDENTITY SANCTUARY (Creative Direction Suite) */}
+          <div className="p-5 rounded-3xl dark-glass border border-amber-400/25 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B]" />
+                <h3 className="text-xs font-heading font-extrabold text-white uppercase tracking-wider">
+                  Soulverse 8 Logos & Easter Egg Sanctuary
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono text-amber-300 font-bold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                Active: {activeBrandLogo}
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400">
+              Choose your active brand identity symbol. It instantly updates across the header, navigation, and discover feed.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+              {SOULVERSE_ALL_LOGOS.slice(0, 8).map(logo => {
+                const LogoComp = logo.component;
+                const isSelected = activeBrandLogo === logo.id;
+                return (
+                  <button
+                    key={logo.id}
+                    onClick={() => {
+                      setActiveBrandLogo(logo.id);
+                      localStorage.setItem('soulverse_brand_logo', logo.id);
+                      window.dispatchEvent(new Event('storage'));
+                      setSavedToast(true);
+                      setTimeout(() => setSavedToast(false), 2500);
+                    }}
+                    className={`p-3 rounded-2xl border flex flex-col items-center gap-2 text-center transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-gradient-to-b from-amber-500/20 to-amber-950/20 border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.25)] scale-[1.02]'
+                        : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    <div className="p-2 rounded-xl bg-black/40 border border-white/10">
+                      <LogoComp size={36} showGlow={isSelected} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white block">{logo.number}. {logo.title}</span>
+                      <span className="text-[10px] text-zinc-400 line-clamp-1 mt-0.5">{logo.description}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* ACTIVITY STATUS (Image 8) */}
           <div className="p-5 rounded-3xl dark-glass border border-white/[0.08] space-y-3 shadow-lg">
             <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider block">

@@ -65,6 +65,7 @@ import { TwoPersonQuestionModal } from './emotional/TwoPersonQuestionModal';
 import { UnifiedAiAssistantDrawer } from './ai/UnifiedAiAssistantDrawer';
 import { UserAiControlCenter } from './control/UserAiControlCenter';
 import { BlockClosureModal } from './messaging/BlockClosureModal';
+import { SOULVERSE_ALL_LOGOS, SoulverseBrandLogo, type HeartLogoVariant } from './brand/SoulverseHeartLogos';
 import type { UserProfile } from '../types';
 import type { 
   ChatMessage, 
@@ -1016,7 +1017,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center text-rose-400 hover:text-rose-300 cursor-pointer transition-all shadow-sm active:scale-95 group"
               title="Connection Heart (2-Person Question Game)"
             >
-              <Heart className="w-4 h-4 fill-rose-500/30 group-hover:fill-rose-500/70 text-rose-400 transition-all" />
+              <SoulverseBrandLogo variant={(localStorage.getItem('soulverse_brand_logo') as any) || 'open_heart'} size={18} showGlow={false} />
             </button>
 
             {/* Three Dots Menu Button */}
@@ -1397,15 +1398,25 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                   {/* Emoji Reactions ribbon */}
                   {msg.reactions && msg.reactions.length > 0 && (
                     <div className="flex items-center gap-1 mt-1 -mb-1 px-1">
-                      {msg.reactions.map((r, i) => (
-                        <span 
-                          key={i}
-                          className="px-2 py-0.5 rounded-full bg-[#12141B] border border-[rgba(255,255,255,0.20)]/30 text-[10px] font-bold text-[#F3F4F6] flex items-center gap-1 shadow-sm"
-                        >
-                          <span className="flex items-center gap-1">{renderWithTelegramEmojis(r.emoji, 16)}</span>
-                          {r.count > 1 && <span className="text-[9px] text-[#E5E7EB]">{r.count}</span>}
-                        </span>
-                      ))}
+                      {msg.reactions.map((r, i) => {
+                        const isSoulLogo = r.emoji.startsWith('[logo:');
+                        const logoId = isSoulLogo ? r.emoji.replace('[logo:', '').replace(']', '') as HeartLogoVariant : null;
+                        return (
+                          <span 
+                            key={i}
+                            className="px-2 py-0.5 rounded-full bg-[#12141B] border border-[rgba(255,255,255,0.20)]/30 text-[10px] font-bold text-[#F3F4F6] flex items-center gap-1 shadow-sm"
+                          >
+                            <span className="flex items-center gap-1">
+                              {isSoulLogo && logoId ? (
+                                <SoulverseBrandLogo variant={logoId} size={15} showGlow={false} />
+                              ) : (
+                                renderWithTelegramEmojis(r.emoji, 16)
+                              )}
+                            </span>
+                            {r.count > 1 && <span className="text-[9px] text-[#E5E7EB]">{r.count}</span>}
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1751,6 +1762,32 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                   <TgEmoji id={item.id} fallback={item.fallback} size={28} />
                 </button>
               ))}
+            </div>
+
+            {/* Soulverse 8 Logos & Easter Egg Reactions */}
+            <div className="py-2 border-b border-white/10 space-y-1">
+              <span className="text-[10px] font-mono font-bold text-amber-300 uppercase tracking-wider px-1 block">
+                ✧ 8 Logos Soul Resonance Reactions
+              </span>
+              <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar pt-1">
+                {SOULVERSE_ALL_LOGOS.slice(0, 8).map(logo => {
+                  const LogoComp = logo.component;
+                  return (
+                    <button
+                      key={logo.id}
+                      onClick={() => {
+                        handleToggleReaction(selectedMessageForMenu.id, `[logo:${logo.id}]`);
+                        setSelectedMessageForMenu(null);
+                        showToast(`Reacted with ${logo.title}!`);
+                      }}
+                      className="p-1 rounded-xl hover:bg-white/10 hover:scale-125 transition-all cursor-pointer shrink-0"
+                      title={logo.title}
+                    >
+                      <LogoComp size={22} showGlow={false} />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Actions List */}

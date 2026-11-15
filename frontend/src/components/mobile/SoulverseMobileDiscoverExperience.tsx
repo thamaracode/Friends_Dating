@@ -26,6 +26,15 @@ import type { UserProfile } from '../../types';
 import { ContextualEmotionalBanner } from '../emotional/ContextualEmotionalBanner';
 import { SocialDiscoveryEngineView } from '../discovery/SocialDiscoveryEngineView';
 import { TinderSwipeDeck } from '../discovery/TinderSwipeDeck';
+import { 
+  OpenHeartLogo, 
+  FlowHeartLogo, 
+  PulseHeartLogo, 
+  ConnectionHeartLogo, 
+  OrbitHeartLogo, 
+  InfiniteHeartLogo, 
+  SparkHeartLogo 
+} from '../brand/SoulverseHeartLogos';
 
 interface SoulverseMobileDiscoverExperienceProps {
   onOpenProfile: (profile: UserProfile) => void;
@@ -180,32 +189,37 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
         </div>
       </div>
 
-      {/* 2. CATEGORY HORIZONTAL FILTER PILLS */}
+      {/* 2. CATEGORY HORIZONTAL FILTER PILLS WITH 8 LOGO EASTER EGGS */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
         {[
-          { id: 'all', label: 'All Humans' },
-          { id: 'dating', label: '❤️ Dating' },
-          { id: 'friendship', label: '🫂 Friendship' },
-          { id: 'nearby', label: '📍 Nearby' },
-          { id: 'ambitions', label: '⚡ Ambitions' },
-          { id: 'lifestyle', label: '🌱 Solitude & Introverts' },
-          { id: 'random', label: '🎲 Random' }
-        ].map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => {
-              setSelectedCategory(cat.id);
-              setCurrentSwipeIndex(0);
-            }}
-            className={`h-10 px-4 rounded-full text-xs font-heading font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center ${
-              selectedCategory === cat.id
-                ? 'bg-white text-[#090A0E] shadow-md font-bold'
-                : 'bg-white/[0.04] text-zinc-300 hover:text-white hover:bg-white/[0.08] border border-white/10'
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
+          { id: 'all', label: 'All Humans', icon: SparkHeartLogo },
+          { id: 'dating', label: 'Dating', icon: OpenHeartLogo },
+          { id: 'friendship', label: 'Friendship', icon: ConnectionHeartLogo },
+          { id: 'nearby', label: 'Nearby Orbit', icon: OrbitHeartLogo },
+          { id: 'ambitions', label: 'Creative Flow', icon: FlowHeartLogo },
+          { id: 'lifestyle', label: 'Soul Pulse', icon: PulseHeartLogo },
+          { id: 'random', label: 'Infinite', icon: InfiniteHeartLogo }
+        ].map(cat => {
+          const LogoIcon = cat.icon;
+          const isSelected = selectedCategory === cat.id;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setSelectedCategory(cat.id);
+                setCurrentSwipeIndex(0);
+              }}
+              className={`h-10 px-3.5 sm:px-4 rounded-full text-xs font-heading font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-2 ${
+                isSelected
+                  ? 'bg-white text-[#090A0E] shadow-md font-bold'
+                  : 'bg-white/[0.04] text-zinc-300 hover:text-white hover:bg-white/[0.08] border border-white/10'
+              }`}
+            >
+              <LogoIcon size={16} showGlow={false} />
+              <span>{cat.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Non-Swipe Banners & Daily Cards: Only displayed in Resonance Engine or Feed view */}

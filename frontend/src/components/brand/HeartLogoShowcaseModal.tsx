@@ -14,12 +14,8 @@ import {
 import { 
   HeartLogoVariant, 
   SoulverseBrandLogo, 
-  OfficialNeonHeartLogo,
-  InfinityOrbitHeartLogo, 
-  CelestialCompassHeartLogo, 
-  TwinSoulsEmbraceLogo, 
-  PrismCrystalHeartLogo, 
-  ResonanceWaveHeartLogo 
+  SOULVERSE_ALL_LOGOS,
+  type SoulverseLogoInfo
 } from './SoulverseHeartLogos';
 
 interface HeartLogoShowcaseModalProps {
@@ -29,65 +25,7 @@ interface HeartLogoShowcaseModalProps {
   onSelectVariant: (variant: HeartLogoVariant) => void;
 }
 
-interface LogoDetail {
-  id: HeartLogoVariant;
-  title: string;
-  tagline: string;
-  symbolism: string;
-  palette: string;
-  component: React.ComponentType<{ size?: number; className?: string; showGlow?: boolean; animated?: boolean }>;
-}
-
-const LOGO_CONCEPTS: LogoDetail[] = [
-  {
-    id: 'official_neon',
-    title: 'Official Neon Ribbon Heart',
-    tagline: 'Luminous Möbius Loop of Infinite Chemistry',
-    symbolism: 'A continuous glowing ultraviolet and magenta ribbon forming an unbroken heart within a dark sanctuary.',
-    palette: 'Neon Violet to Vivid Rose Magenta with Ultraviolet Ambient Radiance',
-    component: OfficialNeonHeartLogo
-  },
-  {
-    id: 'infinity',
-    title: 'Cosmic Infinity Heart',
-    tagline: 'Möbius Ribbon of Eternal Connection',
-    symbolism: 'Two independent soul paths intertwining into an unbroken infinity (∞) heart silhouette.',
-    palette: '24K Solar Gold to Radiant Rose Quartz (#FDE68A → #F59E0B → #F43F5E)',
-    component: InfinityOrbitHeartLogo
-  },
-  {
-    id: 'compass',
-    title: 'Celestial Compass Heart',
-    tagline: 'Love as Your True North in the Universe',
-    symbolism: 'A sweeping heart contour that ascends into a radiant 4-point North Star and orbital ring.',
-    palette: 'Aurora Amber & Celestial Starlight with Deep Indigo undertones',
-    component: CelestialCompassHeartLogo
-  },
-  {
-    id: 'twin_souls',
-    title: 'Twin Souls Embrace',
-    tagline: 'Two Entities, One Sanctuary',
-    symbolism: 'Dual overlapping crescents (liquid gold & blush rose) embracing a brilliant supernova spark.',
-    palette: 'Champagne Liquid Gold & Warm Crimson Blush (#FDE68A + #F43F5E)',
-    component: TwinSoulsEmbraceLogo
-  },
-  {
-    id: 'crystal',
-    title: 'Prism Crystal Heart',
-    tagline: 'Faceted Architectural Luxury & Depth',
-    symbolism: 'Geometric diamond facets reflecting the multifaceted depths of human intimacy.',
-    palette: 'Rose-Gold Wireframe & Amber Crystal Facets (#FFFBEB → #B45309)',
-    component: PrismCrystalHeartLogo
-  },
-  {
-    id: 'resonance',
-    title: 'Resonance Wave Heart',
-    tagline: 'Living Pulse & Synchronized Heartbeats',
-    symbolism: 'Fluid minimalist heart housing a synchronized biometric pulse and emotional frequency.',
-    palette: 'Sunset Rose Aura & Electric Amber Core (#F43F5E → #F59E0B)',
-    component: ResonanceWaveHeartLogo
-  }
-];
+const LOGO_CONCEPTS: SoulverseLogoInfo[] = SOULVERSE_ALL_LOGOS;
 
 export const HeartLogoShowcaseModal: React.FC<HeartLogoShowcaseModalProps> = ({
   isOpen,
@@ -141,13 +79,13 @@ export const HeartLogoShowcaseModal: React.FC<HeartLogoShowcaseModalProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-heading font-extrabold text-white tracking-tight flex items-center gap-2">
-                Soulverse Heart Brand Identity
+                Soulverse Logo Sanctuary & Easter Egg Lab
                 <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium">
-                  5 Design Concepts
+                  8 Alternatives & Master
                 </span>
               </h2>
               <p className="text-xs text-zinc-400">
-                Explore luxury heart-like marks tailored for romantic connection, resonance, and emotional depth.
+                Choose any logo to instantly rebrand the entire application, or discover their hidden meanings.
               </p>
             </div>
           </div>

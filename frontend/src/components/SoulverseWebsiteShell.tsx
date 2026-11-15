@@ -347,16 +347,12 @@ export const SoulverseWebsiteShell: React.FC = () => {
           </button>
 
           <div 
-            onClick={() => navigateTo('discover')}
+            onClick={() => setIsHeartLogoModalOpen(true)}
             className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none py-1"
-            title="Soulverse — Home"
+            title="Click to view & customize Soulverse 8 Logos & Easter Eggs"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-rose-500/15 via-purple-500/15 to-white/5 border border-white/20 flex items-center justify-center shadow-md group-hover:border-rose-400/50 transition-all relative overflow-hidden">
-              <img 
-                src="/images/soulverse_logo.png" 
-                alt="Soulverse Heart" 
-                className="w-7 h-7 sm:w-8 sm:h-8 object-contain drop-shadow-[0_0_8px_rgba(244,63,94,0.5)] group-hover:scale-105 transition-transform" 
-              />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-rose-500/15 via-purple-500/15 to-white/5 border border-white/20 flex items-center justify-center shadow-md group-hover:border-rose-400/50 group-hover:scale-105 transition-all relative overflow-hidden">
+              <SoulverseBrandLogo variant={brandLogoVariant} size={26} showGlow={true} />
             </div>
             <div className="flex items-center gap-2">
               <span className="font-heading font-extrabold tracking-tight text-white text-lg sm:text-xl">Soulverse</span>

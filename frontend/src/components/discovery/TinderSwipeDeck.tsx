@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { UserProfile } from '../../types';
 import { SwipeSyncEngine } from '../../utils/swipeSyncEngine';
+import { PulseHeartLogo } from '../brand/SoulverseHeartLogos';
 
 export interface TinderSwipeDeckProps {
   initialProfiles?: UserProfile[];
@@ -592,7 +593,7 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
             {/* Top Chemistry & Info Buttons */}
             <div className="absolute top-7 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
               <span className="h-8 px-3 rounded-full text-xs font-heading font-bold bg-black/60 backdrop-blur-md text-amber-300 border border-amber-400/30 flex items-center gap-1.5 shadow-lg">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <PulseHeartLogo size={16} showGlow={false} />
                 <span>{activeProfile.compatibilityScore || (activeProfile as any).matchScore || 94}% Soul Chemistry</span>
               </span>
 
