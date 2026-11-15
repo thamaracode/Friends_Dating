@@ -11,7 +11,6 @@ import {
   PlusSquare, 
   Plus, 
   Search, 
-  Sparkles, 
   Edit3, 
   Play, 
   Pause, 
@@ -196,7 +195,7 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-1.5 font-serif tracking-tight">
                     <span>Luna</span>
-                    <span className="text-zinc-400 text-sm">✧</span>
+                    <span className="text-rose-400 text-sm">♡</span>
                   </h1>
                   <span className="w-4 h-4 rounded-full bg-white/10 text-white border border-white/20 flex items-center justify-center text-[10px] shadow-sm">
                     ✓
@@ -204,7 +203,7 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
                 </div>
                 <div className="text-xs text-zinc-400">@lunaverse</div>
                 <p className="text-xs text-zinc-300 italic font-medium pt-0.5">
-                  "Just a dreamer in a chaotic world. ✧"
+                  "Just a dreamer in a chaotic world. ♡"
                 </p>
                 <div className="flex items-center gap-4 text-xs text-zinc-200 pt-1">
                   <span><strong className="text-white">12</strong> <span className="text-zinc-400">Worlds</span></span>
@@ -362,10 +361,10 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
             {/* Vertical Milestone Axis */}
             <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-white/10 relative z-10">
               {[
-                { year: '2026', text: 'Focus on happiness and growth. ✧' },
+                { year: '2026', text: 'Focus on happiness and growth. ♡' },
                 { year: '2024', text: 'A new chapter begins...' },
                 { year: '2021', text: 'Learning, healing, and becoming.' },
-                { year: '2019', text: 'Big dreams, boundless curiosity. ✧' }
+                { year: '2019', text: 'Big dreams, boundless curiosity. ♡' }
               ].map((node, i) => (
                 <div key={i} className="relative group">
                   <span className="absolute -left-6 top-1 w-2 h-2 rounded-full bg-white ring-4 ring-[#090A0E] shadow-[0_0_8px_rgba(255,255,255,0.8)] group-hover:scale-125 transition-transform" />
@@ -425,7 +424,7 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
             <div className="flex items-center gap-2"><span>🎂</span><span className="text-zinc-400">19 years old</span></div>
             <div className="flex items-center gap-2"><span>✨</span><span className="text-zinc-400">Dreamer · Creator · Overthinker</span></div>
             <div className="flex items-center gap-2"><span>🎵</span><span className="text-zinc-400">Anime, Games, Music</span></div>
-            <div className="flex items-center gap-2 text-zinc-200"><span>📍</span><span>Somewhere in the stars ✧</span></div>
+            <div className="flex items-center gap-2 text-zinc-200"><span>📍</span><span>Somewhere in the stars ♡</span></div>
           </div>
         </div>
 
@@ -532,7 +531,7 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
             <SoulverseBrandLogo variant={brandLogoVariant} size={brandLogoVariant === 'official_neon' ? 30 : 20} showGlow={true} />
           </div>
           <span className="font-extrabold text-sm tracking-widest text-white font-sans">
-            Soulverse <span className="text-amber-400">✧</span>
+            Soulverse <span className="text-rose-400">♡</span>
           </span>
         </div>
 
@@ -552,7 +551,7 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
             onClick={() => onNavigateSubsystem('self_discovery')}
             className="p-2 rounded-full hover:bg-white/[0.06] text-zinc-400 hover:text-white transition-colors"
           >
-            <Sparkles className="w-4 h-4" />
+            <Heart className="w-4 h-4 text-rose-400 fill-rose-500/20" />
           </button>
           <button 
             onClick={() => onSelectTab('messages')}

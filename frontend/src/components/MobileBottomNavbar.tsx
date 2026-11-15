@@ -4,8 +4,7 @@ import {
   Compass, 
   Heart, 
   MessageCircle, 
-  User, 
-  Sparkles 
+  User 
 } from 'lucide-react';
 import type { MainNavTab } from '../types';
 

@@ -6,7 +6,6 @@ import {
   Trash2, 
   CheckCircle2, 
   Filter, 
-  Sparkles,
   ExternalLink,
   Check
 } from 'lucide-react';

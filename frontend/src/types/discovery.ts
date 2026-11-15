@@ -40,7 +40,7 @@ export const CONNECTION_TYPES_METADATA: Record<ConnectionType, ConnectionTypeMet
     id: 'long_term',
     label: 'Long-Term Partnership',
     category: 'romance',
-    icon: 'Sparkles',
+    icon: 'Heart',
     description: 'Committed, shared-life building with aligned future values.'
   },
   casual_dating: {

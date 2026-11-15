@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   Bot, 
   Key, 
-  Sparkles, 
   CheckCircle2, 
   AlertTriangle, 
   Eye, 
@@ -117,7 +116,7 @@ export const CustomAiSettingsModal: React.FC<CustomAiSettingsModalProps> = ({
         {/* Intro */}
         <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-1">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <Heart className="w-4 h-4 text-rose-400 fill-rose-500/20" />
             <span className="font-bold text-white text-sm font-serif">Bring Your Own Key (BYOK)</span>
           </div>
           <p className="text-zinc-300 leading-relaxed text-[11px]">

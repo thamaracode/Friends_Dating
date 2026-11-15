@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, MapPin, Sparkles, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
+import { CheckCircle2, MapPin, Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
 
 export interface ProfileHeaderProps {
   name: string;
@@ -140,8 +140,8 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             </p>
           )}
           {intention && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-300 text-xs font-semibold shrink-0">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-400/10 border border-rose-400/20 text-rose-300 text-xs font-semibold shrink-0">
+              <Heart className="w-3.5 h-3.5 fill-rose-500/20" />
               <span>Looking for: {intention}</span>
             </div>
           )}

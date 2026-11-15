@@ -3,7 +3,6 @@ import {
   Heart, 
   Users, 
   Brain, 
-  Sparkles, 
   Bookmark, 
   Share2, 
   CheckCircle2, 
@@ -233,7 +232,7 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
       id: 'growth' as DailyTab, 
       label: 'Daily Growth', 
       sublabel: 'Motivation & Self-Worth',
-      icon: Sparkles, 
+      icon: Heart, 
       color: '#FFFFFF'
     }
   ];
@@ -266,7 +265,7 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
             )}
             <h1 className="type-page-heading flex items-center gap-2.5">
               <span>Daily Connection</span>
-              <span className="text-amber-400 font-normal">✧</span>
+              <span className="text-rose-400 font-normal">♡</span>
             </h1>
           </div>
           <p className="type-supporting">
@@ -310,10 +309,10 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
 
           <a
             href="#quotes"
-            className="flex items-center gap-2 h-10 px-4 rounded-full dark-glass bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/30 text-xs font-heading font-bold text-amber-300 transition-colors cursor-pointer"
+            className="flex items-center gap-2 h-10 px-4 rounded-full dark-glass bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-xs font-heading font-bold text-rose-300 transition-colors cursor-pointer"
             title="Infinite Quotes Sanctuary"
           >
-            <Sparkles className="w-4 h-4 text-amber-300" />
+            <Heart className="w-4 h-4 text-rose-400 fill-rose-500/30" />
             <span className="hidden sm:inline">Quotes Sanctuary</span>
           </a>
         </div>
@@ -677,7 +676,7 @@ export const DailyConnectionHub: React.FC<DailyConnectionHubProps> = ({ onBackTo
           <div className="space-y-6">
             {/* The Visual Card */}
             <div className="p-6 rounded-2xl bg-gradient-to-b from-white/[0.08] to-transparent border border-white/10 space-y-4 text-center relative overflow-hidden shadow-inner">
-              <span className="text-xl">✧</span>
+              <span className="text-xl text-rose-400">♡</span>
               <p className="text-base sm:text-lg font-black text-white font-serif leading-relaxed">
                 "{currentItem.quote_one_liner}"
               </p>

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { 
-  Sparkles, 
   Send, 
   Bot, 
   User, 
@@ -187,8 +186,8 @@ export const AIRelationshipAssistantModal: React.FC<AIRelationshipAssistantModal
               className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'assistant' && (
-                <div className="w-6 h-6 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-zinc-300 shrink-0 mt-0.5">
-                  <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
+                <div className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0 mt-0.5">
+                  <Heart className="w-3.5 h-3.5 fill-rose-500/20" />
                 </div>
               )}
               <div

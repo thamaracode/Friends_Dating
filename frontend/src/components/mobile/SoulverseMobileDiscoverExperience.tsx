@@ -6,7 +6,6 @@ import {
   X, 
   Star, 
   MessageCircle, 
-  Sparkles, 
   MapPin, 
   Filter, 
   Layers, 
@@ -183,7 +182,7 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
             }`}
             title="Complete Social Discovery & Resonance Engine"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400/30" />
             <span>Resonance Engine</span>
           </button>
         </div>
@@ -192,13 +191,13 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
       {/* 2. CATEGORY HORIZONTAL FILTER PILLS WITH 8 LOGO EASTER EGGS */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
         {[
-          { id: 'all', label: 'All Humans', icon: SparkHeartLogo },
-          { id: 'dating', label: 'Dating', icon: OpenHeartLogo },
+          { id: 'all', label: 'All Humans', icon: OpenHeartLogo },
+          { id: 'dating', label: 'Dating', icon: FlowHeartLogo },
           { id: 'friendship', label: 'Friendship', icon: ConnectionHeartLogo },
           { id: 'nearby', label: 'Nearby Orbit', icon: OrbitHeartLogo },
-          { id: 'ambitions', label: 'Creative Flow', icon: FlowHeartLogo },
-          { id: 'lifestyle', label: 'Soul Pulse', icon: PulseHeartLogo },
-          { id: 'random', label: 'Infinite', icon: InfiniteHeartLogo }
+          { id: 'ambitions', label: 'Soul Pulse', icon: PulseHeartLogo },
+          { id: 'lifestyle', label: 'Radiant Heart', icon: SparkHeartLogo },
+          { id: 'random', label: 'Infinite Heart', icon: InfiniteHeartLogo }
         ].map(cat => {
           const LogoIcon = cat.icon;
           const isSelected = selectedCategory === cat.id;
@@ -384,7 +383,7 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
                   {/* Top Badges */}
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
                     <span className="h-8 px-3 rounded-full text-xs font-heading font-bold bg-black/60 backdrop-blur-md text-white border border-white/15 flex items-center gap-1.5 shadow-sm">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                      <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
                       <span>{profile.compatibilityScore || 88}% Compatibility</span>
                     </span>
 

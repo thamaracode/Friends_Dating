@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { 
   Compass, 
   ExternalLink, 
-  Sparkles, 
   Share2, 
   Globe, 
   Link2, 
@@ -184,8 +183,8 @@ export const FriendsConnectHub = () => {
 
                 {/* FRIENDS Action */}
                 <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl text-xs text-slate-300 mt-3 space-y-1">
-                  <div className="flex items-center gap-1.5 text-sky-300 font-semibold text-[11px]">
-                    <Sparkles className="w-3 h-3 text-sky-400" />
+                  <div className="flex items-center gap-1.5 text-rose-300 font-semibold text-[11px]">
+                    <Heart className="w-3 h-3 text-rose-400 fill-rose-500/20" />
                     <span>How FRIENDS interacts:</span>
                   </div>
                   <p className="text-[11px] text-slate-400">{platform.friendsAction}</p>

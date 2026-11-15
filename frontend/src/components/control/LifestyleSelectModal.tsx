@@ -2,7 +2,6 @@ import React from 'react';
 import { 
   X, 
   Check, 
-  Sparkles, 
   Heart, 
   BookOpen, 
   Users, 
@@ -46,7 +45,7 @@ export const LIFESTYLE_CATALOG: Record<LifestyleCategoryKey, {
 }> = {
   interests: {
     title: 'Interests & Passions',
-    icon: Sparkles,
+    icon: Heart,
     isMultiSelect: true,
     options: [
       { id: 'art', label: 'Art & Design', emoji: '🎨' },

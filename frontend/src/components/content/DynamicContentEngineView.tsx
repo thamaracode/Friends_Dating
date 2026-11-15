@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Compass,
-  Sparkles,
   Heart,
   Users,
   Brain,
@@ -220,7 +219,7 @@ export const DynamicContentEngineView: React.FC = () => {
       {/* Toast Notification */}
       {toastMsg && (
         <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-zinc-900/95 border border-white/20 text-xs text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+          <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/30" />
           <span>{toastMsg}</span>
         </div>
       )}

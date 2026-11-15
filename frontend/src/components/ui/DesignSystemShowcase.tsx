@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { 
-  Sparkles, 
   Layers, 
   Type, 
   Grid, 
@@ -154,7 +153,7 @@ export const DesignSystemShowcase: React.FC = () => {
           <Tab value="typography" icon={<Type className="w-4 h-4" />}>
             Typography & Scale
           </Tab>
-          <Tab value="feedback" icon={<Sparkles className="w-4 h-4" />}>
+          <Tab value="feedback" icon={<Heart className="w-4 h-4 fill-rose-500/20" />}>
             Feedback & States
           </Tab>
         </TabList>
@@ -241,7 +240,7 @@ export const DesignSystemShowcase: React.FC = () => {
               <NavigationItem
                 id="nav_lounges"
                 label="Shared Lounges"
-                icon={<Sparkles className="w-4 h-4" />}
+                icon={<Heart className="w-4 h-4" />}
                 isActive={activeNav === 'lounges'}
                 onClick={() => setActiveNav('lounges')}
               />
@@ -423,7 +422,7 @@ export const DesignSystemShowcase: React.FC = () => {
                 Empty State with Next Useful Action
               </span>
               <EmptyState
-                icon={<Sparkles className="w-6 h-6" />}
+                icon={<Heart className="w-6 h-6 text-rose-400 fill-rose-500/20" />}
                 title="Your Memory Vault is Empty"
                 description="Record the first meaningful commitment, promise, or emotional milestone with someone in your connection circle."
                 actionLabel="Create First Milestone"

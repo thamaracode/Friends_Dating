@@ -11,7 +11,6 @@ import {
   ExternalLink,
   Lock,
   ChevronRight,
-  Sparkles,
   BarChart3
 } from 'lucide-react';
 import type { AdminUser } from '../types/admin';

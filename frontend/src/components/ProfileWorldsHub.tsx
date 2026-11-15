@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Globe2, 
-  Sparkles, 
   Plus, 
   Eye, 
   Film, 

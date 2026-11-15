@@ -3,7 +3,6 @@ import {
   Compass, 
   Heart, 
   X, 
-  Sparkles, 
   Bookmark, 
   BookmarkCheck, 
   Users, 
@@ -248,7 +247,7 @@ export const SocialDiscoveryEngineView: React.FC<SocialDiscoveryEngineViewProps>
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-zinc-900/95 border border-white/20 text-xs text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-emerald-400" />
+          <Heart className="w-4 h-4 text-rose-400 fill-rose-500/30" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -462,10 +461,10 @@ export const SocialDiscoveryEngineView: React.FC<SocialDiscoveryEngineViewProps>
                         {/* Resonance Score Badge */}
                         <div
                           onClick={() => setActiveExplainReport({ profile, report: resonance })}
-                          className="px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-extrabold flex items-center gap-1 cursor-pointer hover:bg-purple-500/25 transition-all shadow-sm"
+                          className="px-2.5 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-extrabold flex items-center gap-1 cursor-pointer hover:bg-rose-500/25 transition-all shadow-sm"
                           title="Click to view transparent 7-dimension score breakdown"
                         >
-                          <Sparkles className="w-3 h-3 text-purple-400" />
+                          <Heart className="w-3 h-3 text-rose-400 fill-rose-400" />
                           <span>{resonance.overallResonanceScore}%</span>
                         </div>
                       </div>
@@ -549,10 +548,10 @@ export const SocialDiscoveryEngineView: React.FC<SocialDiscoveryEngineViewProps>
 
                         <button
                           onClick={() => setActiveExplainReport({ profile, report: resonance })}
-                          className="p-2.5 rounded-2xl bg-white/[0.05] hover:bg-purple-500/20 text-zinc-400 hover:text-purple-300 transition-all cursor-pointer border border-white/10"
+                          className="p-2.5 rounded-2xl bg-white/[0.05] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 transition-all cursor-pointer border border-white/10"
                           title="Explain Resonance Breakdown"
                         >
-                          <Sparkles className="w-4 h-4 text-purple-400" />
+                          <Heart className="w-4 h-4 text-rose-400 fill-rose-500/30" />
                         </button>
                       </div>
 

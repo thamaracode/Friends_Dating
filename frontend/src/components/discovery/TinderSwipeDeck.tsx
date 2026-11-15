@@ -10,7 +10,6 @@ import {
   Heart,
   X,
   Star,
-  Sparkles,
   Info,
   MapPin,
   ShieldCheck,
@@ -445,8 +444,8 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
   if (!activeProfile) {
     return (
       <div className="w-full aspect-[3/4.6] max-h-[640px] max-w-sm sm:max-w-md mx-auto rounded-3xl glin-glass-frosted border border-white/15 flex flex-col items-center justify-center p-8 text-center space-y-5 animate-in fade-in shadow-2xl">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400/20 to-purple-500/20 border border-amber-400/30 flex items-center justify-center text-amber-300 shadow-[0_0_24px_rgba(245,158,11,0.25)]">
-          <Sparkles className="w-10 h-10 animate-pulse" />
+        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-rose-500/20 to-purple-500/20 border border-rose-400/30 flex items-center justify-center text-rose-300 shadow-[0_0_24px_rgba(244,63,94,0.25)]">
+          <Heart className="w-10 h-10 animate-pulse fill-rose-500/30" />
         </div>
         <div className="space-y-2">
           <h3 className="text-2xl font-black text-white font-heading tracking-tight">You've Caught Up!</h3>
@@ -736,15 +735,15 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
               <span className="text-zinc-300 font-semibold">{activeProfile.status || 'Active Member'}</span>
             </p>
           </div>
-          <span className="px-3 py-1 rounded-full text-xs font-bold font-heading bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <span className="px-3 py-1 rounded-full text-xs font-bold font-heading bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1">
+            <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
             <span>{activeProfile.compatibilityScore || 88}% Soul Match</span>
           </span>
         </div>
 
         {/* Intention & Philosophy Quote */}
         <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] space-y-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300/90 font-mono">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-rose-300/90 font-mono">
             Personal Philosophy & Intention
           </span>
           <p className="text-sm text-zinc-200 italic leading-relaxed">
@@ -755,8 +754,8 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
         {/* Deep Introspective Question & Answer */}
         {activeProfile.deepQuestion && (
           <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/30 to-black border border-purple-500/25 space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-bold text-purple-300 font-mono">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            <div className="flex items-center gap-2 text-xs font-bold text-rose-300 font-mono">
+              <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400/40" />
               <span>THE UNSPOKEN TRUTH</span>
             </div>
             <p className="text-xs text-zinc-300 font-medium">
@@ -846,8 +845,8 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
             >
               {/* Animated Match Header */}
               <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-bold uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5" />
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold uppercase tracking-wider">
+                  <Heart className="w-3.5 h-3.5 fill-rose-400" />
                   <span>Resonance Aligned</span>
                 </div>
                 <h2 className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-amber-200 font-heading tracking-tight">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Sparkles, 
+  Heart, 
   Clock, 
   FileText, 
   BookOpen, 
@@ -34,8 +34,8 @@ export const MobileCreateActionSheet: React.FC<MobileCreateActionSheetProps> = (
       id: 'identity' as const,
       title: 'New Identity / Persona',
       description: 'Create Real, Imaginary, Cinematic, or Fantasy versions of yourself',
-      icon: Sparkles,
-      color: 'from-blue-500/20 to-indigo-500/10 border-blue-500/20 text-blue-300',
+      icon: Heart,
+      color: 'from-rose-500/20 to-pink-500/10 border-rose-500/20 text-rose-300',
       badge: 'Core'
     },
     {
@@ -116,7 +116,7 @@ export const MobileCreateActionSheet: React.FC<MobileCreateActionSheetProps> = (
         <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
           <div>
             <h3 className="text-base font-bold text-white font-serif tracking-tight flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-zinc-300" />
+              <Heart className="w-4 h-4 text-rose-400 fill-rose-500/20" />
               <span>Create in Soulverse</span>
             </h3>
             <p className="text-xs text-zinc-400 mt-0.5">

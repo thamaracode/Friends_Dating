@@ -55,7 +55,7 @@ export const COUPLE_GAMES_METADATA: CoupleGameMeta[] = [
     subtitle: 'Artistic positions, emotional moods & bedroom inspiration',
     description: 'Curated intimate positions complete with difficulty ratings, emotional intimacy guidance, and tips to reignite passionate chemistry tonight.',
     badge: 'Sensual',
-    iconName: 'Sparkles',
+    iconName: 'Heart',
     accentColor: '#8B5CF6', // Purple
     minPlayers: 2,
     maxPlayers: 2,
@@ -245,7 +245,7 @@ export const ROULETTE_SLICES: RouletteSlice[] = [
     title: 'Thigh Tease',
     shortDesc: 'Trace the forbidden border',
     color: '#E11D48',
-    icon: 'Sparkles',
+    icon: 'Heart',
     tier: 'xxx',
     actionPrompt: 'Rest your partner back and slowly run your fingers up their inner thighs, stopping just millimeters away from the center.'
   },

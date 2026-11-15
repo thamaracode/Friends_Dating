@@ -7,7 +7,6 @@ import {
   Star, 
   MessageCircle, 
   Share2, 
-  Sparkles, 
   Clock, 
   BookOpen, 
   Briefcase, 

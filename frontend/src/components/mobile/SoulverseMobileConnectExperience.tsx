@@ -4,7 +4,6 @@ import {
   Calendar, 
   Tv, 
   Radio, 
-  Sparkles, 
   MapPin, 
   ShieldCheck, 
   ChevronRight, 
@@ -395,7 +394,7 @@ export const SoulverseMobileConnectExperience: React.FC<SoulverseMobileConnectEx
         <div className="rounded-3xl dark-glass border border-white/15 p-5 space-y-3.5 shadow-xl bg-gradient-to-b from-white/[0.03] to-transparent">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-zinc-300" />
+              <Heart className="w-4 h-4 text-rose-400 fill-rose-500/30" />
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">
                 Solo Activities & Self-Discovery
               </h3>

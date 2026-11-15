@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Sparkles, 
   Compass, 
   Heart, 
   MessageCircle, 
@@ -60,12 +59,12 @@ export const SoulverseHomePage: React.FC<SoulverseHomePageProps> = ({
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div className="space-y-4 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-heading font-bold text-white">
-              <Sparkles className="w-4 h-4 text-amber-300" />
+              <Heart className="w-4 h-4 text-rose-400 fill-rose-400/30" />
               <span>SOULVERSE SANCTUARY • INTENTIONAL SOCIAL SPACE</span>
             </div>
 
             <h1 className="type-hero">
-              Welcome back, <span className="text-silver-gradient">{profile.name}</span> <span className="text-amber-400 font-normal">✧</span>
+              Welcome back, <span className="text-silver-gradient">{profile.name}</span> <span className="text-rose-400 font-normal">♡</span>
             </h1>
 
             <p className="type-body text-zinc-300 leading-relaxed font-body">

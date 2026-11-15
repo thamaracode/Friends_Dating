@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   X,
-  Sparkles,
+  Heart,
   Image,
   ListOrdered,
   Lock,
@@ -28,7 +28,7 @@ interface PostComposerModalProps {
 }
 
 const POST_FORMATS: { type: PostType; label: string; icon: any }[] = [
-  { type: 'thought', label: 'Thought', icon: Sparkles },
+  { type: 'thought', label: 'Thought', icon: Heart },
   { type: 'reflection', label: 'Reflection', icon: HelpCircle },
   { type: 'story', label: 'Story', icon: Smile },
   { type: 'image', label: 'Image', icon: Image },
@@ -180,8 +180,8 @@ export const PostComposerModal: React.FC<PostComposerModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-300">
-              <Sparkles className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-300">
+              <Heart className="w-4 h-4 fill-rose-500/30" />
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-heading font-extrabold text-white">Create Expression</h2>

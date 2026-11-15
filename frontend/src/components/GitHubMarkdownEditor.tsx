@@ -20,7 +20,6 @@ import {
   Table as TableIcon, 
   Link2, 
   Minus, 
-  Sparkles, 
   Trash2, 
   Check, 
   AlertCircle,

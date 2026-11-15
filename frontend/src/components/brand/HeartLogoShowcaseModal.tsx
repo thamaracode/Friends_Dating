@@ -3,7 +3,7 @@ import {
   X, 
   Check, 
   Copy, 
-  Sparkles, 
+  Heart, 
   Eye, 
   Download, 
   Sliders,
@@ -74,8 +74,8 @@ export const HeartLogoShowcaseModal: React.FC<HeartLogoShowcaseModalProps> = ({
         {/* Modal Header */}
         <div className="relative px-6 pt-6 pb-4 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-inner">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-inner">
+              <Heart className="w-5 h-5 fill-rose-500/30" />
             </div>
             <div>
               <h2 className="text-xl font-heading font-extrabold text-white tracking-tight flex items-center gap-2">
@@ -113,8 +113,8 @@ export const HeartLogoShowcaseModal: React.FC<HeartLogoShowcaseModalProps> = ({
               
               {/* Overlay Badge */}
               <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs text-zinc-300">
-                <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-amber-300">
-                  <Sparkles className="w-3.5 h-3.5" /> High-End Obsidian & Rose-Gold Edition
+                <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-rose-400">
+                  <Heart className="w-3.5 h-3.5 fill-rose-500/30" /> High-End Obsidian & Rose-Gold Edition
                 </span>
                 <span className="text-[11px] text-zinc-400 hidden sm:inline">
                   Vector Scalable • Dark-Glass Optimized • Retina Ready
@@ -226,7 +226,7 @@ export const HeartLogoShowcaseModal: React.FC<HeartLogoShowcaseModalProps> = ({
                   }`}
                   title="Toggle subtle glow pulse animation"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Heart className="w-3.5 h-3.5 fill-current" />
                   Pulse: {isAnimated ? 'ON' : 'OFF'}
                 </button>
               </div>

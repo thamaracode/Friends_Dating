@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   User, 
-  Sparkles, 
   Check, 
   Heart, 
   Compass, 
@@ -101,7 +100,7 @@ export const EditProfileInfoModal: React.FC<EditProfileInfoModalProps> = ({
         <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2">
           <div className="flex items-center justify-between text-xs">
             <span className="font-bold text-white flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
+              <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/20" />
               <span>Profile Strength & Completion</span>
             </span>
             <span className="font-mono font-bold text-white">

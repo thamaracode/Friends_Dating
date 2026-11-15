@@ -10,7 +10,7 @@ import {
   ShieldAlert, 
   CheckCircle2,
   RefreshCw,
-  Sparkles
+  Heart
 } from 'lucide-react';
 import { AdminApiClient } from '../services/adminApiClient';
 import type { SystemHealth, AuditLogEntry, AdminFeature } from '../types/admin';
@@ -188,7 +188,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onNavigateTab }) => 
         {/* Left Col: Operations Switchboard */}
         <div className="sv-card p-6 space-y-5">
           <h3 className="type-card-heading text-white tracking-tight flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#F6C138]" />
+            <Heart className="w-4 h-4 text-rose-400 fill-rose-500/20" />
             <span>Administrative Controls</span>
           </h3>
 

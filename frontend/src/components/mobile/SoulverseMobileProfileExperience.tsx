@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   User, 
-  Sparkles, 
+  Heart, 
   ShieldCheck, 
   ShieldAlert, 
   Clock, 
@@ -347,7 +347,7 @@ export const SoulverseMobileProfileExperience: React.FC<SoulverseMobileProfileEx
               </span>
             ) : (
               <span className="h-8 px-3.5 rounded-full text-xs font-heading font-bold bg-purple-500/80 backdrop-blur-md text-white border border-purple-400/40 flex items-center gap-1.5 shadow-md">
-                <Sparkles className="w-4 h-4" />
+                <Heart className="w-4 h-4 fill-white/30" />
                 <span>Fictional / Creative Universe</span>
               </span>
             )}

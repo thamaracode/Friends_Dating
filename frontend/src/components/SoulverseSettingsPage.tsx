@@ -24,7 +24,7 @@ import {
   Flame, 
   ExternalLink, 
   ChevronRight, 
-  Sparkles, 
+  Heart, 
   AlertTriangle,
   ShieldAlert,
   ShieldCheck
@@ -226,7 +226,7 @@ export const SoulverseSettingsPage: React.FC = () => {
             onClick={handleSaveAll}
             className="sv-btn-gold"
           >
-            {savedToast ? <Check className="w-4 h-4 text-[#090A0E]" /> : <Sparkles className="w-4 h-4 text-[#090A0E]" />}
+            {savedToast ? <Check className="w-4 h-4 text-[#090A0E]" /> : <Heart className="w-4 h-4 text-[#090A0E] fill-[#090A0E]" />}
             <span>{savedToast ? 'Settings Saved!' : 'Save Preferences'}</span>
           </button>
         </div>

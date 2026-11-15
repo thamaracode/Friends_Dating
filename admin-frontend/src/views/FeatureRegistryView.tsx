@@ -8,7 +8,6 @@ import {
   RotateCcw, 
   Save, 
   Sliders, 
-  Sparkles,
   AlertTriangle,
   History,
   Check

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Sparkles, 
+  Heart, 
   User, 
   Shield, 
   Globe2, 
@@ -15,7 +15,6 @@ import {
   Calendar, 
   Gamepad2, 
   ExternalLink, 
-  Heart, 
   ThumbsUp, 
   ThumbsDown, 
   Flag, 
@@ -435,8 +434,8 @@ export const IdentityUniverseHub: React.FC<IdentityUniverseHubProps> = ({
       <div className="p-5 rounded-3xl dark-glass border border-white/[0.08] shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center text-white shadow-[0_0_14px_rgba(255,255,255,0.1)]">
-              <Sparkles className="w-4 h-4 text-purple-300" />
+            <div className="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center text-rose-300 shadow-[0_0_14px_rgba(255,79,135,0.2)]">
+              <Heart className="w-4 h-4 text-rose-300 fill-rose-500/20" />
             </div>
             <div>
               <h2 className="text-lg font-black text-white font-serif tracking-tight flex items-center gap-2">

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Heart, 
-  Sparkles, 
   ShieldCheck, 
   MessageCircle, 
   Clock, 
@@ -38,7 +37,7 @@ export const LikesAndMatchesView: React.FC<LikesAndMatchesViewProps> = ({
         </div>
 
         <div className="px-3 py-1 rounded-full glass-panel border border-[rgba(255,255,255,0.20)]/30 flex items-center gap-1.5 text-xs text-[#E5E7EB] font-bold shadow-md">
-          <Sparkles className="w-3.5 h-3.5 text-[#FFFFFF]" />
+          <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/30" />
           <span>{likedYouProfiles.length + mutualMatches.length} Total</span>
         </div>
       </div>

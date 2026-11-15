@@ -8,7 +8,6 @@ import {
   Copy,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Sliders,
   Filter,
   Check,
@@ -304,7 +303,7 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
       case 'Compass': return <Compass className={className} />;
       case 'Flame': return <Flame className={className} />;
       case 'Moon': return <Moon className={className} />;
-      case 'Sparkles': return <Sparkles className={className} />;
+      case 'Sparkles': return <Heart className={className} />;
       case 'BookOpen': return <BookOpen className={className} />;
       case 'Sun': return <Sun className={className} />;
       case 'MessageCircle': return <MessageCircle className={className} />;
@@ -312,7 +311,7 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
       case 'Feather': return <Feather className={className} />;
       case 'TrendingUp': return <TrendingUp className={className} />;
       case 'Smile': return <Smile className={className} />;
-      default: return <Sparkles className={className} />;
+      default: return <Heart className={className} />;
     }
   };
 
@@ -323,7 +322,7 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 border border-indigo-500/40 text-slate-100 shadow-2xl text-xs animate-in fade-in slide-in-from-bottom-2">
-          <Sparkles className="w-4 h-4 text-indigo-400" />
+          <Heart className="w-4 h-4 text-rose-400 fill-rose-500/30" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -507,7 +506,7 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
                 <div className="flex items-center justify-between text-xs text-zinc-400 mb-6">
                   <div className="flex items-center gap-2.5">
                     <span className="h-8 px-3.5 rounded-full text-xs font-heading font-semibold flex items-center gap-2 border border-amber-400/30 bg-amber-400/10 text-amber-300">
-                      {renderCategoryIcon(categoryMeta?.icon || 'Sparkles', "w-3.5 h-3.5")}
+                      {renderCategoryIcon(categoryMeta?.icon || 'Heart', "w-3.5 h-3.5")}
                       {categoryMeta?.label || currentQuote.category}
                     </span>
 
@@ -752,8 +751,8 @@ export const QuoteDiscoveryView: React.FC<QuoteDiscoveryViewProps> = ({ onClose 
 
               {/* Reflection Question */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-purple-950/20 to-transparent border border-indigo-500/30 space-y-2">
-                <div className="flex items-center gap-1.5 text-indigo-300 font-bold">
-                  <Sparkles className="w-4 h-4 text-indigo-400" />
+                <div className="flex items-center gap-1.5 text-rose-300 font-bold">
+                  <Heart className="w-4 h-4 text-rose-400 fill-rose-500/30" />
                   <span>Contemplation Question</span>
                 </div>
                 <p className="text-xs text-slate-200 leading-relaxed font-serif text-sm">

@@ -3,7 +3,6 @@ import {
   Lock, 
   Globe2, 
   EyeOff, 
-  Sparkles, 
   AlertTriangle, 
   Heart, 
   Send, 

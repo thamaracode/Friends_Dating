@@ -4,7 +4,6 @@ import {
   Clock, 
   MapPin, 
   Tag, 
-  Sparkles, 
   BookOpen, 
   ArrowRight, 
   Plus, 

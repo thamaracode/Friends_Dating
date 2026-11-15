@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Sparkles, 
+  Heart, 
   MapPin, 
   Compass, 
   Brain, 
@@ -32,8 +32,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onInitiateCon
         
         {/* Compatibility Badge if available */}
         {profile.compatibilityScore && (
-          <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-md border border-amber-400/30 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-md border border-rose-400/30 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md">
+            <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/30" />
             <span className="text-xs font-heading font-bold text-white">
               {profile.compatibilityScore}% Match
             </span>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Heart, 
-  Sparkles, 
   Calendar, 
   Clock, 
   Check, 
@@ -273,7 +272,7 @@ export const IndividualRelationshipDetailModal: React.FC<IndividualRelationshipD
             <div className="p-4 rounded-2xl dark-glass border border-white/10 space-y-2.5">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
+                  <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/20" />
                   <span>Things Mentioned Casually ("Once Mentioned")</span>
                 </h4>
                 <button

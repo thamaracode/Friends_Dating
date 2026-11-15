@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Search, Sparkles, Filter, X, ArrowUpRight } from 'lucide-react';
+import { BookOpen, Search, Filter, X, ArrowUpRight } from 'lucide-react';
 import { GlassModal, GlassButton } from '../klyven';
 import { FeatureControlService } from '../../services/featureControlService';
 

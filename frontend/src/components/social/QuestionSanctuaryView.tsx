@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   HelpCircle,
   RefreshCw,
-  Sparkles,
   Lock,
   Globe,
   Users,
@@ -211,8 +210,8 @@ export const QuestionSanctuaryView: React.FC = () => {
       
       {/* Toast Alert */}
       {toast && (
-        <div className="fixed top-20 right-6 z-50 px-4 py-3 rounded-2xl bg-[#12131A] border border-amber-400/30 text-amber-300 text-xs font-semibold shadow-2xl flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-amber-400" />
+        <div className="fixed top-20 right-6 z-50 px-4 py-3 rounded-2xl bg-[#12131A] border border-rose-400/30 text-rose-300 text-xs font-semibold shadow-2xl flex items-center gap-2">
+          <Heart className="w-4 h-4 text-rose-400 fill-rose-500/30" />
           <span>{toast}</span>
         </div>
       )}
@@ -220,8 +219,8 @@ export const QuestionSanctuaryView: React.FC = () => {
       {/* Top Header & Mode Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-heading font-bold mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-heading font-bold mb-2">
+            <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/30" />
             <span>SOUL DISCOVERY ENGINE</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white">
@@ -331,8 +330,8 @@ export const QuestionSanctuaryView: React.FC = () => {
 
           {/* Cycle Reset Banner */}
           {refreshNotice && (
-            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs flex items-center gap-2">
-              <Sparkles className="w-4 h-4 shrink-0" />
+            <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs flex items-center gap-2">
+              <Heart className="w-4 h-4 shrink-0 text-rose-400 fill-rose-500/30" />
               <span>{refreshNotice}</span>
             </div>
           )}

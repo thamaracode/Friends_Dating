@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { 
-  Sparkles, 
   Eye, 
   EyeOff, 
   Heart, 
@@ -92,7 +91,7 @@ export const BlindChemistryView: React.FC<BlindChemistryViewProps> = ({
       <div className="flex items-center justify-between px-1">
         <div>
           <div className="flex items-center gap-1.5 text-xs font-black text-[#FFB4CE]">
-            <Sparkles className="w-4 h-4 text-[#FF4F87]" />
+            <Heart className="w-4 h-4 text-[#FF4F87] fill-[#FF4F87]/30" />
             <span>BLIND CHEMISTRY (ANONYMOUS FIRST)</span>
           </div>
           <h1 className="text-xl font-black text-[#FFF1F3] tracking-tight">Personality Before Appearance</h1>

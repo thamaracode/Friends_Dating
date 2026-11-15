@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { 
-  Sparkles, 
   Share2, 
   Copy, 
   Check, 
@@ -205,7 +204,7 @@ export const ShareEngineHub = () => {
       {/* 2. Sub-Tabs Bar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
         {[
-          { id: 'identity_card', label: '1. Personality Identity Card', icon: Sparkles },
+          { id: 'identity_card', label: '1. Personality Identity Card', icon: Heart },
           { id: 'wishlist', label: '2. The People I Want in My Life', icon: Heart },
           { id: 'know_me_quiz', label: '3. "How Well Do You Know Me?" Quiz', icon: HelpCircle },
           { id: 'ama_link', label: '4. Public Profile & Pre-written Messages', icon: Share2 }
@@ -247,7 +246,7 @@ export const ShareEngineHub = () => {
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-rose-500 to-purple-500 flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                    <Heart className="w-3.5 h-3.5 text-white fill-white/30" />
                   </div>
                   <span className="text-xs font-black tracking-widest uppercase text-white/90">
                     FRIENDS IDENTITY

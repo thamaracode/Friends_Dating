@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Sparkles, Heart, X, Check } from 'lucide-react';
+import { Mail, Heart, X, Check } from 'lucide-react';
 import { GlassModal, GlassButton } from '../klyven';
 import { UNOPENED_LETTERS_POOL } from '../../services/emotionalContentEngine';
 import type { UnopenedLetter } from '../../types/emotionalUniverse';
@@ -51,8 +51,8 @@ export const UnopenedLetterModal: React.FC<UnopenedLetterModalProps> = ({
 
           {/* Easter Egg: Universe Wax Seals of Resonance */}
           <div className="pt-3 border-t border-white/10 space-y-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400/90 block">
-              ✧ Stamped with Universe Soul Seals (Easter Egg)
+            <span className="text-[10px] font-mono uppercase tracking-wider text-rose-400/90 block">
+              ♡ Stamped with Universe Soul Seals (Easter Egg)
             </span>
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
               {SOULVERSE_ALL_LOGOS.slice(0, 8).map((logo) => {

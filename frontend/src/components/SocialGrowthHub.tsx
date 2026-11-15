@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { 
-  Sparkles, 
   BookOpen, 
   Bot, 
   Send, 

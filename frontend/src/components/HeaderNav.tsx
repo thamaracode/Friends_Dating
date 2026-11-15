@@ -4,7 +4,6 @@ import {
   MessageCircleHeart, 
   Radio, 
   ShieldAlert, 
-  Sparkles, 
   GraduationCap, 
   Share2, 
   UserCheck, 
@@ -49,8 +48,8 @@ export const HeaderNav = ({
           
           {/* Logo & Philosophy Tag */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
+              <Heart className="w-5 h-5 text-white fill-white/30" />
             </div>
             <div>
               <div className="flex items-center gap-2">

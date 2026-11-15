@@ -6,7 +6,6 @@ import {
   Check, 
   RefreshCw, 
   Lock, 
-  Sparkles, 
   Info, 
   Layers, 
   Key, 
@@ -181,7 +180,7 @@ export const UniversalIdentityHub = () => {
           { id: 'directory', label: '1. Universal Provider Directory (50+ Services)', icon: Layers },
           { id: 'connections', label: '2. My Connected World (Manage Sync Tiers)', icon: ShieldCheck },
           { id: 'login_preview', label: '3. Universal Login Screen Preview', icon: Key },
-          { id: 'architecture', label: '4. Security & Phased Rollout Architecture', icon: Sparkles }
+          { id: 'architecture', label: '4. Security & Phased Rollout Architecture', icon: Heart }
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -411,8 +410,8 @@ export const UniversalIdentityHub = () => {
       {/* 5. TAB 3: UNIVERSAL LOGIN SCREEN PREVIEW */}
       {activeTab === 'login_preview' && (
         <div className="max-w-md mx-auto bg-[#121927] border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-500 via-indigo-500 to-purple-500 mx-auto flex items-center justify-center shadow-lg shadow-indigo-500/30">
-            <Sparkles className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-500 mx-auto flex items-center justify-center shadow-lg shadow-pink-500/30">
+            <Heart className="w-6 h-6 text-white fill-white/30" />
           </div>
 
           <div>
@@ -497,8 +496,8 @@ export const UniversalIdentityHub = () => {
             </div>
 
             <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl space-y-2">
-              <h4 className="text-sm font-bold text-indigo-400 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4" />
+              <h4 className="text-sm font-bold text-rose-400 flex items-center gap-1.5">
+                <Heart className="w-4 h-4 fill-rose-500/20" />
                 <span>6-Phase Implementation Roadmap</span>
               </h4>
               <p>

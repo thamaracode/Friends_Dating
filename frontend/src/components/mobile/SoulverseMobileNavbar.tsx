@@ -3,7 +3,7 @@ import {
   Compass, 
   MessageCircle, 
   Plus, 
-  Sparkles, 
+  Heart, 
   User 
 } from 'lucide-react';
 import type { MobilePrimaryTab } from '../../types';
@@ -99,8 +99,8 @@ export const SoulverseMobileNavbar: React.FC<SoulverseMobileNavbarProps> = ({
           title="Connect with Communities & Events"
         >
           <div className="relative">
-            <Sparkles className={`w-5 h-5 transition-transform ${activeTab === 'connect' ? 'scale-110 text-white' : 'text-zinc-400 group-hover:text-zinc-200'}`} />
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10B981]" />
+            <Heart className={`w-5 h-5 transition-transform ${activeTab === 'connect' ? 'scale-110 text-rose-400 fill-rose-400/40' : 'text-zinc-400 group-hover:text-zinc-200'}`} />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_8px_#F43F5E]" />
           </div>
           {activeTab === 'connect' && (
             <span className="absolute bottom-1 w-1 h-1 rounded-full bg-white shadow-[0_0_6px_#ffffff]" />

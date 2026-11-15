@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   X, 
-  Sparkles, 
   Layers, 
   Check, 
   Copy, 
@@ -63,8 +62,8 @@ export const GlinGlassShowcaseModal: React.FC<GlinGlassShowcaseModalProps> = ({
         {/* Modal Header */}
         <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl glin-glass-liquid border border-amber-400/40 flex items-center justify-center text-amber-300 shadow-[0_0_15px_rgba(246,193,56,0.25)]">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl glin-glass-liquid border border-rose-500/40 flex items-center justify-center text-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.25)]">
+              <Heart className="w-5 h-5 fill-rose-500/30" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -220,7 +219,7 @@ export const GlinGlassShowcaseModal: React.FC<GlinGlassShowcaseModalProps> = ({
                   <div className="glin-glass-well p-5 rounded-2xl flex flex-col gap-3">
                     <span className="text-xs font-semibold text-zinc-300">Shimmer Light Sweep (Amber)</span>
                     <ShimmerButton variant="amber" size="md">
-                      <Sparkles className="w-4 h-4" />
+                      <Heart className="w-4 h-4 fill-amber-300/30" />
                       <span>Shimmer Gold Action</span>
                     </ShimmerButton>
                     <span className="text-[11px] text-zinc-400">Sweeping 2.4s light ray with haptic hover state</span>

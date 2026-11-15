@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Sparkles, 
+  Heart, 
   Share2, 
   HelpCircle, 
   CheckCircle, 
@@ -68,7 +68,7 @@ export const SelfDiscoveryHub: React.FC = () => {
         <div className="lg:col-span-5 space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-400" />
+              <Heart className="w-5 h-5 text-rose-400 fill-rose-500/20" />
               <span>Shareable Personality Card</span>
             </h3>
             <span className="text-xs text-purple-400">Viral Engine</span>

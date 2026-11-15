@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   Heart, 
-  Sparkles, 
   Clock, 
   Calendar, 
   CheckCircle2, 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, 
-  Sparkles, 
   Clock, 
   Flame, 
   Heart, 
@@ -31,7 +30,7 @@ interface TelegramPremiumEmojiPickerProps {
 }
 
 const CATEGORY_TABS: Array<{ id: TelegramEmojiCategoryGroup; label: string; icon: any }> = [
-  { id: 'all', label: 'All', icon: Sparkles },
+  { id: 'all', label: 'All', icon: Heart },
   { id: 'reactions', label: 'Reactions', icon: Flame },
   { id: 'love', label: 'Romance', icon: Heart },
   { id: 'vip', label: 'Stars & VIP', icon: Star },
@@ -115,8 +114,8 @@ export const TelegramPremiumEmojiPicker: React.FC<TelegramPremiumEmojiPickerProp
       <div className="p-3 border-b border-white/[0.08] space-y-2.5 bg-white/[0.02]">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              <Sparkles className="w-4 h-4" />
+            <span className="p-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30">
+              <Heart className="w-4 h-4 fill-rose-500/30" />
             </span>
             <div>
               <h4 className="text-xs font-bold text-white uppercase tracking-wider font-serif flex items-center gap-1.5">
@@ -221,7 +220,7 @@ export const TelegramPremiumEmojiPicker: React.FC<TelegramPremiumEmojiPickerProp
       <div className="flex-1 overflow-y-auto p-3 no-scrollbar">
         {emojis.length === 0 ? (
           <div className="h-40 flex flex-col items-center justify-center text-center space-y-2 text-zinc-500 text-xs">
-            <Sparkles className="w-6 h-6 text-zinc-600" />
+            <Heart className="w-6 h-6 text-zinc-600 fill-zinc-700/20" />
             <p>No Telegram emojis matching your search.</p>
             <span className="text-[10px] text-zinc-600">Try searching for "heart", "огонь", "cat", or "star"</span>
           </div>

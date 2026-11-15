@@ -4,7 +4,6 @@ import {
   ShieldCheck, 
   Cpu, 
   Bell, 
-  Sparkles, 
   Eye, 
   EyeOff, 
   CheckCircle2, 

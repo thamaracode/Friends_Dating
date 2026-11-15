@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Compass, 
-  Sparkles, 
+  Heart, 
   ShieldCheck, 
   MessageCircle, 
   MapPin, 

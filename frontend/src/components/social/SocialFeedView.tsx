@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Sparkles,
   Heart,
   MessageCircle,
   Share2,
@@ -37,7 +36,7 @@ import {
 } from '../../types/social';
 
 const FEED_MODES: { mode: FeedMode; label: string; icon: any }[] = [
-  { mode: 'for_you', label: 'For You', icon: Sparkles },
+  { mode: 'for_you', label: 'For You', icon: Heart },
   { mode: 'following', label: 'Following', icon: Users },
   { mode: 'friends', label: 'Friends', icon: Heart },
   { mode: 'questions', label: 'Questions & Answers', icon: HelpCircle },
@@ -320,8 +319,8 @@ export const SocialFeedView: React.FC = () => {
       
       {/* Toast Alert */}
       {toast && (
-        <div className="fixed top-20 right-6 z-50 px-4 py-3 rounded-2xl bg-[#12131A] border border-amber-400/30 text-amber-300 text-xs font-semibold shadow-2xl flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-amber-400" />
+        <div className="fixed top-20 right-6 z-50 px-4 py-3 rounded-2xl bg-[#12131A] border border-rose-400/30 text-rose-300 text-xs font-semibold shadow-2xl flex items-center gap-2">
+          <Heart className="w-4 h-4 text-rose-400 fill-rose-500/30" />
           <span>{toast}</span>
         </div>
       )}
@@ -329,8 +328,8 @@ export const SocialFeedView: React.FC = () => {
       {/* Top Feed Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-heading font-bold mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-heading font-bold mb-2">
+            <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/30" />
             <span>COMMUNITY FEED & PERSPECTIVES</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white">
@@ -623,7 +622,7 @@ export const SocialFeedView: React.FC = () => {
         </div>
       ) : (
         <div className="p-12 text-center rounded-3xl dark-glass border border-white/10 text-zinc-400 space-y-3">
-          <Sparkles className="w-8 h-8 mx-auto text-amber-400 opacity-50" />
+          <Heart className="w-8 h-8 mx-auto text-rose-400 fill-rose-500/20 opacity-50" />
           <p className="text-sm">No expressions found in this feed mode yet.</p>
           <button
             onClick={() => setIsComposerOpen(true)}

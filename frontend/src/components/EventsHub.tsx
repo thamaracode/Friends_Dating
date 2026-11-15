@@ -6,7 +6,6 @@ import {
   Plus, 
   Film, 
   Tv, 
-  Sparkles, 
   Globe, 
   Lock, 
   ShieldCheck, 

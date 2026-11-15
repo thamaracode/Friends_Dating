@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Sparkles, 
+  Heart, 
   Compass, 
   Calendar, 
   Users, 
@@ -42,7 +42,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate, onInit
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="max-w-2xl space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D6AD60]/10 border border-[#D6AD60]/30 text-xs font-semibold text-[#F1D99F]">
-              <Sparkles className="w-3.5 h-3.5 text-[#D6AD60]" />
+              <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400/30" />
               <span>FRIENDS ARCHITECTURE • GOLDEN × OBSIDIAN EDITION</span>
             </div>
             

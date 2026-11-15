@@ -4,7 +4,7 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Sparkles,
+  Heart,
   ExternalLink,
   Code2,
   Copy,
@@ -16,7 +16,6 @@ import {
   Maximize2,
   Volume2,
   Layers,
-  Heart,
   Compass,
   Link as LinkIcon
 } from 'lucide-react';
@@ -489,7 +488,7 @@ export const SpotifyEmbedHubView: React.FC = () => {
             {/* Custom URI / URL Input Box */}
             <div className="rounded-2xl bg-white/5 border border-white/10 p-5 space-y-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-400" />
+                <Heart className="w-4 h-4 text-rose-400 fill-rose-500/20" />
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider">
                   Load Custom Track, Playlist, Podcast, or Album
                 </h3>

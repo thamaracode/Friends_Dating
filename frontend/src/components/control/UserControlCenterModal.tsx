@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Sliders, 
-  Sparkles, 
   Layers, 
   Shield, 
   Heart, 
@@ -308,7 +307,7 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
   });
 
   const sections = [
-    { id: 'experience' as ControlSection, label: 'My Experience', icon: Sparkles, badge: activePreset.replace('_', ' ') },
+    { id: 'experience' as ControlSection, label: 'My Experience', icon: Heart, badge: activePreset.replace('_', ' ') },
     { id: 'library' as ControlSection, label: 'Features & Modules', icon: Layers, badge: `${configuredCount}/${totalFeatures}` },
     { id: 'privacy' as ControlSection, label: 'Privacy Center', icon: Shield },
     { id: 'relationships' as ControlSection, label: 'Relationships & Vault', icon: Heart },
@@ -362,7 +361,7 @@ export const UserControlCenterModal: React.FC<UserControlCenterModalProps> = ({
                 className="hidden md:flex items-center gap-2 h-10 px-4 rounded-xl dark-glass border border-white/10 text-xs font-heading font-semibold text-emerald-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 title="What's New in this Release"
               >
-                <Sparkles className="w-4 h-4 text-emerald-400" />
+                <Heart className="w-4 h-4 text-emerald-400" />
                 <span>What's New</span>
               </button>
 

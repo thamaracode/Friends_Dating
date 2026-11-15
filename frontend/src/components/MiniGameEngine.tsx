@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Gamepad2, 
-  Sparkles, 
   Flame, 
   HelpCircle, 
   CheckCircle, 

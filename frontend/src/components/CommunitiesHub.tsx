@@ -5,7 +5,6 @@ import {
   Mic, 
   MessageSquare, 
   Lock, 
-  Sparkles, 
   Plus, 
   Check, 
   Compass,

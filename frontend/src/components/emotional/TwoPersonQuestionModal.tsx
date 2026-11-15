@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Heart, 
-  Sparkles, 
   Lock, 
   Unlock, 
   Send, 

@@ -4,7 +4,6 @@ import {
   Dices, 
   Disc, 
   Flame, 
-  Sparkles, 
   Wine, 
   Timer, 
   PartyPopper, 
@@ -354,8 +353,8 @@ export const CouplePlayHubView: React.FC<CouplePlayHubViewProps> = ({
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 px-4 py-3 rounded-2xl bg-gradient-to-r from-rose-900/90 to-amber-900/90 border border-amber-400/40 text-amber-200 shadow-2xl backdrop-blur-xl flex items-center gap-3 animate-slideIn">
-          <Sparkles className="w-5 h-5 text-amber-300 animate-spin" />
+        <div className="fixed top-20 right-6 z-50 px-4 py-3 rounded-2xl bg-gradient-to-r from-rose-900/90 to-amber-900/90 border border-rose-400/40 text-rose-200 shadow-2xl backdrop-blur-xl flex items-center gap-3 animate-slideIn">
+          <Heart className="w-5 h-5 text-rose-300 fill-rose-500/30" />
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
       )}
@@ -503,7 +502,7 @@ export const CouplePlayHubView: React.FC<CouplePlayHubViewProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {COUPLE_GAMES_METADATA.map(game => {
                 const iconMap: Record<string, any> = {
-                  Dices, Disc, Flame, Sparkles, Wine, Timer, PartyPopper
+                  Dices, Disc, Flame, Sparkles: Heart, Heart, Wine, Timer, PartyPopper
                 };
                 const IconComponent = iconMap[game.iconName] || Gamepad2;
 
@@ -1025,7 +1024,7 @@ export const CouplePlayHubView: React.FC<CouplePlayHubViewProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl dark-glass border border-white/10">
             <div>
               <h2 className="font-heading font-bold text-xl text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-400" />
+                <Heart className="w-5 h-5 text-rose-400 fill-rose-500/30" />
                 <span>Kama Sutra Cards</span>
               </h2>
               <p className="text-xs text-zinc-400">Artistic positions, emotional moods & bedroom inspiration</p>
@@ -1088,8 +1087,8 @@ export const CouplePlayHubView: React.FC<CouplePlayHubViewProps> = ({
 
             {/* Sensory & Practical Tips */}
             <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
+              <span className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Heart className="w-3.5 h-3.5 fill-rose-500/20" />
                 <span>Sensory Intimacy Tips</span>
               </span>
               <ul className="space-y-2">

@@ -271,8 +271,8 @@ export const OrbitHeartLogo: React.FC<HeartLogoProps> = ({
 };
 
 /**
- * 06. THE INFINITE
- * "An elegant symbol for endless identities and connections."
+ * 06. THE INFINITE HEART
+ * "Endless looping infinity heart celebrating unbreakable bonds."
  */
 export const InfiniteHeartLogo: React.FC<HeartLogoProps> = ({
   size = 40,
@@ -300,22 +300,29 @@ export const InfiniteHeartLogo: React.FC<HeartLogoProps> = ({
       {showGlow && (
         <circle cx="50" cy="50" r="30" fill="#F43F5E" opacity="0.22" filter="blur(14px)" />
       )}
-      {/* Möbius Infinity Symbol */}
+      {/* Outer Infinity Heart Silhouette */}
       <path
-        d="M 32 36 C 42 36, 58 64, 68 64 C 76 64, 82 58, 82 50 C 82 42, 76 36, 68 36 C 58 36, 42 64, 32 64 C 24 64, 18 58, 18 50 C 18 42, 24 36, 32 36 Z"
+        d="M 50 32 C 40 18, 16 20, 16 42 C 16 62, 42 74, 50 84 C 58 74, 84 62, 84 42 C 84 20, 60 18, 50 32 Z"
         stroke={`url(#${id}_inf)`}
-        strokeWidth="6"
+        strokeWidth="5.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="50" cy="50" r="2.5" fill="#FFFFFF" />
+      {/* Inner Möbius Infinity Loop in Heart Core */}
+      <path
+        d="M 34 48 C 42 42, 58 58, 66 52 C 72 48, 72 40, 66 36 C 60 32, 54 38, 50 44 C 46 38, 40 32, 34 36 C 28 40, 28 48, 34 48 Z"
+        stroke={`url(#${id}_inf)`}
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 };
 
 /**
- * 07. THE SPARK (Celestial Compass & North Star)
- * "A luminous celestial spark uniting two searching souls."
+ * 07. THE RADIANT HEART
+ * "Nested twin hearts glowing with warm starlight resonance."
  */
 export const SparkHeartLogo: React.FC<HeartLogoProps> = ({
   size = 40,
@@ -345,18 +352,19 @@ export const SparkHeartLogo: React.FC<HeartLogoProps> = ({
       )}
       {/* Outer Heart Arc */}
       <path
-        d="M 50 82 C 26 62, 16 42, 16 28 C 16 16, 26 10, 38 10 C 45 10, 48 14, 50 18 C 52 14, 55 10, 62 10 C 74 10, 84 16, 84 28 C 84 42, 74 62, 50 82 Z"
+        d="M 50 84 C 24 64, 14 44, 14 30 C 14 16, 24 10, 36 10 C 44 10, 48 14, 50 18 C 52 14, 56 10, 64 10 C 76 10, 86 16, 86 30 C 86 44, 76 64, 50 84 Z"
         stroke={`url(#${id}_spark)`}
         strokeWidth="4.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* 4-Point Radiant Center Star */}
+      {/* Inner Radiant Glowing Heart Core (Pure Heart - Zero Stars) */}
       <path
-        d="M 50 28 L 53 45 L 70 48 L 53 51 L 50 68 L 47 51 L 30 48 L 47 45 Z"
+        d="M 50 68 C 34 54, 26 42, 26 32 C 26 22, 34 18, 42 18 C 47 18, 49 21, 50 24 C 51 21, 53 18, 58 18 C 66 18, 74 22, 74 32 C 74 42, 66 54, 50 68 Z"
         fill={`url(#${id}_spark)`}
+        opacity="0.9"
       />
-      <circle cx="50" cy="48" r="2.5" fill="#FFFBEB" />
+      <circle cx="50" cy="38" r="2.5" fill="#FFFBEB" />
     </svg>
   );
 };
@@ -521,21 +529,21 @@ export const SOULVERSE_ALL_LOGOS: SoulverseLogoInfo[] = [
   {
     id: 'the_infinite',
     number: '06',
-    title: 'The Infinite',
-    tagline: 'Eternal Identity Loop',
-    description: 'An elegant symbol for endless identities and connections.',
-    symbolism: 'A continuous Möbius ribbon weaving multidimensional identities into infinite connection.',
+    title: 'The Infinite Heart',
+    tagline: 'Eternal Heart Loop',
+    description: 'An elegant infinity heart for endless identities and connections.',
+    symbolism: 'A continuous ribbon weaving two hearts into infinite connection and trust.',
     palette: 'Amethyst Violet & Sunset Tangerine (#C084FC → #F43F5E → #FB923C)',
     component: InfiniteHeartLogo
   },
   {
     id: 'the_spark',
     number: '07',
-    title: 'The Spark',
-    tagline: 'Supernova Encounter',
-    description: 'A luminous celestial spark uniting two searching souls.',
-    symbolism: 'The exact microsecond of instant chemistry when two universes collide into light.',
-    palette: 'Solar Amber & Starlight Gold (#FDE68A → #F59E0B)',
+    title: 'The Radiant Heart',
+    tagline: 'Warm Beating Resonance',
+    description: 'Nested twin hearts glowing with warm starlight resonance.',
+    symbolism: 'The exact microsecond of instant chemistry when two hearts pulse in unison.',
+    palette: 'Solar Amber & Starlight Gold (#FDE68A → #F59E0B → #F43F5E)',
     component: SparkHeartLogo
   },
   {

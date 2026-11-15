@@ -95,7 +95,7 @@ export const QUOTE_CATEGORIES: Record<QuoteCategoryKey, CategoryMetadata> = {
     key: 'confidence_identity',
     label: 'Confidence & Identity',
     description: 'Embracing your authentic individuality without apologizing for your essence.',
-    icon: 'Sparkles',
+    icon: 'Heart',
     accentColor: '#EAB308',
     tags: ['confidence', 'identity', 'authenticity', 'courage', 'individuality']
   },

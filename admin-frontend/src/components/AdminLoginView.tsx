@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Lock, Mail, KeyRound, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Shield, Lock, Mail, KeyRound, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { AdminApiClient } from '../services/adminApiClient';
 import type { AdminUser } from '../types/admin';
 

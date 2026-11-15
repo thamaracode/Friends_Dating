@@ -15,7 +15,6 @@ import {
   Play, 
   Compass, 
   Sliders, 
-  Sparkles, 
   Globe2, 
   Settings, 
   Trash2, 
@@ -420,7 +419,7 @@ export const AdminDashboard: React.FC = () => {
   });
 
   // Global System Announcement Banner
-  const [announcementText, setAnnouncementText] = useState('✧ Soulverse v7.42.1 Live: Integrated Spotify Music Player & Discovery Intelligence.');
+  const [announcementText, setAnnouncementText] = useState('♡ Soulverse v7.42.1 Live: Integrated Spotify Music Player & Discovery Intelligence.');
   const [isAnnouncementActive, setIsAnnouncementActive] = useState(true);
   const [actionSuccessToast, setActionSuccessToast] = useState<string | null>(null);
 
@@ -815,7 +814,7 @@ export const AdminDashboard: React.FC = () => {
                     }}
                     className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
+                    <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/20" />
                     <span>Grant Sanctuary VIP</span>
                   </button>
 
@@ -2466,7 +2465,7 @@ export const AdminDashboard: React.FC = () => {
                                     className="p-1.5 rounded-lg dark-glass hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 cursor-pointer"
                                     title="Lock as Featured Daily Quote"
                                   >
-                                    <Sparkles className="w-3.5 h-3.5" />
+                                    <Heart className="w-3.5 h-3.5 fill-amber-300/30" />
                                   </button>
                                   <button
                                     onClick={() => handleDeleteAdminQuote(q.id)}

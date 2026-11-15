@@ -3,7 +3,6 @@ import {
   FileText, 
   HelpCircle, 
   Globe, 
-  Sparkles, 
   ShieldAlert, 
   ChevronRight, 
   Heart,
@@ -61,7 +60,7 @@ export const SoulverseMorePage: React.FC<SoulverseMorePageProps> = ({
     {
       title: 'Safety & Moderation Triage',
       desc: 'Review flagged interactions, reports, and administrative trust controls.',
-      icon: Sparkles,
+      icon: Heart,
       badge: 'Admin',
       action: onOpenAdmin
     }

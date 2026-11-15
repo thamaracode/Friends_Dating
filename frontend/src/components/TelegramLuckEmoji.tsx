@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 
 interface TelegramLuckEmojiProps {
   type: 'dice' | 'slot' | 'coin';

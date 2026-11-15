@@ -3,7 +3,6 @@ import {
   Lock, 
   Globe2, 
   EyeOff, 
-  Sparkles, 
   Heart, 
   Share2, 
   Trash2, 
@@ -141,8 +140,8 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
       
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-20 right-6 z-50 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-rose-900/90 to-amber-900/90 border border-amber-400/40 text-amber-200 shadow-2xl backdrop-blur-xl flex items-center gap-2 text-xs font-semibold animate-slideIn">
-          <Sparkles className="w-4 h-4 text-amber-300" />
+        <div className="fixed top-20 right-6 z-50 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-rose-900/90 to-amber-900/90 border border-rose-400/40 text-rose-200 shadow-2xl backdrop-blur-xl flex items-center gap-2 text-xs font-semibold animate-slideIn">
+          <Heart className="w-4 h-4 text-rose-300 fill-rose-400/30" />
           <span>{toastMsg}</span>
         </div>
       )}
@@ -203,7 +202,7 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
       {activeTab === 'supportive' && (
         <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-transparent border border-amber-400/25 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+            <Heart className="w-4 h-4 text-rose-400 fill-rose-500/20 shrink-0" />
             <span className="text-zinc-200">
               Personalized supportive matches based on your resonance tags:
             </span>
@@ -327,8 +326,8 @@ export const ConfessionsStreamView: React.FC<ConfessionsStreamViewProps> = ({
                 {/* Supportive Resonance Recommendation Pill */}
                 {confession.resonanceScore && (
                   <div className="flex flex-wrap items-center gap-2 pb-1">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-rose-500/10 border border-amber-400/30 text-[11px] font-bold text-amber-300 shadow-sm">
-                      <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-rose-500/20 via-purple-500/20 to-rose-500/10 border border-rose-400/30 text-[11px] font-bold text-rose-300 shadow-sm">
+                      <Heart className="w-3 h-3 text-rose-400 fill-rose-400 animate-pulse" />
                       <span>{confession.resonanceScore}% Resonance Match</span>
                     </span>
                     {confession.matchedTags && confession.matchedTags.length > 0 && (

@@ -10,7 +10,6 @@ import {
   Lock,
   Search,
   Filter,
-  Sparkles,
   ExternalLink,
   MessageSquare
 } from 'lucide-react';

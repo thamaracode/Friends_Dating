@@ -4,7 +4,7 @@ import {
   Link as LinkIcon, 
   Check, 
   AlertCircle, 
-  Sparkles, 
+  Heart, 
   RotateCcw, 
   ExternalLink,
   Radio,
@@ -220,7 +220,7 @@ export const LinkSpotifyModal: React.FC = () => {
         <div className="border-t border-white/10 pt-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
+              <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/20" />
               <span>Or Choose a Curated Ambient Soundscape</span>
             </span>
             <span className="text-[10px] text-zinc-500 font-medium">Click to activate</span>
@@ -292,7 +292,7 @@ export const LinkSpotifyModal: React.FC = () => {
             }}
             className="w-full py-2.5 rounded-xl text-xs font-bold bg-[#1DB954]/15 hover:bg-[#1DB954]/25 text-[#1DB954] border border-[#1DB954]/30 transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#1DB954]/10"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Heart className="w-3.5 h-3.5 fill-[#1DB954]/30" />
             <span>Open Interactive Spotify Embed Sanctuary (IFrame API & Telemetry)</span>
             <ExternalLink className="w-3 h-3" />
           </button>

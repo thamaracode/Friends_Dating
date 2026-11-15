@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Sparkles, Heart, Briefcase, BookOpen } from 'lucide-react';
+import { User, Heart, Briefcase, BookOpen } from 'lucide-react';
 
 export interface IdentityDimensionOption {
   id: string;
@@ -27,7 +27,7 @@ export const IdentitySelector: React.FC<IdentitySelectorProps> = ({
       case 'real':
         return <User className="w-4 h-4 text-emerald-400" />;
       case 'imaginary':
-        return <Sparkles className="w-4 h-4 text-indigo-400" />;
+        return <Heart className="w-4 h-4 text-purple-400 fill-purple-400/20" />;
       case 'inner':
         return <Heart className="w-4 h-4 text-rose-400" />;
       case 'creative':

@@ -34,7 +34,6 @@ import {
   Check,
   RotateCcw,
   Square,
-  Sparkles,
   PhoneOff,
   VideoOff,
   Download,
@@ -940,7 +939,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       return (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-[#6B7280]">
           <div className="w-16 h-16 rounded-full glass-panel flex items-center justify-center mb-3 text-[#FFFFFF]">
-            <Sparkles className="w-8 h-8" />
+            <Heart className="w-8 h-8 text-rose-400 fill-rose-500/20" />
           </div>
           <h3 className="text-sm font-bold text-[#F3F4F6]">Select a conversation</h3>
           <p className="text-xs text-[#9CA3AF] mt-1">Choose from your matches, friends, or personal cloud.</p>
@@ -951,8 +950,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     return (
       <div className="flex-1 flex flex-col h-full bg-[#090A0E] animate-fadeIn relative overflow-hidden">
         {chatToast && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-[#090A0E]/95 border border-amber-400/40 text-white text-xs font-heading font-bold shadow-2xl backdrop-blur-md animate-fadeIn flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-[#090A0E]/95 border border-rose-400/40 text-white text-xs font-heading font-bold shadow-2xl backdrop-blur-md animate-fadeIn flex items-center gap-2">
+            <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400/40" />
             <span>{chatToast}</span>
           </div>
         )}
@@ -1077,7 +1076,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-zinc-200 hover:bg-white/10 cursor-pointer transition-colors"
               >
-                <Sparkles className="w-4 h-4 text-amber-300" />
+                <Heart className="w-4 h-4 text-rose-400" />
                 <span className="font-medium">Before You Talk Briefing</span>
               </button>
 
@@ -1766,8 +1765,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
             {/* Soulverse 8 Logos & Easter Egg Reactions */}
             <div className="py-2 border-b border-white/10 space-y-1">
-              <span className="text-[10px] font-mono font-bold text-amber-300 uppercase tracking-wider px-1 block">
-                ✧ 8 Logos Soul Resonance Reactions
+              <span className="text-[10px] font-mono font-bold text-rose-300 uppercase tracking-wider px-1 block">
+                ♡ 8 Logos Soul Heart Reactions
               </span>
               <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar pt-1">
                 {SOULVERSE_ALL_LOGOS.slice(0, 8).map(logo => {

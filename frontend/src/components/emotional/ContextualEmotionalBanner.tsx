@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { 
-  Sparkles, 
   Heart, 
   Bookmark, 
   Copy, 

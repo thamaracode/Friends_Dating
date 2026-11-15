@@ -6,7 +6,6 @@ import {
   Brain, 
   Search, 
   Filter, 
-  Sparkles, 
   Heart, 
   MessageCircle, 
   Play, 
@@ -164,7 +163,7 @@ export const DiscoverExplorationView: React.FC<DiscoverExplorationViewProps> = (
               {/* Compatibility Badge on top */}
               {profile.compatibilityScore && (
                 <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full glass-panel bg-black/60 border border-[rgba(255,255,255,0.20)]/40 text-[10px] font-bold text-[#E5E7EB] flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-[#FFFFFF]" />
+                  <Heart className="w-2.5 h-2.5 text-rose-400 fill-rose-400" />
                   <span>{profile.compatibilityScore}%</span>
                 </div>
               )}
@@ -280,7 +279,7 @@ export const DiscoverExplorationView: React.FC<DiscoverExplorationViewProps> = (
       {activeMode === 'personality' && (
         <div className="space-y-4 pt-1">
           <div className="p-4 rounded-3xl glass-panel-elevated border border-[rgba(255,255,255,0.20)]/30 space-y-2 text-center glass-panel">
-            <Sparkles className="w-6 h-6 text-[#FFFFFF] mx-auto animate-pulse" />
+            <Heart className="w-6 h-6 text-rose-400 fill-rose-500/30 mx-auto animate-pulse" />
             <h3 className="text-sm font-black text-[#F3F4F6]">AI-Guided Holistic Chemistry</h3>
             <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto">
               Skip superficial swiping. Connect with people whose communication cadence and values align with yours.
@@ -294,7 +293,7 @@ export const DiscoverExplorationView: React.FC<DiscoverExplorationViewProps> = (
                 className="px-4 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 inline-flex items-center gap-1.5"
               >
                 <span>Open Personality & EI Sanctuary</span>
-                <span className="text-emerald-400">✦</span>
+                <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/20" />
               </button>
             </div>
           </div>

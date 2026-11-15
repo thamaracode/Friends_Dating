@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, Lock, Globe, Sparkles, Send, SkipForward, Check } from 'lucide-react';
+import { HelpCircle, Lock, Globe, Send, SkipForward, Check } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardFooter } from './Card';
 import { Textarea } from './Form';
 

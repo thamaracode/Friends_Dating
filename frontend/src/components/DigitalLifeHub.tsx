@@ -12,7 +12,7 @@ import {
   Eye, 
   ArrowUp, 
   ArrowDown, 
-  Sparkles,
+  Heart,
   MessageSquare,
   Music,
   Gamepad2,
@@ -329,7 +329,7 @@ export const DigitalLifeHub: React.FC<DigitalLifeHubProps> = ({
             {/* Recognition Status / Preview */}
             {isRecognizing && (
               <div className="p-3 rounded-2xl glass-panel text-xs text-[#FFB4CE] flex items-center gap-2 animate-pulse">
-                <Sparkles className="w-4 h-4 text-[#FF4F87]" />
+                <Heart className="w-4 h-4 text-[#FF4F87] fill-[#FF4F87]/30" />
                 <span>Recognizing platform & verifying format...</span>
               </div>
             )}

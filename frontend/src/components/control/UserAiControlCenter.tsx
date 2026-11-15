@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Sparkles,
+  Heart,
   Key,
   ShieldCheck,
   ShieldAlert,
@@ -351,7 +351,7 @@ export const UserAiControlCenter: React.FC<UserAiControlCenterProps> = ({ onClos
         {/* Toast Alert */}
         {toastMessage && (
           <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-indigo-500/40 text-slate-100 shadow-2xl shadow-indigo-500/20 text-xs animate-in fade-in slide-in-from-bottom-2">
-            <Sparkles className="w-4 h-4 text-indigo-400" />
+            <Heart className="w-4 h-4 text-rose-400 fill-rose-500/30" />
             {toastMessage}
           </div>
         )}

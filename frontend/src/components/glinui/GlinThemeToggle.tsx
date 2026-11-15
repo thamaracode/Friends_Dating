@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Eye } from 'lucide-react';
+import { Heart, Eye } from 'lucide-react';
 
 export interface GlinThemeToggleProps {
   onOpenShowcase?: () => void;
@@ -39,7 +39,7 @@ export const GlinThemeToggle: React.FC<GlinThemeToggleProps> = ({
         }`}
         title={isGlassActive ? 'GlinUI Liquid Glass Theme Active' : 'Switch to GlinUI Liquid Glass Theme'}
       >
-        <Sparkles className={`w-3.5 h-3.5 ${isGlassActive ? 'text-amber-300 animate-spin-slow' : 'text-zinc-400'}`} />
+        <Heart className={`w-3.5 h-3.5 ${isGlassActive ? 'text-rose-400 fill-rose-500/30' : 'text-zinc-400'}`} />
         <span className="hidden md:inline">{isGlassActive ? 'Glass On' : 'Glass UI'}</span>
       </button>
 

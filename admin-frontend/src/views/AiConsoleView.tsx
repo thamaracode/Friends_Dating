@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Cpu, 
-  Sparkles, 
   Activity, 
   CheckCircle2, 
   Settings, 

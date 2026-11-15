@@ -4,7 +4,6 @@ import {
   ShieldCheck, 
   Settings, 
   Edit3, 
-  Sparkles, 
   Heart, 
   Lock, 
   Eye, 
@@ -288,7 +287,7 @@ export const MyProfileHub: React.FC<MyProfileHubProps> = ({
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-2xl bg-[#FFFFFF]/20 flex items-center justify-center text-[#FFFFFF]">
-                <Sparkles className="w-4 h-4" />
+                <Heart className="w-4 h-4 fill-white/20" />
               </div>
               <div>
                 <h4 className="text-xs font-bold text-[#F3F4F6] group-hover:text-[#E5E7EB] transition-colors">Social Growth Ladder</h4>

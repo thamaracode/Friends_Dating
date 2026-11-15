@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { 
-  Sparkles, 
   MapPin, 
   BookOpen, 
   Briefcase, 
@@ -353,8 +352,8 @@ export const MyWorldProfile = () => {
             className="w-full p-6 text-left flex items-center justify-between cursor-pointer hover:bg-slate-900/40 transition"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                <Sparkles className="w-4 h-4" />
+              <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                <Heart className="w-4 h-4 fill-rose-500/20" />
               </div>
               <div>
                 <h3 className="text-base font-bold text-white">Chapter 3: Curated Conversation Prompts</h3>

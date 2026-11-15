@@ -13,7 +13,7 @@ import {
   Link2, 
   Lock, 
   ShieldAlert,
-  Sparkles,
+  Heart,
   HeartHandshake,
   Gamepad2
 } from 'lucide-react';
@@ -47,7 +47,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       items: [
         { id: 'my_world' as ExperienceTab, label: 'My World Profile', icon: User, badge: '8 Ch' },
         { id: 'social_growth' as ExperienceTab, label: 'Social Growth Ladder', icon: TrendingUp, badge: '30D' },
-        { id: 'self_discovery' as ExperienceTab, label: 'Self Discovery & Quiz', icon: Sparkles, badge: '' },
+        { id: 'self_discovery' as ExperienceTab, label: 'Self Discovery & Quiz', icon: Heart, badge: '' },
         { id: 'share_engine' as ExperienceTab, label: 'Identity Card Engine', icon: Share2, badge: 'Viral' }
       ]
     },

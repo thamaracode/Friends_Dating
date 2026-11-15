@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Sparkles,
   Bot,
   Heart,
   Wand2,
@@ -370,8 +369,8 @@ Respond in strict JSON with:
       {/* Top Header */}
       <div className="px-4 py-3.5 border-b border-slate-800 bg-slate-900/60 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center space-x-2.5">
-          <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-            <Sparkles className="w-4 h-4" />
+          <div className="p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400">
+            <Heart className="w-4 h-4 fill-rose-500/30" />
           </div>
           <div>
             <h3 className="text-xs font-semibold text-white flex items-center gap-1.5">

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   BookOpen,
-  Sparkles,
   Shield,
   Lock,
   Globe,
@@ -252,7 +251,7 @@ export const SoulJournalSanctuary: React.FC<SoulJournalSanctuaryProps> = ({
                 : 'bg-white/5 hover:bg-white/10 text-slate-400'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
+            <Heart className="w-4 h-4 fill-white/20" />
             Today's Reflection
           </button>
 
@@ -489,7 +488,7 @@ export const SoulJournalSanctuary: React.FC<SoulJournalSanctuaryProps> = ({
             {/* Why This Matters Explainer */}
             <div className="rounded-2xl bg-white/5 border border-white/10 p-5 flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center shrink-0">
-                <Sparkles className="w-5 h-5 text-violet-300" />
+                <Heart className="w-5 h-5 text-violet-300 fill-violet-400/20" />
               </div>
               <div className="space-y-1">
                 <h3 className="text-sm font-bold text-white">Why Single-Player Soul Prompts?</h3>
@@ -525,7 +524,7 @@ export const SoulJournalSanctuary: React.FC<SoulJournalSanctuaryProps> = ({
             ) : communityResponses.length === 0 ? (
               <div className="rounded-3xl bg-slate-900/50 border border-white/10 p-8 text-center space-y-3">
                 <div className="w-12 h-12 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto text-violet-400">
-                  <Sparkles className="w-6 h-6" />
+                  <Heart className="w-6 h-6 fill-violet-400/30" />
                 </div>
                 <h4 className="text-sm font-bold text-white">Be the First Echo in the Circle</h4>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
@@ -632,7 +631,7 @@ export const SoulJournalSanctuary: React.FC<SoulJournalSanctuaryProps> = ({
                             }`}
                             title="Inspired"
                           >
-                            <Sparkles className="w-3 h-3" />
+                            <Heart className="w-3 h-3 text-rose-400 fill-rose-400" />
                             <span>{item.reactionInspired || 0}</span>
                           </button>
                         </div>
@@ -841,7 +840,7 @@ export const SoulJournalSanctuary: React.FC<SoulJournalSanctuaryProps> = ({
                         key={idx}
                         className="p-3 rounded-2xl bg-white/5 border border-white/5 text-xs text-slate-200 flex items-start gap-2.5"
                       >
-                        <Sparkles className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                        <Heart className="w-4 h-4 text-rose-400 fill-rose-500/20 shrink-0 mt-0.5" />
                         <span>{insight}</span>
                       </div>
                     ))}

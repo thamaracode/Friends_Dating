@@ -14,7 +14,6 @@ import {
   AlertTriangle, 
   Lock, 
   MessageCircle, 
-  Sparkles,
   LifeBuoy,
   FileText,
   UserCheck,
@@ -987,8 +986,8 @@ export const SafetyAndSupportCenter: React.FC<SafetyAndSupportCenterProps> = ({
       {activeSection === 'grounding' && (
         <div className="p-6 sm:p-8 rounded-3xl dark-glass border border-indigo-500/30 space-y-6 shadow-2xl animate-fadeIn text-center">
           <div className="max-w-md mx-auto space-y-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-sky-400 flex items-center justify-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-rose-400 flex items-center justify-center gap-1.5">
+              <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400/30" />
               <span>4-7-8 Nervous System Regulation</span>
             </span>
             <h3 className="text-xl sm:text-2xl font-heading font-black text-white tracking-tight">

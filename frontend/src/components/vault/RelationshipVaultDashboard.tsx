@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Heart, 
-  Sparkles, 
   Clock, 
   Calendar, 
   CheckCircle2, 
@@ -327,7 +326,7 @@ export const RelationshipVaultDashboard: React.FC<RelationshipVaultDashboardProp
                   className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
                   title="Open Instant Briefing"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
+                  <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500/20" />
                   <span>Before You Talk</span>
                 </button>
 

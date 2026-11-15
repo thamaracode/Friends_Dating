@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   MessageCircle, 
-  Sparkles, 
   Calendar, 
   Clock, 
   Check, 

@@ -11,7 +11,7 @@ import {
   CheckCheck, 
   Pin, 
   Lock, 
-  Sparkles, 
+  Heart, 
   MessageSquare,
   Settings,
   MoreVertical,
@@ -452,7 +452,7 @@ export const TelegramWebWindow: React.FC<TelegramWebWindowProps> = ({
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-zinc-500">
-              <Sparkles className="w-12 h-12 text-zinc-400 mb-2" />
+              <Heart className="w-12 h-12 text-rose-400 fill-rose-500/20 mb-2" />
               <h3 className="text-sm font-bold text-white">Select a chat to start messaging</h3>
             </div>
           )}

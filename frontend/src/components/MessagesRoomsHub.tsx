@@ -7,7 +7,7 @@ import {
   Volume2, 
   VolumeX, 
   Send, 
-  Sparkles, 
+  Heart, 
   ShieldCheck, 
   Users, 
   Headphones, 
@@ -178,7 +178,7 @@ export const MessagesRoomsHub: React.FC = () => {
                 : 'text-[#A7A094] hover:text-[#F5F0E6]'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Heart className="w-3.5 h-3.5 fill-current" />
             <span>AI Practice Sandbox</span>
           </button>
         </div>
@@ -549,8 +549,8 @@ export const MessagesRoomsHub: React.FC = () => {
         <div className="rounded-3xl bg-[#171717] border border-[#302B22] p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#302B22]">
             <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#F1D99F] mb-1">
-                <Sparkles className="w-4 h-4 text-[#D6AD60]" />
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-300 mb-1">
+                <Heart className="w-4 h-4 text-rose-400 fill-rose-500/20" />
                 <span>Zero-Judgment AI Conversation Coach</span>
               </div>
               <p className="text-xs text-[#A7A094]">
@@ -587,10 +587,10 @@ export const MessagesRoomsHub: React.FC = () => {
                       : 'bg-[#171717] text-[#F5F0E6] border border-[#D6AD60]/30'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-[#D6AD60]">
+                  <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-rose-400">
                     {msg.sender === 'ai' ? (
                       <>
-                        <Sparkles className="w-3 h-3" />
+                        <Heart className="w-3 h-3 fill-rose-500/20" />
                         <span>AI Coach</span>
                       </>
                     ) : (

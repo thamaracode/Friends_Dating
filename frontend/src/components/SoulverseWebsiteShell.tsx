@@ -11,7 +11,6 @@ import {
   PlusSquare, 
   Plus, 
   Search, 
-  Sparkles, 
   Edit3, 
   Play, 
   Pause, 
@@ -282,7 +281,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
         { id: 'quotes' as SoulverseRoute, label: 'Quotes Sanctuary', icon: QuoteIcon, badge: 'Wise', featureId: 'feat_daily_quotes' },
         { id: 'journal' as SoulverseRoute, label: 'Soul Prompts & Journal', icon: BookOpen, badge: 'Soul', featureId: 'feat_daily_quotes' },
         { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily', featureId: 'feat_daily_quotes' },
-        { id: 'unspoken' as SoulverseRoute, label: 'The Unspoken', icon: Sparkles, badge: 'Inner', featureId: 'feat_the_unspoken' },
+        { id: 'unspoken' as SoulverseRoute, label: 'The Unspoken', icon: Heart, badge: 'Inner', featureId: 'feat_the_unspoken' },
       ]
     },
     {
@@ -299,7 +298,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       title: 'Identities & Memories',
       items: [
         { id: 'profile' as SoulverseRoute, label: 'My Identities', icon: User },
-        { id: 'identities' as SoulverseRoute, label: 'Identity Universe', icon: Sparkles, featureId: 'feat_imaginary_identities' },
+        { id: 'identities' as SoulverseRoute, label: 'Identity Universe', icon: Heart, featureId: 'feat_imaginary_identities' },
         { id: 'timeline' as SoulverseRoute, label: 'Life Timeline', icon: Calendar, featureId: 'feat_timeline_view' },
         { id: 'worlds' as SoulverseRoute, label: 'Story Worlds', icon: Globe2, featureId: 'feat_cinematic_profiles' },
       ]
@@ -383,7 +382,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
             className="hidden sm:flex h-10 px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 border border-white/10 text-xs font-semibold transition-all cursor-pointer items-center gap-2"
             title="Open The Unspoken Sanctuary"
           >
-            <Sparkles className="w-4 h-4 text-amber-300" />
+            <Heart className="w-4 h-4 text-rose-400 fill-rose-400/20" />
             <span className="hidden md:inline">The Unspoken</span>
           </button>
 
@@ -904,8 +903,8 @@ export const SoulverseWebsiteShell: React.FC = () => {
       />
 
       {shellToast && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-2 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-4">
-          <Sparkles className="w-4 h-4 text-amber-400" />
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/40 text-rose-300 font-bold text-xs flex items-center gap-2 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-4">
+          <Heart className="w-4 h-4 text-rose-400 fill-rose-400/40" />
           <span>{shellToast}</span>
         </div>
       )}

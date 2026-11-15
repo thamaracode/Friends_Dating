@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, ArrowRight, CheckCircle2, Flame, Heart, Music, Shield } from 'lucide-react';
+import { Calendar, ArrowRight, CheckCircle2, Flame, Heart, Music, Shield } from 'lucide-react';
 import { GlassModal, GlassButton } from '../klyven';
 import { FeatureControlService } from '../../services/featureControlService';
 
@@ -51,7 +51,7 @@ export const WhatsNewModal: React.FC<WhatsNewModalProps> = ({
       <div className="space-y-4">
         {/* Intro */}
         <div className="flex items-center gap-2 p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-xs text-zinc-300">
-          <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+          <Heart className="w-4 h-4 text-rose-400 fill-rose-500/20 shrink-0" />
           <span>
             Continuous evolution: inspect newly deployed architectural modules, sanctuary layers, and audio engines.
           </span>

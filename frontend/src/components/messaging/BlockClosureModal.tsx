@@ -5,7 +5,6 @@ import {
   MessageCircle,
   X,
   Send,
-  Sparkles,
   Lock,
   HeartHandshake,
   AlertTriangle,
