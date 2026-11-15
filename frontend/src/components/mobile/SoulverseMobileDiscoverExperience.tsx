@@ -123,7 +123,7 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
   };
 
   return (
-    <div className={`w-full max-w-2xl mx-auto animate-fadeIn px-1 sm:px-2 ${viewMode === 'swipe' ? 'space-y-2.5 pb-20' : 'space-y-8 pb-32'}`}>
+    <div className={`w-full max-w-6xl mx-auto animate-fadeIn px-1 sm:px-3 lg:px-4 ${viewMode === 'swipe' ? 'space-y-2.5 pb-20 lg:pb-8' : 'space-y-8 pb-32'}`}>
       
       {/* 1. TOP DISCOVERY BAR & VIEW MODE SWITCHER */}
       <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${viewMode === 'swipe' ? 'pt-1 pb-0.5' : 'pt-2'}`}>
@@ -348,9 +348,9 @@ export const SoulverseMobileDiscoverExperience: React.FC<SoulverseMobileDiscover
         />
       )}
 
-      {/* 5. MODE B: VERTICAL EXPLORE FEED */}
+      {/* 5. MODE B: VERTICAL / MULTI-COLUMN EXPLORE FEED */}
       {viewMode === 'feed' && (
-        <div className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredProfiles.map(profile => {
             const identities = getProfileIdentities(profile);
             return (

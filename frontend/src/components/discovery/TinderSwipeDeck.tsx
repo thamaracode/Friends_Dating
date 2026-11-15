@@ -480,10 +480,13 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
     : [activeProfile.avatar];
 
   return (
-    <div className="relative w-full max-w-sm sm:max-w-md mx-auto flex flex-col items-center select-none pt-1">
+    <div className="w-full max-w-5xl mx-auto flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 lg:gap-8 select-none pt-1">
       
-      {/* ── TINDER CARD STACK CONTAINER ────────────────────────── */}
-      <div className="relative w-full h-[calc(100dvh-270px)] min-h-[390px] max-h-[540px] sm:max-h-[600px]">
+      {/* ── LEFT COLUMN: SWIPE CARD STACK & TACTILE CONTROLS ───── */}
+      <div className="relative w-full max-w-sm sm:max-w-md flex flex-col items-center shrink-0">
+        
+        {/* ── TINDER CARD STACK CONTAINER ────────────────────────── */}
+        <div className="relative w-full h-[calc(100dvh-290px)] min-h-[380px] max-h-[500px] sm:max-h-[540px] lg:h-[580px] lg:max-h-[600px]">
         
         {/* Next Card in Stack (Sits underneath at scale(0.95), smoothly enters) */}
         {nextProfile && (
@@ -710,6 +713,120 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
         <span>·</span>
         <span>Space Details</span>
       </div>
+
+      </div> {/* END LEFT COLUMN */}
+
+      {/* ── RIGHT COLUMN: DESKTOP DEEP PROFILE & RESONANCE DOSSIER ── */}
+      <div className="hidden lg:flex flex-col flex-1 min-w-[340px] max-w-md dark-glass rounded-3xl p-6 border border-white/10 space-y-4.5 h-[580px] overflow-y-auto no-scrollbar shadow-2xl animate-in fade-in duration-300">
+        
+        {/* Dossier Header */}
+        <div className="flex items-start justify-between pb-3.5 border-b border-white/10">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl font-black text-white font-heading tracking-tight">
+                {activeProfile.name}, {activeProfile.age}
+              </h3>
+              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            </div>
+            <p className="text-xs text-zinc-400 flex items-center gap-1.5 mt-0.5">
+              <MapPin className="w-3.5 h-3.5 text-zinc-500" />
+              <span>{activeProfile.location}</span>
+              <span>·</span>
+              <span className="text-zinc-300 font-semibold">{activeProfile.status || 'Active Member'}</span>
+            </p>
+          </div>
+          <span className="px-3 py-1 rounded-full text-xs font-bold font-heading bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>{activeProfile.compatibilityScore || 88}% Soul Match</span>
+          </span>
+        </div>
+
+        {/* Intention & Philosophy Quote */}
+        <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] space-y-1.5">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300/90 font-mono">
+            Personal Philosophy & Intention
+          </span>
+          <p className="text-sm text-zinc-200 italic leading-relaxed">
+            "{activeProfile.tagline || (activeProfile as any).bio || activeProfile.aboutMeLong || 'Seeking meaningful, soulful connection.'}"
+          </p>
+        </div>
+
+        {/* Deep Introspective Question & Answer */}
+        {activeProfile.deepQuestion && (
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/30 to-black border border-purple-500/25 space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-bold text-purple-300 font-mono">
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <span>THE UNSPOKEN TRUTH</span>
+            </div>
+            <p className="text-xs text-zinc-300 font-medium">
+              {activeProfile.deepQuestion.question}
+            </p>
+            <p className="text-xs text-white italic border-l-2 border-purple-400 pl-2.5 font-editorial">
+              "{activeProfile.deepQuestion.answer}"
+            </p>
+          </div>
+        )}
+
+        {/* Identity Universes Preview */}
+        <div className="space-y-1.5">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 font-mono block">
+            Multiple Identities & Universes
+          </span>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+              <span className="text-base block">👤</span>
+              <span className="font-bold text-white block mt-1">Real Life</span>
+              <span className="text-zinc-400 text-[11px] truncate block">{activeProfile.status || 'Active Member'}</span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+              <span className="text-base block">🎬</span>
+              <span className="font-bold text-white block mt-1">Cinematic Me</span>
+              <span className="text-zinc-400 text-[11px] truncate block">{activeProfile.tagline || 'Storyteller'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Values & Chemistry Tags */}
+        <div className="space-y-1.5">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 font-mono block">
+            Resonance Dimensions & Values
+          </span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40">
+              {activeProfile.intent}
+            </span>
+            {(activeProfile.coreValues || ['Authenticity', 'Curiosity']).map((val: string) => (
+              <span key={val} className="px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 text-zinc-200 border border-white/15">
+                {val}
+              </span>
+            ))}
+            {(activeProfile.interests || ['Philosophy', 'Indie Craft']).slice(0, 3).map((int: string) => (
+              <span key={int} className="px-2.5 py-1 rounded-full text-xs text-zinc-400 bg-black/40 border border-white/5">
+                #{int}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Fast Desktop Actions */}
+        <div className="flex items-center gap-3 pt-2.5 border-t border-white/10 mt-auto">
+          <button
+            onClick={() => onOpenProfileDetail(activeProfile)}
+            className="flex-1 h-11 rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border border-white/15 active:scale-98"
+          >
+            <Info className="w-4 h-4 text-zinc-300" />
+            <span>Full Bio Dossier</span>
+          </button>
+          <button
+            onClick={() => onInitiateChat(activeProfile)}
+            className="flex-1 h-11 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 text-zinc-950 text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-98"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>Instant Chat</span>
+          </button>
+        </div>
+
+      </div> {/* END RIGHT COLUMN */}
 
       {/* ── IT'S A MATCH CELEBRATION MODAL ───────────────────────── */}
       <AnimatePresence>

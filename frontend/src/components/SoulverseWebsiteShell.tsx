@@ -630,8 +630,8 @@ export const SoulverseWebsiteShell: React.FC = () => {
             </div>
           )}
 
-          {/* Scrollable View Area */}
-          <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar">
+          {/* Scrollable View Area with responsive bottom clearance for mobile dock */}
+          <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar pb-28 lg:pb-8">
             
             {/* DESTINATION 1: DISCOVER (Dating, Friends, Recommendations, Daily Inspiration) */}
             {currentRoute === 'discover' && (
