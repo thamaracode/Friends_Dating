@@ -549,6 +549,9 @@ export class MessagingService {
     limit?: number;
     beforeSequence?: number;
   }): ChatMessage[] {
+    if (!db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?').get(params.conversationId, params.userId)) {
+      throw new Error('Forbidden: user is not a conversation member');
+    }
     const limit = Math.min(params.limit || 50, 100);
 
     let query = `
@@ -576,6 +579,9 @@ export class MessagingService {
    * Retrieves messages for offline synchronization since a given sequence number
    */
   public static syncMessages(conversationId: string, sinceSequence: number, userId: string): ChatMessage[] {
+    if (!db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?').get(conversationId, userId)) {
+      throw new Error('Forbidden: user is not a conversation member');
+    }
     const rows = db.prepare(`
       SELECT m.*, u.name as sender_name, u.avatar_url as sender_avatar
       FROM messages m

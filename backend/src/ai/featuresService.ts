@@ -101,7 +101,7 @@ export class SoulverseIntelligenceService {
         { role: 'user', content: cleanUserPrompt }
       ];
 
-      const res = await AIRequestRouter.dispatchRequest(userId, {
+      const res = await AIRequestRouter.dispatch(userId, {
         taskKey,
         messages,
         systemPrompt,

@@ -5,7 +5,6 @@ import {
   Phone, 
   Video, 
   ArrowLeft, 
-  Smile, 
   Image as ImageIcon, 
   Mic, 
   MicOff,
@@ -53,8 +52,7 @@ import { MOCK_PROFILES, CURRENT_USER } from '../mockData';
 import { VoiceWaveformPlayer } from './VoiceWaveformPlayer';
 import { TelegramLuckEmoji } from './TelegramLuckEmoji';
 import { TgEmoji, renderWithTelegramEmojis } from './common/TgEmoji';
-import { TelegramPremiumEmojiPicker } from './chat/TelegramPremiumEmojiPicker';
-import type { TelegramPremiumEmoji } from '../types/telegramEmoji';
+import { NativeEmojiPicker } from './chat/NativeEmojiPicker';
 import { chatClient } from '../services/chatApiClient';
 import { offlineChatDb } from '../services/offlineChatDb';
 import { webrtcCallService, type CallSession } from '../services/webrtcCallService';
@@ -72,6 +70,16 @@ import type {
   ChatFolderType, 
   ChatFolder 
 } from '../types/messaging';
+
+const formatChatDayLabel = (timestamp: number) => {
+  const date = new Date(timestamp);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric' });
+};
 
 interface MessagingInboxViewProps {
   onOpenProfileDetail: (profile: UserProfile) => void;
@@ -166,7 +174,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
   // Emoji / Sticker / GIF picker drawer state
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [pickerTab, setPickerTab] = useState<'emoji' | 'stickers' | 'luck'>('luck');
+  const [pickerTab, setPickerTab] = useState<'emoji' | 'stickers' | 'luck'>('emoji');
   const [installedPacks, setInstalledPacks] = useState<any[]>([]);
 
   // Production Toast Feedback State
@@ -207,7 +215,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
   }, []);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const composerInputRef = useRef<HTMLInputElement | null>(null);
+  const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Folder definitions (Telegram Web K benchmark)
   const folders: ChatFolder[] = [
@@ -302,6 +310,24 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       loadConversations();
     });
 
+    const unsubReconnect = chatClient.subscribe('ws.open', async () => {
+      if (!activeConversationId) return;
+      try {
+        const lastSequence = currentMessages.reduce((latest, message) => Math.max(latest, message.sequenceNumber || 0), 0);
+        const recovered = await chatClient.syncMessages(activeConversationId, lastSequence);
+        if (recovered.length > 0) {
+          setCurrentMessages((previous) => {
+            const merged = new Map(previous.map((message) => [message.id, message]));
+            recovered.forEach((message: ChatMessage) => merged.set(message.id, message));
+            return [...merged.values()].sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
+          });
+        }
+        loadConversations();
+      } catch (error) {
+        console.warn('Failed to recover messages after reconnect', error);
+      }
+    });
+
     return () => {
       unsubMsg();
       unsubEdit();
@@ -310,8 +336,9 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
       unsubTypingStart();
       unsubTypingStop();
       unsubPresence();
+      unsubReconnect();
     };
-  }, [activeConversationId, activeProfileOverride]);
+  }, [activeConversationId, activeProfileOverride, currentMessages, loadConversations]);
 
   // Load real messages & draft whenever active conversation changes
   useEffect(() => {
@@ -562,6 +589,18 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
     // Persist draft in background
     chatClient.saveDraft(activeConversationId, text);
+  };
+
+  const insertEmoji = (emoji: string) => {
+    const input = composerInputRef.current;
+    const start = input?.selectionStart ?? inputMessage.length;
+    const end = input?.selectionEnd ?? inputMessage.length;
+    const nextText = `${inputMessage.slice(0, start)}${emoji}${inputMessage.slice(end)}`;
+    handleTypingNotice(nextText);
+    requestAnimationFrame(() => {
+      input?.focus();
+      input?.setSelectionRange(start + emoji.length, start + emoji.length);
+    });
   };
 
   const handleSendMessage = async (customText?: string, type: ChatMessage['type'] = 'text', mediaUrl?: string) => {
@@ -1218,20 +1257,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
         )}
 
         {/* Messages Stream with Grouping & Date Separators */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-1.5 no-scrollbar telegram-chat-wallpaper">
+        <div className="flex-1 overflow-y-auto bg-[#101114] p-4 sm:p-6 space-y-1.5 no-scrollbar">
           <div className="max-w-3xl xl:max-w-4xl mx-auto w-full flex flex-col space-y-1.5 min-h-full justify-end">
-            {/* Floating Date Separator */}
-            <div className="flex justify-center my-2">
-              <span className="px-3.5 py-1 rounded-full bg-black/60 border border-white/10 text-[10px] font-bold text-zinc-300 shadow-sm backdrop-blur-md">
-                Today
-              </span>
-            </div>
-
             {currentMessages
               .filter(m => !inChatSearchQuery.trim() || m.text.toLowerCase().includes(inChatSearchQuery.toLowerCase()))
               .map((msg, idx) => {
                 const groupedPrev = isGroupedWithPrevious(idx);
                 const groupedNext = isGroupedWithNext(idx);
+                const previousMessage = idx > 0 ? currentMessages[idx - 1] : undefined;
+                const startsNewDay = !previousMessage || new Date(previousMessage.createdAt).toDateString() !== new Date(msg.createdAt).toDateString();
 
                 // Tail corner rounding rules (Telegram Web K reference)
                 let cornerClass = 'rounded-3xl';
@@ -1248,8 +1282,15 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 }
 
                 return (
+                  <React.Fragment key={msg.id}>
+                  {startsNewDay && (
+                    <div className="my-4 flex justify-center">
+                      <span className="rounded-full bg-[#202228] px-3 py-1 text-[11px] text-zinc-400">
+                        {formatChatDayLabel(msg.createdAt)}
+                      </span>
+                    </div>
+                  )}
                   <div
-                    key={msg.id}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       setSelectedMessageForMenu(msg);
@@ -1267,8 +1308,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                     {/* TELEGRAM LUCK EMOJIS: Large borderless element with floating time pill */}
                     {msg.type === 'dice_event' || msg.type === 'slot_event' || msg.type === 'coin_event' ? (
                       <div 
-                        onClick={() => setSelectedMessageForMenu(msg)}
-                        className="relative p-1 my-1 flex flex-col items-center cursor-pointer group/luck"
+                        className="relative p-1 my-1 flex flex-col items-center group/luck"
                       >
                         <TelegramLuckEmoji 
                           type={msg.type === 'dice_event' ? 'dice' : msg.type === 'slot_event' ? 'slot' : 'coin'} 
@@ -1283,8 +1323,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                     ) : msg.type === 'sticker' ? (
                       /* STICKER: Borderless enlarged sticker with floating time pill */
                       <div 
-                        onClick={() => setSelectedMessageForMenu(msg)}
-                        className="relative p-1 my-1 cursor-pointer group/sticker"
+                        className="relative p-1 my-1 group/sticker"
                       >
                         <img 
                           src={msg.mediaUrl} 
@@ -1299,11 +1338,10 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                     ) : (
                       /* Standard Message Bubble */
                       <div
-                        onClick={() => setSelectedMessageForMenu(msg)}
-                        className={`relative max-w-[80%] p-3.5 text-xs space-y-1 shadow-md cursor-pointer transition-transform active:scale-[0.98] ${cornerClass} ${
+                        className={`relative max-w-[82%] p-3 sm:p-3.5 text-sm space-y-1 shadow-sm ${cornerClass} ${
                           msg.isOutgoing
-                            ? 'bg-white text-[#090A0E] shadow-[0_4px_16px_rgba(255,255,255,0.18)] font-medium'
-                            : 'bg-[#181B24]/90 border border-white/10 backdrop-blur-xl text-zinc-100'
+                            ? 'bg-[#d6ad60] text-[#17120a] font-medium'
+                            : 'bg-[#202228] border border-white/[0.04] text-zinc-100'
                         }`}
                       >
                       {/* Media Image Attachment with Lightbox Viewer */}
@@ -1418,7 +1456,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                       })}
                     </div>
                   )}
-                </div>
+                  </div>
+                  </React.Fragment>
               );
             })}
             <div ref={messagesEndRef} />
@@ -1461,20 +1500,20 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
 
         {/* Emoji / Sticker / Luck Drawer (Telegram Benchmark) */}
         {isEmojiPickerOpen && (
-          <div className={`${pickerTab === 'emoji' ? 'h-96' : 'h-56'} bg-[#12141B] border-t border-[rgba(255,255,255,0.20)]/20 flex flex-col animate-fadeIn select-none transition-all duration-200`}>
+          <div className={`${pickerTab === 'emoji' ? 'h-[min(430px,48vh)]' : 'h-56'} bg-[#12141B] border-t border-white/10 flex flex-col animate-fadeIn transition-all duration-200`}>
             {/* Header Tabs */}
             <div className="flex items-center justify-around border-b border-[rgba(255,255,255,0.20)]/10 py-1.5 text-xs font-bold">
               <button 
                 onClick={() => setPickerTab('emoji')} 
                 className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'emoji' ? 'bg-[#FFFFFF] text-[#090A0E] shadow-md font-bold' : 'text-[#9CA3AF] hover:text-white'}`}
               >
-                <span>✨ Telegram Premium Emojis</span>
+                <span>Emoji</span>
               </button>
               <button 
                 onClick={() => setPickerTab('luck')} 
                 className={`px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-all ${pickerTab === 'luck' ? 'bg-[#FFFFFF] text-[#090A0E] shadow-md font-bold' : 'text-[#9CA3AF] hover:text-white'}`}
               >
-                <span>🎰 Telegram Luck</span>
+                <span>Fun</span>
               </button>
               <button 
                 onClick={() => setPickerTab('stickers')} 
@@ -1484,16 +1523,10 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               </button>
             </div>
 
-            {/* TAB 1: TELEGRAM PREMIUM EMOJIS (7,092 CATALOG BY ZULUT30) */}
+            {/* Native Unicode emoji picker */}
             {pickerTab === 'emoji' && (
-              <div className="flex-1 overflow-hidden p-1">
-                <TelegramPremiumEmojiPicker
-                  onSelectEmoji={(_emoji, html) => {
-                    setInputMessage(prev => (prev ? `${prev} ${html}` : html));
-                    if (composerInputRef.current) composerInputRef.current.focus();
-                  }}
-                  onClose={() => setIsEmojiPickerOpen(false)}
-                />
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <NativeEmojiPicker onSelectEmoji={insertEmoji} />
               </div>
             )}
 
@@ -1645,7 +1678,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
             </div>
           </div>
         ) : (
-          <div className="p-4 bg-[#12141B]/95 border-t border-white/[0.08] backdrop-blur-2xl">
+          <div className="border-t border-white/[0.08] bg-[#111214] px-3 py-3 sm:px-4">
             <div className="max-w-3xl xl:max-w-4xl mx-auto w-full flex items-center gap-2.5">
               <button
                 onClick={() => setIsActionDockOpen(!isActionDockOpen)}
@@ -1664,20 +1697,25 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                 className={`w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer transition-colors ${
                   isEmojiPickerOpen ? 'text-white bg-white/20' : 'bg-white/[0.04] text-zinc-400 hover:text-white border border-white/10'
                 }`}
-                title="Emoji, Stickers & Telegram Luck"
+                title="Emoji and stickers"
               >
-                <Smile className="w-4 h-4" />
+                <span className="text-lg leading-none" aria-hidden="true">😊</span>
               </button>
 
               <div className="relative flex-1">
-                <input
+                <textarea
                   ref={composerInputRef}
-                  type="text"
+                  rows={1}
                   value={inputMessage}
                   onChange={(e) => handleTypingNotice(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder={editingMessage ? "Update message (Esc to cancel)..." : `Message ${currentConv.title}...`}
-                  className="w-full pl-4 pr-10 py-3 rounded-2xl bg-white/[0.04] border border-white/15 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder={editingMessage ? 'Edit message…' : 'Write a message…'}
+                  className="max-h-32 min-h-11 w-full resize-none rounded-2xl border border-white/10 bg-[#202228] py-3 pl-4 pr-10 text-sm leading-5 text-white placeholder-zinc-500 outline-none transition-colors focus:border-[#d6ad60]/60"
                 />
                 <button 
                   onClick={startVoiceRecording}
@@ -1691,7 +1729,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
               <button
                 onClick={() => handleSendMessage()}
                 disabled={!inputMessage.trim()}
-                className="w-11 h-11 rounded-2xl bg-white text-[#090A0E] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none cursor-pointer hover:bg-zinc-200 transition-all active:scale-95 shadow-md"
+                className="h-11 w-11 rounded-full bg-[#d6ad60] text-[#17120a] flex items-center justify-center disabled:opacity-35 disabled:pointer-events-none cursor-pointer hover:bg-[#e3bd78] transition-colors active:scale-95"
               >
                 <Send className="w-4 h-4" />
               </button>

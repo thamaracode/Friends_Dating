@@ -1,11 +1,15 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { db } from './db';
+import { db, initDatabase } from './db';
+import { initCommunicationSchema } from './communication/schema';
 
 describe('Exhaustive Interaction Reality & Persistence Test Suite', () => {
   const API_URL = 'http://127.0.0.1:3001/api/v1';
   let testConvId: string = '';
 
   beforeAll(() => {
+    initDatabase();
+    initCommunicationSchema();
+
     // Ensure a conversation exists for testing
     const existing = db.prepare('SELECT id FROM conversations LIMIT 1').get() as { id: string } | undefined;
     if (existing) {

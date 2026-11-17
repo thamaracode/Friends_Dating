@@ -22,7 +22,7 @@ architectureRouter.use(idempotencyMiddleware());
 
 architectureRouter.get('/users/:userId/settings', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
@@ -81,7 +81,7 @@ architectureRouter.get('/users/:userId/settings', (req: Request, res: Response) 
 
 architectureRouter.put('/users/:userId/settings', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
@@ -152,7 +152,7 @@ architectureRouter.put('/users/:userId/settings', (req: Request, res: Response) 
 
 architectureRouter.get('/users/:userId/sessions', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
@@ -171,8 +171,8 @@ architectureRouter.get('/users/:userId/sessions', (req: Request, res: Response) 
 
 architectureRouter.delete('/users/:userId/sessions/:sessionId', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
-  const sessionId = req.params.sessionId;
+  const targetUserId = String(req.params.userId);
+  const sessionId = String(req.params.sessionId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
@@ -309,7 +309,7 @@ architectureRouter.post('/connection-requests', (req: Request, res: Response) =>
 
 architectureRouter.post('/connection-requests/:id/respond', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const requestId = req.params.id;
+  const requestId = String(req.params.id);
   const { action } = req.body || {}; // 'accept' or 'decline'
 
   if (action !== 'accept' && action !== 'decline') {
@@ -408,7 +408,7 @@ architectureRouter.get('/notifications', (req: Request, res: Response) => {
 
 architectureRouter.patch('/notifications/:id/read', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const id = req.params.id;
+  const id = String(req.params.id);
 
   const result = db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?').run(id, callerId);
   if (result.changes === 0) {
@@ -431,7 +431,7 @@ architectureRouter.post('/notifications/mark-all-read', (req: Request, res: Resp
 
 architectureRouter.get('/users/:userId/media', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   const rawMedia = db.prepare(`
@@ -458,7 +458,7 @@ architectureRouter.get('/users/:userId/media', (req: Request, res: Response) => 
 
 architectureRouter.post('/users/:userId/media', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
@@ -499,7 +499,7 @@ architectureRouter.post('/users/:userId/media', (req: Request, res: Response) =>
 
 architectureRouter.get('/users/:userId/consent', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
@@ -512,7 +512,7 @@ architectureRouter.get('/users/:userId/consent', (req: Request, res: Response) =
 
 architectureRouter.post('/users/:userId/consent', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
@@ -537,7 +537,7 @@ architectureRouter.post('/users/:userId/consent', (req: Request, res: Response) 
 
 architectureRouter.post('/users/:userId/export', async (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
@@ -554,7 +554,7 @@ architectureRouter.post('/users/:userId/export', async (req: Request, res: Respo
 
 architectureRouter.get('/users/:userId/exports', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
@@ -573,14 +573,14 @@ architectureRouter.get('/users/:userId/exports', (req: Request, res: Response) =
 
 architectureRouter.get('/users/:userId/exports/:exportId/download', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {
     return sendError(res, 'IDOR_VIOLATION', 'Unauthorized to download data export', 403);
   }
 
-  const record = db.prepare('SELECT file_path, status FROM user_data_exports WHERE id = ? AND user_id = ?').get(req.params.exportId, targetUserId) as any;
+  const record = db.prepare('SELECT file_path, status FROM user_data_exports WHERE id = ? AND user_id = ?').get(String(req.params.exportId), targetUserId) as any;
   if (!record || !record.file_path) {
     return sendError(res, 'NOT_FOUND', 'Export record not found', 404);
   }
@@ -592,7 +592,7 @@ architectureRouter.get('/users/:userId/exports/:exportId/download', (req: Reques
 
 architectureRouter.delete('/users/:userId/gdpr-erasure', (req: Request, res: Response) => {
   const callerId = (req.headers['x-user-id'] as string) || 'usr_me';
-  const targetUserId = req.params.userId;
+  const targetUserId = String(req.params.userId);
   const adminId = (req.headers['x-admin-id'] as string) || undefined;
 
   if (!AccessControlEngine.verifyCallerOrAdmin(callerId, targetUserId, adminId)) {

@@ -124,37 +124,12 @@ wss.on('connection', (ws, req) => {
   }
   userSockets.get(userId)!.add(ws);
 
-  // Update presence
-  db.prepare('UPDATE users SET last_seen_at = ? WHERE id = ?').run(Date.now(), userId);
-  broadcastToAll({
-    type: 'presence.updated',
-    userId,
-    isOnline: true,
-    lastSeenAt: Date.now()
-  });
-
-  ws.on('message', (data) => {
-    try {
-      const payload = JSON.parse(data.toString());
-      handleClientSocketEvent(userId, payload, ws);
-    } catch (e) {
-      console.error('WS parse error', e);
-    }
-  });
-
   ws.on('close', () => {
     const sockets = userSockets.get(userId);
     if (sockets) {
       sockets.delete(ws);
       if (sockets.size === 0) {
         userSockets.delete(userId);
-        db.prepare('UPDATE users SET last_seen_at = ? WHERE id = ?').run(Date.now(), userId);
-        broadcastToAll({
-          type: 'presence.updated',
-          userId,
-          isOnline: false,
-          lastSeenAt: Date.now()
-        });
       }
     }
   });
@@ -180,34 +155,6 @@ function broadcastToAll(event: any) {
         ws.send(payload);
       }
     }
-  }
-}
-
-function handleClientSocketEvent(userId: string, event: any, _ws: WebSocket) {
-  if (event.type === 'typing.start') {
-    const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ?')
-      .all(event.conversationId, userId) as { user_id: string }[];
-    members.forEach(m => broadcastToUser(m.user_id, {
-      type: 'typing.started',
-      conversationId: event.conversationId,
-      userId
-    }));
-  } else if (event.type === 'typing.stop') {
-    const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ?')
-      .all(event.conversationId, userId) as { user_id: string }[];
-    members.forEach(m => broadcastToUser(m.user_id, {
-      type: 'typing.stopped',
-      conversationId: event.conversationId,
-      userId
-    }));
-  } else if (event.type === 'call.signal') {
-    // Forward WebRTC SDP Offer/Answer or ICE Candidate to the peer
-    broadcastToUser(event.recipientId, {
-      type: 'call.signal',
-      senderId: userId,
-      signalData: event.signalData,
-      callType: event.callType
-    });
   }
 }
 
@@ -316,11 +263,19 @@ app.get('/api/v1/conversations', (req, res) => {
       lm.created_at as last_msg_created_at
     FROM conversations c
     JOIN conversation_members cm ON c.id = cm.conversation_id AND cm.user_id = ?
-    LEFT JOIN conversation_members other ON c.id = other.conversation_id AND other.user_id != ? AND c.type = 'direct'
+    LEFT JOIN conversation_members other
+      ON c.id = other.conversation_id
+      AND c.type = 'direct'
+      AND other.user_id != ?
+      AND other.user_id = (
+        SELECT MIN(partner_member.user_id)
+        FROM conversation_members partner_member
+        WHERE partner_member.conversation_id = c.id AND partner_member.user_id != ?
+      )
     LEFT JOIN users partner ON other.user_id = partner.id
     LEFT JOIN messages lm ON c.last_message_id = lm.id
     ORDER BY cm.is_pinned DESC, c.updated_at DESC
-  `).all(userId, userId) as any[];
+  `).all(userId, userId, userId) as any[];
 
   const conversations = rows.map(r => ({
     id: r.id,
@@ -358,7 +313,13 @@ app.get('/api/v1/conversations', (req, res) => {
 app.get('/api/v1/conversations/:id/messages', (req, res) => {
   const { id } = req.params;
   const userId = (req.query.userId as string) || 'usr_me';
-  const limit = parseInt(req.query.limit as string) || 50;
+  const parsedLimit = parseInt(req.query.limit as string, 10) || 50;
+  const limit = Math.min(Math.max(parsedLimit, 1), 100);
+  const beforeSequence = req.query.beforeSequence ? parseInt(req.query.beforeSequence as string, 10) : undefined;
+
+  if (!isConversationMember(id, userId)) {
+    return res.status(403).json({ error: 'Forbidden: user is not a conversation member', code: 'NOT_CONVERSATION_MEMBER' });
+  }
 
   const messages = db.prepare(`
     SELECT 
@@ -382,9 +343,11 @@ app.get('/api/v1/conversations/:id/messages', (req, res) => {
     FROM messages m
     JOIN users u ON m.sender_id = u.id
     WHERE m.conversation_id = ?
-    ORDER BY m.sequence_number ASC
+      AND (? IS NULL OR m.sequence_number < ?)
+    ORDER BY m.sequence_number DESC
     LIMIT ?
-  `).all(id, limit) as any[];
+  `).all(id, beforeSequence ?? null, beforeSequence ?? null, limit) as any[];
+  messages.reverse();
 
   // Fetch reactions
   const reactionsMap = new Map<string, any[]>();
@@ -520,6 +483,9 @@ app.post('/api/v1/conversations/:id/messages', (req, res) => {
   // Idempotency check: If client retried with same clientMessageId, return existing
   const existing = db.prepare('SELECT * FROM messages WHERE client_message_id = ?').get(clientMessageId) as any;
   if (existing) {
+    if (existing.conversation_id !== id || existing.sender_id !== senderId) {
+      return res.status(409).json({ error: 'clientMessageId has already been used for another message', code: 'IDEMPOTENCY_KEY_CONFLICT' });
+    }
     return res.json({ success: true, message: existing, deduplicated: true });
   }
 
@@ -759,7 +725,7 @@ app.post('/api/v1/attachments/upload', upload.single('file'), (req, res) => {
     return res.status(400).json({ error: 'No file provided' });
   }
 
-  const mediaUrl = `http://127.0.0.1:3001/uploads/${req.file.filename}`;
+  const mediaUrl = `/uploads/${req.file.filename}`;
   res.json({
     success: true,
     file: {
@@ -807,7 +773,7 @@ app.post('/api/v1/scheduled-messages', (req, res) => {
 // 13. Privacy & Safety: Block and Unblock User with Boundary Reasons & Parting Words
 app.post(['/api/v1/users/:id/block', '/api/users/:id/block'], (req, res) => {
   const { blockerId = 'usr_me', reason, partingMessage } = req.body;
-  const blockedId = req.body?.blockedId || req.params.id;
+  const blockedId = req.body?.blockedId || String(req.params.id);
 
   try {
     SafetyService.blockUser(blockerId, blockedId, reason, partingMessage);
@@ -835,7 +801,7 @@ app.post(['/api/v1/blocks', '/api/blocks'], (req, res) => {
 
 app.delete(['/api/v1/users/:id/block', '/api/users/:id/block'], (req, res) => {
   const blockerId = (req.headers['x-user-id'] as string) || req.body?.blockerId || (req.query.blockerId as string) || 'usr_me';
-  const blockedId = req.body?.blockedId || (req.query.blockedId as string) || req.params.id;
+  const blockedId = req.body?.blockedId || (req.query.blockedId as string) || String(req.params.id);
 
   SafetyService.unblockUser(blockerId, blockedId);
   res.json({ success: true, blocked: false });
@@ -3341,7 +3307,7 @@ function formatIdentityRecord(id: any) {
 
 // 1. List User Identities with Strict Server-Side Visibility Enforcement
 const handleListIdentities = (req: any, res: any) => {
-  const userId = req.params.userId || (req.query.userId as string) || 'usr_me';
+  const userId = String(req.params.userId) || (req.query.userId as string) || 'usr_me';
   const viewerId = (req.headers['x-user-id'] as string) || (req.query.viewerId as string) || 'usr_me';
   const isOwner = viewerId === userId;
 
@@ -3882,7 +3848,7 @@ app.get('/api/v1/psychology/concepts', (req, res) => {
 
 app.get('/api/v1/psychology/concepts/:conceptId', (req, res) => {
   try {
-    const concept = psychologyService.getConceptById(req.params.conceptId);
+    const concept = psychologyService.getConceptById(String(req.params.conceptId));
     if (!concept) return res.status(404).json({ success: false, error: 'Concept not found' });
     res.json({ success: true, concept });
   } catch (err: any) {
@@ -3893,7 +3859,7 @@ app.get('/api/v1/psychology/concepts/:conceptId', (req, res) => {
 app.get('/api/v1/psychology/profile/:userId', (req, res) => {
   try {
     const viewerId = (req.query.viewerId as string) || (req.headers['x-user-id'] as string) || 'usr_me';
-    const profile = psychologyService.getUserProfile(req.params.userId, viewerId);
+    const profile = psychologyService.getUserProfile(String(req.params.userId), viewerId);
     if (!profile) return res.status(404).json({ success: false, error: 'Personality profile not found or private' });
     res.json({ success: true, profile });
   } catch (err: any) {
@@ -3930,7 +3896,7 @@ app.get('/api/v1/psychology/exercises', (req, res) => {
 
 app.get('/api/v1/psychology/exercises/:exerciseId', (req, res) => {
   try {
-    const exercise = psychologyService.getExerciseById(req.params.exerciseId);
+    const exercise = psychologyService.getExerciseById(String(req.params.exerciseId));
     if (!exercise) return res.status(404).json({ success: false, error: 'Exercise not found' });
     res.json({ success: true, exercise });
   } catch (err: any) {
@@ -3950,7 +3916,7 @@ app.post('/api/v1/psychology/exercises/:exerciseId/submit', (req, res) => {
 
     const response = psychologyService.submitExerciseResponse(
       userId,
-      req.params.exerciseId,
+      String(req.params.exerciseId),
       answers,
       personalTakeaway,
       visibility || 'private'
@@ -3964,7 +3930,7 @@ app.post('/api/v1/psychology/exercises/:exerciseId/submit', (req, res) => {
 app.get('/api/v1/psychology/exercises/user/:userId', (req, res) => {
   try {
     const viewerId = (req.query.viewerId as string) || (req.headers['x-user-id'] as string) || 'usr_me';
-    const responses = psychologyService.getUserExerciseResponses(req.params.userId, viewerId);
+    const responses = psychologyService.getUserExerciseResponses(String(req.params.userId), viewerId);
     res.json({ success: true, responses });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -3975,7 +3941,7 @@ app.post('/api/v1/psychology/feedback/:targetUserId', (req, res) => {
   try {
     const callerId = getCallerUserId(req);
     const authorUserId = req.body.authorUserId || callerId || 'usr_me';
-    const targetUserId = req.params.targetUserId;
+    const targetUserId = String(req.params.targetUserId);
 
     if (authorUserId === targetUserId) {
       return res.status(400).json({ success: false, error: 'Cannot submit perception feedback for yourself' });
@@ -3991,7 +3957,7 @@ app.post('/api/v1/psychology/feedback/:targetUserId', (req, res) => {
 app.get('/api/v1/psychology/feedback/:targetUserId', (req, res) => {
   try {
     const viewerId = (req.query.viewerId as string) || (req.headers['x-user-id'] as string) || 'usr_me';
-    const feedback = psychologyService.getUserPerceptionFeedback(req.params.targetUserId, viewerId);
+    const feedback = psychologyService.getUserPerceptionFeedback(String(req.params.targetUserId), viewerId);
     res.json({ success: true, feedback });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -4018,7 +3984,7 @@ app.post('/api/v1/psychology/history/snapshot', (req, res) => {
 app.get('/api/v1/psychology/history/:userId', (req, res) => {
   try {
     const viewerId = (req.query.viewerId as string) || (req.headers['x-user-id'] as string) || 'usr_me';
-    const snapshots = psychologyService.getUserTraitHistory(req.params.userId, viewerId);
+    const snapshots = psychologyService.getUserTraitHistory(String(req.params.userId), viewerId);
     res.json({ success: true, snapshots });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -8071,7 +8037,7 @@ app.post('/api/v1/discovery/interact', (req, res) => {
       connectionType || 'friendship'
     );
 
-    res.json({ success: true, ...result });
+    res.json({ ...result, success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to record interaction' });
   }
@@ -8211,7 +8177,7 @@ app.get('/api/v1/vault/persons', (req, res) => {
 app.get('/api/v1/vault/persons/:id', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
-    const person = RelationshipVaultService.getPerson(userId, req.params.id);
+    const person = RelationshipVaultService.getPerson(userId, String(req.params.id));
     if (!person) {
       return res.status(404).json({ error: 'Person record not found in your relationship vault' });
     }
@@ -8225,7 +8191,7 @@ app.get('/api/v1/vault/persons/:id', (req, res) => {
 app.get('/api/v1/vault/persons/:id/dossier', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
-    const dossier = RelationshipVaultService.getFullDossier(userId, req.params.id);
+    const dossier = RelationshipVaultService.getFullDossier(userId, String(req.params.id));
     if (!dossier) {
       return res.status(404).json({ error: 'Relationship dossier not found' });
     }
@@ -8254,7 +8220,7 @@ app.post('/api/v1/vault/persons', (req, res) => {
 app.put('/api/v1/vault/persons/:id', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
-    const updated = RelationshipVaultService.updatePerson(userId, req.params.id, req.body);
+    const updated = RelationshipVaultService.updatePerson(userId, String(req.params.id), req.body);
     if (!updated) {
       return res.status(404).json({ error: 'Person record not found to update' });
     }
@@ -8268,7 +8234,7 @@ app.put('/api/v1/vault/persons/:id', (req, res) => {
 app.delete('/api/v1/vault/persons/:id', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || req.body?.userId || (req.query.userId as string) || 'usr_me';
-    const deleted = RelationshipVaultService.deletePerson(userId, req.params.id);
+    const deleted = RelationshipVaultService.deletePerson(userId, String(req.params.id));
     if (!deleted) {
       return res.status(404).json({ error: 'Person record not found or already deleted' });
     }
@@ -8282,7 +8248,7 @@ app.delete('/api/v1/vault/persons/:id', (req, res) => {
 app.get('/api/v1/vault/persons/:id/briefing', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
-    const dossier = RelationshipVaultService.getFullDossier(userId, req.params.id);
+    const dossier = RelationshipVaultService.getFullDossier(userId, String(req.params.id));
     if (!dossier) {
       return res.status(404).json({ error: 'Person not found' });
     }
@@ -8296,7 +8262,7 @@ app.get('/api/v1/vault/persons/:id/briefing', (req, res) => {
 app.get('/api/v1/vault/persons/:id/ai-insights', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
-    const insights = RelationshipVaultService.getAiInsights(userId, req.params.id);
+    const insights = RelationshipVaultService.getAiInsights(userId, String(req.params.id));
     if (!insights) {
       return res.status(404).json({ error: 'Person not found to generate insights' });
     }
@@ -8314,7 +8280,7 @@ app.post('/api/v1/vault/persons/:id/interactions', (req, res) => {
       return res.status(400).json({ error: 'interaction_type and notes are required' });
     }
 
-    const interaction = RelationshipVaultService.logInteraction(userId, req.params.id, req.body);
+    const interaction = RelationshipVaultService.logInteraction(userId, String(req.params.id), req.body);
     res.json({ success: true, interaction });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to log interaction' });
@@ -8325,7 +8291,7 @@ app.post('/api/v1/vault/persons/:id/interactions', (req, res) => {
 app.get('/api/v1/vault/persons/:id/interactions', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
-    const interactions = RelationshipVaultService.getInteractions(userId, req.params.id);
+    const interactions = RelationshipVaultService.getInteractions(userId, String(req.params.id));
     res.json({ success: true, interactions });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to get interactions' });
@@ -8340,7 +8306,7 @@ app.post('/api/v1/vault/persons/:id/memories', (req, res) => {
       return res.status(400).json({ error: 'content is required for memory' });
     }
 
-    const memory = RelationshipVaultService.addMemory(userId, req.params.id, {
+    const memory = RelationshipVaultService.addMemory(userId, String(req.params.id), {
       memory_type: req.body.memory_type || 'quote',
       title: req.body.title,
       content: req.body.content,
@@ -8359,7 +8325,7 @@ app.post('/api/v1/vault/persons/:id/memories', (req, res) => {
 app.put('/api/v1/vault/memories/:id', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
-    const updated = RelationshipVaultService.updateMemory(userId, req.params.id, req.body);
+    const updated = RelationshipVaultService.updateMemory(userId, String(req.params.id), req.body);
     if (!updated) {
       return res.status(404).json({ error: 'Memory not found to update' });
     }
@@ -8377,7 +8343,7 @@ app.post('/api/v1/vault/persons/:id/commitments', (req, res) => {
       return res.status(400).json({ error: 'title is required for commitment' });
     }
 
-    const commitment = RelationshipVaultService.addCommitment(userId, req.params.id, {
+    const commitment = RelationshipVaultService.addCommitment(userId, String(req.params.id), {
       made_by: req.body.made_by || 'me',
       title: req.body.title,
       description: req.body.description,
@@ -8394,7 +8360,7 @@ app.post('/api/v1/vault/persons/:id/commitments', (req, res) => {
 app.put('/api/v1/vault/commitments/:id', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
-    const updated = RelationshipVaultService.updateCommitment(userId, req.params.id, req.body);
+    const updated = RelationshipVaultService.updateCommitment(userId, String(req.params.id), req.body);
     if (!updated) {
       return res.status(404).json({ error: 'Commitment not found to update' });
     }
@@ -8412,7 +8378,7 @@ app.post('/api/v1/vault/persons/:id/reminders', (req, res) => {
       return res.status(400).json({ error: 'title and due_date are required for reminder' });
     }
 
-    const reminder = RelationshipVaultService.addReminder(userId, req.params.id, {
+    const reminder = RelationshipVaultService.addReminder(userId, String(req.params.id), {
       title: req.body.title,
       category: req.body.category || 'custom',
       due_date: req.body.due_date,
@@ -8430,7 +8396,7 @@ app.put('/api/v1/vault/reminders/:id', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
     const status = req.body.status || 'completed';
-    const updated = RelationshipVaultService.updateReminder(userId, req.params.id, status);
+    const updated = RelationshipVaultService.updateReminder(userId, String(req.params.id), status);
     if (!updated) {
       return res.status(404).json({ error: 'Reminder not found to update' });
     }
@@ -8445,7 +8411,7 @@ app.get('/api/v1/vault/persons/:id/export', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
     const format = req.query.format === 'markdown' ? 'markdown' : 'json';
-    const dossier = RelationshipVaultService.getFullDossier(userId, req.params.id);
+    const dossier = RelationshipVaultService.getFullDossier(userId, String(req.params.id));
 
     if (!dossier) {
       return res.status(404).json({ error: 'Relationship not found to export' });
@@ -8609,7 +8575,7 @@ app.get('/api/v1/content/items/personalized', (req, res) => {
 app.get('/api/v1/content/items/:id', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
-    const item = ContentEngineService.getContentItem(req.params.id, userId);
+    const item = ContentEngineService.getContentItem(String(req.params.id), userId);
     if (!item) {
       return res.status(404).json({ error: 'Content item not found' });
     }
@@ -8624,7 +8590,7 @@ app.get('/api/v1/content/items/:id', (req, res) => {
 app.post('/api/v1/content/items/:id/favorite', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
-    const result = ContentEngineService.toggleFavorite(userId, req.params.id);
+    const result = ContentEngineService.toggleFavorite(userId, String(req.params.id));
     res.json({ success: true, ...result });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to toggle favorite' });
@@ -8652,7 +8618,7 @@ app.post('/api/v1/content/items/:id/answer', (req, res) => {
     if (!answerText || !answerText.trim()) {
       return res.status(400).json({ error: 'answerText is required' });
     }
-    const answer = ContentEngineService.recordAnswer(userId, req.params.id, answerText, moodState, tags);
+    const answer = ContentEngineService.recordAnswer(userId, String(req.params.id), answerText, moodState, tags);
     res.status(201).json({ success: true, answer });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to record answer' });
@@ -8675,7 +8641,7 @@ app.get('/api/v1/content/answers', (req, res) => {
 app.delete('/api/v1/content/answers/:id', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
-    const deleted = ContentEngineService.deleteAnswer(userId, req.params.id);
+    const deleted = ContentEngineService.deleteAnswer(userId, String(req.params.id));
     if (!deleted) {
       return res.status(404).json({ error: 'Answer not found or not owned by user' });
     }
@@ -8690,7 +8656,7 @@ app.post('/api/v1/content/items/:id/skip', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
     const { reason } = req.body;
-    ContentEngineService.skipItem(userId, req.params.id, reason);
+    ContentEngineService.skipItem(userId, String(req.params.id), reason);
     res.json({ success: true, message: 'Item skipped' });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to skip item' });
@@ -8705,7 +8671,7 @@ app.post('/api/v1/content/items/:id/report', (req, res) => {
     if (!reason) {
       return res.status(400).json({ error: 'reason is required' });
     }
-    const report = ContentEngineService.reportContent(userId, req.params.id, reason, details);
+    const report = ContentEngineService.reportContent(userId, String(req.params.id), reason, details);
     res.status(201).json({ success: true, report });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to report content' });
@@ -8899,7 +8865,7 @@ app.post(['/api/v1/conversations/:id/members', '/api/v1/communication/conversati
     const actorId = (req.headers['x-user-id'] as string) || req.body.actorId || 'usr_me';
     const { userId, role } = req.body;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
-    MessagingService.addMemberToGroup(req.params.id, actorId, userId, role || 'member');
+    MessagingService.addMemberToGroup(String(req.params.id), actorId, userId, role || 'member');
     res.status(201).json({ success: true, message: 'Member added successfully' });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to add member' });
@@ -8909,7 +8875,7 @@ app.post(['/api/v1/conversations/:id/members', '/api/v1/communication/conversati
 app.delete(['/api/v1/conversations/:id/members/:userId', '/api/v1/communication/conversations/:id/members/:userId'], (req, res) => {
   try {
     const actorId = (req.headers['x-user-id'] as string) || (req.query.actorId as string) || 'usr_me';
-    MessagingService.removeMemberFromGroup(req.params.id, actorId, req.params.userId);
+    MessagingService.removeMemberFromGroup(String(req.params.id), actorId, String(req.params.userId));
     res.json({ success: true, message: 'Member removed successfully' });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to remove member' });
@@ -8919,7 +8885,7 @@ app.delete(['/api/v1/conversations/:id/members/:userId', '/api/v1/communication/
 app.patch(['/api/v1/conversations/:id', '/api/v1/communication/conversations/:id'], (req, res) => {
   try {
     const actorId = (req.headers['x-user-id'] as string) || req.body.actorId || 'usr_me';
-    const conv = MessagingService.updateGroupInfo(req.params.id, actorId, req.body);
+    const conv = MessagingService.updateGroupInfo(String(req.params.id), actorId, req.body);
     res.json({ success: true, conversation: conv });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to update conversation' });
@@ -8928,7 +8894,7 @@ app.patch(['/api/v1/conversations/:id', '/api/v1/communication/conversations/:id
 
 app.get(['/api/v1/conversations/:id/members', '/api/v1/communication/conversations/:id/members'], (req, res) => {
   try {
-    const members = MessagingService.getGroupMembers(req.params.id);
+    const members = MessagingService.getGroupMembers(String(req.params.id));
     res.json({ success: true, members });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to get group members' });
@@ -8961,7 +8927,7 @@ app.get('/api/v1/communication/conversations', (req, res) => {
 app.get('/api/v1/communication/conversations/:id', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
-    const conv = MessagingService.getConversationById(req.params.id, userId);
+    const conv = MessagingService.getConversationById(String(req.params.id), userId);
     if (!conv) return res.status(404).json({ error: 'Conversation not found' });
     res.json({ success: true, conversation: conv });
   } catch (err: any) {
@@ -8976,7 +8942,7 @@ app.post('/api/v1/communication/conversations/:id/messages', (req, res) => {
     const { clientMessageId, type, text, mediaUrl, voiceDuration, voiceWaveform, attachments, replyToMessageId, threadId } = req.body;
     if (!clientMessageId) return res.status(400).json({ error: 'clientMessageId is required' });
     const result = MessagingService.sendMessage({
-      conversationId: req.params.id,
+      conversationId: String(req.params.id),
       senderId,
       clientMessageId,
       type,
@@ -8999,7 +8965,7 @@ app.get('/api/v1/communication/conversations/:id/messages', (req, res) => {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
     const beforeSequence = req.query.beforeSequence ? parseInt(req.query.beforeSequence as string) : undefined;
-    const messages = MessagingService.getMessages({ conversationId: req.params.id, userId, limit, beforeSequence });
+    const messages = MessagingService.getMessages({ conversationId: String(req.params.id), userId, limit, beforeSequence });
     res.json({ success: true, messages });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to fetch messages' });
@@ -9010,7 +8976,7 @@ app.get(['/api/v1/conversations/:id/sync', '/api/v1/communication/conversations/
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
     const sinceSequence = parseInt((req.query.sinceSequence as string) || (req.query.since as string) || '0');
-    const messages = MessagingService.syncMessages(req.params.id, sinceSequence, userId);
+    const messages = MessagingService.syncMessages(String(req.params.id), sinceSequence, userId);
     res.json({ success: true, messages, count: messages.length });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to sync messages' });
@@ -9022,7 +8988,7 @@ app.patch('/api/v1/communication/messages/:id', (req, res) => {
     const editorId = (req.headers['x-user-id'] as string) || req.body.editorId || 'usr_me';
     const { text } = req.body;
     if (!text) return res.status(400).json({ error: 'text is required' });
-    const updated = MessagingService.editMessage(req.params.id, editorId, text);
+    const updated = MessagingService.editMessage(String(req.params.id), editorId, text);
     res.json({ success: true, message: updated });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to edit message' });
@@ -9033,7 +8999,7 @@ app.delete('/api/v1/communication/messages/:id', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
     const mode = (req.query.mode as string) === 'for_everyone' ? 'for_everyone' : 'for_me';
-    MessagingService.deleteMessage(req.params.id, userId, mode);
+    MessagingService.deleteMessage(String(req.params.id), userId, mode);
     res.json({ success: true, deleted: true, mode });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to delete message' });
@@ -9045,7 +9011,7 @@ app.post('/api/v1/communication/messages/:id/reactions', (req, res) => {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
     const { emoji } = req.body;
     if (!emoji) return res.status(400).json({ error: 'emoji is required' });
-    const result = MessagingService.toggleReaction(req.params.id, userId, emoji);
+    const result = MessagingService.toggleReaction(String(req.params.id), userId, emoji);
     res.json({ success: true, ...result });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to toggle reaction' });
@@ -9056,7 +9022,7 @@ app.post('/api/v1/communication/conversations/:id/read', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
     const sequenceNumber = req.body.sequenceNumber ? parseInt(req.body.sequenceNumber) : undefined;
-    MessagingService.markAsRead(req.params.id, userId, sequenceNumber);
+    MessagingService.markAsRead(String(req.params.id), userId, sequenceNumber);
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to mark as read' });
@@ -9073,7 +9039,7 @@ app.post(['/api/v1/conversations/:id/poll', '/api/v1/communication/conversations
     if (!options || options.length < 2) return res.status(400).json({ error: 'At least 2 options are required' });
 
     const result = MessagingService.createPollMessage({
-      conversationId: req.params.id,
+      conversationId: String(req.params.id),
       senderId,
       clientMessageId,
       question,
@@ -9093,8 +9059,8 @@ app.post(['/api/v1/messages/:id/poll/vote', '/api/v1/communication/messages/:id/
     const { optionIndex } = req.body;
     if (typeof optionIndex !== 'number') return res.status(400).json({ error: 'optionIndex number is required' });
 
-    const result = MessagingService.votePoll(req.params.id, userId, optionIndex);
-    res.json({ success: true, ...result });
+    const result = MessagingService.votePoll(String(req.params.id), userId, optionIndex);
+    res.json({ ...result, success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to vote on poll' });
   }
@@ -9129,7 +9095,7 @@ app.patch(['/api/v1/calls/:id', '/api/v1/communication/calls/:id'], (req, res) =
   try {
     const { status, durationSeconds } = req.body;
     if (!status) return res.status(400).json({ error: 'status is required' });
-    MessagingService.updateCallStatus(req.params.id, status, durationSeconds);
+    MessagingService.updateCallStatus(String(req.params.id), status, durationSeconds);
     res.json({ success: true, message: 'Call status updated' });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to update call status' });
@@ -9182,7 +9148,7 @@ app.post('/api/v1/communication/games/start', (req, res) => {
 app.post('/api/v1/communication/games/:id/turn', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
-    const session = InteractiveGamesEngine.submitGameTurn(req.params.id, userId, req.body.actionPayload || req.body);
+    const session = InteractiveGamesEngine.submitGameTurn(String(req.params.id), userId, req.body.actionPayload || req.body);
     res.json({ success: true, session });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to process game turn' });
@@ -9234,7 +9200,7 @@ app.post('/api/v1/communication/watch-party', (req, res) => {
 
 app.get('/api/v1/communication/watch-party/:id', (req, res) => {
   try {
-    const party = SocialActivitiesService.getWatchParty(req.params.id);
+    const party = SocialActivitiesService.getWatchParty(String(req.params.id));
     if (!party) return res.status(404).json({ error: 'Watch party not found' });
     res.json({ success: true, watchParty: party });
   } catch (err: any) {
@@ -9247,7 +9213,7 @@ app.post('/api/v1/communication/watch-party/:id/sync', (req, res) => {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
     const { position, isPlaying } = req.body;
     if (typeof position !== 'number') return res.status(400).json({ error: 'Numeric position required' });
-    const party = SocialActivitiesService.syncWatchPartyPlayback(req.params.id, userId, position, Boolean(isPlaying));
+    const party = SocialActivitiesService.syncWatchPartyPlayback(String(req.params.id), userId, position, Boolean(isPlaying));
     res.json({ success: true, watchParty: party });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Sync failed' });
@@ -9278,7 +9244,7 @@ app.post('/api/v1/communication/social-rooms', (req, res) => {
 app.post('/api/v1/communication/social-rooms/:id/join', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
-    SocialActivitiesService.joinRoom(req.params.id, userId);
+    SocialActivitiesService.joinRoom(String(req.params.id), userId);
     res.json({ success: true, joined: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to join room' });
@@ -9288,7 +9254,7 @@ app.post('/api/v1/communication/social-rooms/:id/join', (req, res) => {
 app.post('/api/v1/communication/social-rooms/:id/leave', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
-    SocialActivitiesService.leaveRoom(req.params.id, userId);
+    SocialActivitiesService.leaveRoom(String(req.params.id), userId);
     res.json({ success: true, left: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to leave room' });
@@ -9299,7 +9265,7 @@ app.post('/api/v1/communication/social-rooms/:id/hand-raise', (req, res) => {
   try {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
     const isRaised = Boolean(req.body.isRaised);
-    SocialActivitiesService.toggleHandRaise(req.params.id, userId, isRaised);
+    SocialActivitiesService.toggleHandRaise(String(req.params.id), userId, isRaised);
     res.json({ success: true, isRaised });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to update hand raise' });
@@ -9335,7 +9301,7 @@ app.post('/api/v1/communication/invitations/:id/respond', (req, res) => {
     const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
     const response = req.body.response as 'accepted' | 'declined';
     if (!['accepted', 'declined'].includes(response)) return res.status(400).json({ error: 'Response must be accepted or declined' });
-    const success = SocialActivitiesService.respondInvitation(req.params.id, userId, response);
+    const success = SocialActivitiesService.respondInvitation(String(req.params.id), userId, response);
     res.json({ success });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to respond to invitation' });

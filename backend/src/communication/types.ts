@@ -345,7 +345,12 @@ export interface SocketClientEvent {
     | 'watch_party.sync'
     | 'room.speaker_update'
     | 'room.hand_raise'
-    | 'call.signal';
+    | 'call.signal'
+    | 'call.offer'
+    | 'call.answer'
+    | 'call.ice_candidate'
+    | 'call.hangup'
+    | 'call.reject';
   [key: string]: any;
 }
 

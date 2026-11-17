@@ -47,6 +47,7 @@ export interface ChatMessage {
   clientMessageId: string;
   conversationId: string;
   senderId: string;
+  sequenceNumber?: number;
   senderName: string;
   senderAvatar?: string;
   type: MessageType;

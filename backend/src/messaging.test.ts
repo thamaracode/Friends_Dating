@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import WebSocket from 'ws';
 
 describe('FRIENDS Master Messaging Engine Comprehensive Test Suite', () => {
   const API_URL = 'http://127.0.0.1:3001/api/v1';
@@ -18,6 +19,7 @@ describe('FRIENDS Master Messaging Engine Comprehensive Test Suite', () => {
     expect(data.success).toBe(true);
     expect(Array.isArray(data.conversations)).toBe(true);
     expect(data.conversations.length).toBeGreaterThanOrEqual(1);
+    expect(new Set(data.conversations.map((conversation: any) => conversation.id)).size).toBe(data.conversations.length);
 
     const savedConv = data.conversations.find((c: any) => c.id === 'conv_saved');
     expect(savedConv).toBeDefined();
@@ -52,6 +54,74 @@ describe('FRIENDS Master Messaging Engine Comprehensive Test Suite', () => {
     expect(resDup.status).toBe(200);
     const dupData = await resDup.json();
     expect(dupData.deduplicated).toBe(true);
+  });
+
+  it('rejects conversation history reads from non-members', async () => {
+    const res = await fetch(`${API_URL}/conversations/conv_alex/messages?userId=usr_stranger`);
+    expect(res.status).toBe(403);
+    const data = await res.json();
+    expect(data.code).toBe('NOT_CONVERSATION_MEMBER');
+  });
+
+  it('rejects reuse of a client message id across conversations', async () => {
+    const clientMessageId = `scope_test_${Date.now()}`;
+    const first = await fetch(`${API_URL}/conversations/conv_alex/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientMessageId, senderId: 'usr_me', text: 'Scoped idempotency', type: 'text' })
+    });
+    expect(first.status).toBe(201);
+
+    const duplicate = await fetch(`${API_URL}/conversations/conv_saved/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientMessageId, senderId: 'usr_me', text: 'Must not leak prior message', type: 'text' })
+    });
+    expect(duplicate.status).toBe(409);
+    expect((await duplicate.json()).code).toBe('IDEMPOTENCY_KEY_CONFLICT');
+  });
+
+  it('delivers a persisted message to the other participant over WebSocket', async () => {
+    const clientMessageId = `realtime_test_${Date.now()}`;
+    const socket = new WebSocket('ws://127.0.0.1:3001?userId=usr_alex');
+
+    try {
+      const delivered = new Promise<any>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Timed out waiting for live message')), 5000);
+        socket.on('message', (raw) => {
+          const event = JSON.parse(raw.toString());
+          if (event.type === 'chat.message.created' && event.message?.clientMessageId === clientMessageId) {
+            clearTimeout(timeout);
+            resolve(event);
+          }
+        });
+        socket.once('error', (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        });
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        socket.once('open', resolve);
+        socket.once('error', reject);
+      });
+      const response = await fetch(`${API_URL}/conversations/conv_alex/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientMessageId, senderId: 'usr_me', text: 'Live delivery check', type: 'text' })
+      });
+      expect(response.status).toBe(201);
+
+      const event = await delivered;
+      expect(event.conversationId).toBe('conv_alex');
+      expect(event.message.text).toBe('Live delivery check');
+
+      const history = await fetch(`${API_URL}/conversations/conv_alex/messages?userId=usr_alex`);
+      const historyData = await history.json();
+      expect(historyData.messages.some((message: any) => message.clientMessageId === clientMessageId)).toBe(true);
+    } finally {
+      socket.close();
+    }
   });
 
   it('edits a message with audit history', async () => {

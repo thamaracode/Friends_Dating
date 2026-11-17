@@ -117,7 +117,7 @@ socialRouter.get('/questions/history', (req: Request, res: Response) => {
 socialRouter.get('/questions/:id', (req: Request, res: Response) => {
   try {
     const viewerId = getViewerId(req);
-    const question = QuestionsService.getQuestionById(req.params.id, viewerId);
+    const question = QuestionsService.getQuestionById(String(req.params.id), viewerId);
     if (!question) {
       return res.status(404).json({ success: false, error: 'Question not found' });
     }
@@ -176,7 +176,7 @@ socialRouter.post('/questions/:id/answers', (req: Request, res: Response) => {
     }
 
     const answer = QuestionsService.answerQuestion({
-      question_id: req.params.id,
+      question_id: String(req.params.id),
       user_id: viewerId,
       answer_text,
       answer_type,
@@ -191,13 +191,13 @@ socialRouter.post('/questions/:id/answers', (req: Request, res: Response) => {
     // Optionally publish as social post
     let publishedPost = null;
     if (publish_as_post && visibility !== 'private') {
-      const q = QuestionsService.getQuestionById(req.params.id);
+      const q = QuestionsService.getQuestionById(String(req.params.id));
       publishedPost = PostsService.createPost({
         user_id: viewerId,
         post_type: 'shared_answer',
         title: q ? `Reflection: ${q.question_text}` : undefined,
         content: answer_text,
-        question_id: req.params.id,
+        question_id: String(req.params.id),
         visibility: visibility || 'public',
         media_urls
       });
@@ -219,7 +219,7 @@ socialRouter.get('/questions/:id/answers', (req: Request, res: Response) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
     const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
 
-    const answers = QuestionsService.getQuestionAnswers(req.params.id, viewerId, limit, offset);
+    const answers = QuestionsService.getQuestionAnswers(String(req.params.id), viewerId, limit, offset);
     res.json({ success: true, answers });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -232,7 +232,7 @@ socialRouter.get('/questions/:id/answers', (req: Request, res: Response) => {
 socialRouter.delete('/answers/:id', (req: Request, res: Response) => {
   try {
     const viewerId = getViewerId(req);
-    const success = QuestionsService.deleteAnswer(req.params.id, viewerId);
+    const success = QuestionsService.deleteAnswer(String(req.params.id), viewerId);
     res.json({ success });
   } catch (err: any) {
     res.status(400).json({ success: false, error: err.message });
@@ -245,7 +245,7 @@ socialRouter.delete('/answers/:id', (req: Request, res: Response) => {
 socialRouter.post('/questions/:id/skip', (req: Request, res: Response) => {
   try {
     const viewerId = getViewerId(req);
-    QuestionsService.skipQuestion(req.params.id, viewerId);
+    QuestionsService.skipQuestion(String(req.params.id), viewerId);
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ success: false, error: err.message });
@@ -337,7 +337,7 @@ socialRouter.get('/posts', (req: Request, res: Response) => {
 socialRouter.get('/posts/:id', (req: Request, res: Response) => {
   try {
     const viewerId = getViewerId(req);
-    const post = PostsService.getPostById(req.params.id, viewerId);
+    const post = PostsService.getPostById(String(req.params.id), viewerId);
     if (!post) {
       return res.status(404).json({ success: false, error: 'Post not found or access denied' });
     }
@@ -357,7 +357,7 @@ socialRouter.patch('/posts/:id', (req: Request, res: Response) => {
     const { content, title, media_urls } = req.body;
 
     const updated = PostsService.editPost({
-      post_id: req.params.id,
+      post_id: String(req.params.id),
       user_id: viewerId,
       content,
       title,
@@ -378,7 +378,7 @@ socialRouter.delete('/posts/:id', (req: Request, res: Response) => {
   try {
     const viewerId = getViewerId(req);
     const isAdmin = Boolean(req.headers['x-admin-id']);
-    const success = PostsService.deletePost(req.params.id, viewerId, isAdmin);
+    const success = PostsService.deletePost(String(req.params.id), viewerId, isAdmin);
     res.json({ success });
   } catch (err: any) {
     res.status(400).json({ success: false, error: err.message });
@@ -391,7 +391,7 @@ socialRouter.delete('/posts/:id', (req: Request, res: Response) => {
  */
 socialRouter.get('/posts/:id/edits', (req: Request, res: Response) => {
   try {
-    const rows = db.prepare('SELECT * FROM social_post_edits WHERE post_id = ? ORDER BY edited_at DESC').all(req.params.id);
+    const rows = db.prepare('SELECT * FROM social_post_edits WHERE post_id = ? ORDER BY edited_at DESC').all(String(req.params.id));
     res.json({ success: true, edits: rows });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -458,7 +458,7 @@ socialRouter.delete('/comments/:id', (req: Request, res: Response) => {
   try {
     const viewerId = getViewerId(req);
     const isAdmin = Boolean(req.headers['x-admin-id']);
-    const success = PostsService.deleteComment(req.params.id, viewerId, isAdmin);
+    const success = PostsService.deleteComment(String(req.params.id), viewerId, isAdmin);
     res.json({ success });
   } catch (err: any) {
     res.status(400).json({ success: false, error: err.message });
@@ -615,7 +615,7 @@ socialRouter.get('/drafts', (req: Request, res: Response) => {
 socialRouter.delete('/drafts/:id', (req: Request, res: Response) => {
   try {
     const viewerId = getViewerId(req);
-    const success = PostsService.deleteDraft(req.params.id, viewerId);
+    const success = PostsService.deleteDraft(String(req.params.id), viewerId);
     res.json({ success });
   } catch (err: any) {
     res.status(400).json({ success: false, error: err.message });
@@ -715,11 +715,11 @@ socialRouter.patch('/admin/moderation-queue/:id', (req: Request, res: Response) 
       UPDATE content_moderation_reports
       SET status = ?, reviewed_by_admin_id = ?, admin_notes = ?, resolved_at = ?
       WHERE id = ?
-    `).run(status || 'resolved_action_taken', adminId, admin_notes || null, Date.now(), req.params.id);
+    `).run(status || 'resolved_action_taken', adminId, admin_notes || null, Date.now(), String(req.params.id));
 
     // If action_taken is delete, handle target deletion
     if (action_taken === 'delete_post') {
-      const rep = db.prepare('SELECT target_id FROM content_moderation_reports WHERE id = ?').get(req.params.id) as any;
+      const rep = db.prepare('SELECT target_id FROM content_moderation_reports WHERE id = ?').get(String(req.params.id)) as any;
       if (rep) {
         db.prepare('UPDATE social_posts SET is_deleted = 1 WHERE id = ?').run(rep.target_id);
       }

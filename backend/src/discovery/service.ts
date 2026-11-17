@@ -1297,7 +1297,7 @@ export class SocialDiscoveryService {
           living_space: 'minimalist'
         },
         communication: {
-          cadence: 'direct',
+          cadence: 'frequent_daily',
           style: 'direct',
           listening_style: 'action_oriented',
           conflict_approach: 'collaborative_walk'
@@ -1599,7 +1599,7 @@ export class SocialDiscoveryService {
         interests: ['Trail Running', 'Wildlife Conservation', 'Outdoor Navigation', 'Indie Rock'],
         activities: ['Mountain Climbing', 'Wilderness Camping', 'Star Mapping'],
         lifestyle: { sleep_schedule: 'early_bird', social_energy: 'extrovert', pets: 'dog_lover', living_space: 'nomadic' },
-        communication: { cadence: 'direct', style: 'direct', listening_style: 'action_oriented', conflict_approach: 'collaborative_walk' },
+        communication: { cadence: 'frequent_daily', style: 'direct', listening_style: 'action_oriented', conflict_approach: 'collaborative_walk' },
         photos: [
           'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800'
         ],
@@ -1899,7 +1899,7 @@ export class SocialDiscoveryService {
         interests: ['Geology', 'Mineralogy', 'Kayaking', 'Rock Climbing'],
         activities: ['River Kayaking', 'Field Sampling', 'Campfire Discussions'],
         lifestyle: { sleep_schedule: 'early_bird', social_energy: 'extrovert', pets: 'dog_lover', living_space: 'minimalist' },
-        communication: { cadence: 'direct', style: 'direct', listening_style: 'action_oriented', conflict_approach: 'collaborative_walk' },
+        communication: { cadence: 'frequent_daily', style: 'direct', listening_style: 'action_oriented', conflict_approach: 'collaborative_walk' },
         photos: [
           'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800'
         ],

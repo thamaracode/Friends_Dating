@@ -4,6 +4,7 @@ import { webrtcCallService } from './webrtcCallService';
 
 export class ChatApiClient {
   private ws: WebSocket | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private currentUserId: string = 'usr_me';
   private eventListeners: Map<string, Set<(data: any) => void>> = new Map();
   private isDrainingOutbox: boolean = false;
@@ -23,23 +24,29 @@ export class ChatApiClient {
   }
 
   public setUserId(userId: string) {
+    if (userId === this.currentUserId) return;
     this.currentUserId = userId;
-    if (this.ws) {
-      this.ws.close();
-      this.initWebSocket();
-    }
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
+    const previousSocket = this.ws;
+    this.ws = null;
+    previousSocket?.close();
+    this.initWebSocket();
   }
 
   private initWebSocket() {
     try {
-      this.ws = new WebSocket(`${WS_BASE}?userId=${this.currentUserId}`);
+      const socket = new WebSocket(`${WS_BASE}?userId=${encodeURIComponent(this.currentUserId)}`);
+      this.ws = socket;
 
-      this.ws.onopen = () => {
+      socket.onopen = () => {
+        if (this.ws !== socket) return;
         this.triggerEvent('ws.open', { userId: this.currentUserId });
         this.drainOutbox();
       };
 
-      this.ws.onmessage = (event) => {
+      socket.onmessage = (event) => {
+        if (this.ws !== socket) return;
         try {
           const payload = JSON.parse(event.data);
 
@@ -70,12 +77,16 @@ export class ChatApiClient {
         }
       };
 
-      this.ws.onclose = () => {
+      socket.onclose = () => {
+        if (this.ws !== socket) return;
         this.triggerEvent('ws.close', { userId: this.currentUserId });
-        setTimeout(() => this.initWebSocket(), 3000);
+        this.reconnectTimer = setTimeout(() => {
+          this.reconnectTimer = null;
+          if (this.ws === socket) this.initWebSocket();
+        }, 3000);
       };
 
-      this.ws.onerror = (err) => {
+      socket.onerror = (err) => {
         console.warn('Chat WS error', err);
       };
     } catch (e) {
