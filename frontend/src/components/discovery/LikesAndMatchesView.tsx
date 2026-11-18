@@ -54,11 +54,9 @@ export const LikesAndMatchesView: React.FC<LikesAndMatchesViewProps> = ({
   });
 
   // Mutual Matches list
-  const [mutualMatches, setMutualMatches] = useState<UserProfile[]>([
-    MOCK_PROFILES[0],
-    MOCK_PROFILES[2],
-    MOCK_PROFILES[3]
-  ]);
+  const [mutualMatches, setMutualMatches] = useState<UserProfile[]>(() => {
+    return MOCK_PROFILES.filter(Boolean).slice(0, 2);
+  });
 
   // Match celebration state
   const [newMatchCelebration, setNewMatchCelebration] = useState<UserProfile | null>(null);
@@ -149,7 +147,7 @@ export const LikesAndMatchesView: React.FC<LikesAndMatchesViewProps> = ({
           </div>
 
           <div className="flex items-center gap-4 overflow-x-auto no-scrollbar py-2">
-            {mutualMatches.map((match) => (
+            {mutualMatches.filter(Boolean).map((match) => (
               <div 
                 key={match.id}
                 onClick={() => onInitiateChat(match)}
@@ -157,7 +155,7 @@ export const LikesAndMatchesView: React.FC<LikesAndMatchesViewProps> = ({
               >
                 <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-white/20 group-hover:border-rose-400 group-hover:scale-105 transition-all shadow-lg bg-[#141720]">
                   <img 
-                    src={match.avatar} 
+                    src={match.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'} 
                     alt={match.name} 
                     className="w-full h-full object-cover" 
                   />
@@ -203,7 +201,7 @@ export const LikesAndMatchesView: React.FC<LikesAndMatchesViewProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredLikes.map((profile) => (
+              {filteredLikes.filter(Boolean).map((profile) => (
                 <div
                   key={profile.id}
                   className="group relative rounded-3xl overflow-hidden bg-[#12141D] border border-white/[0.10] hover:border-white/[0.22] transition-all duration-300 shadow-xl flex flex-col"
@@ -214,7 +212,7 @@ export const LikesAndMatchesView: React.FC<LikesAndMatchesViewProps> = ({
                     className="relative w-full aspect-[4/5] overflow-hidden cursor-pointer bg-[#0A0B0F]"
                   >
                     <img 
-                      src={profile.avatar} 
+                      src={profile.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'} 
                       alt={profile.name}
                       className="w-full h-full object-cover object-center group-hover:scale-103 transition-transform duration-500" 
                     />
@@ -313,10 +311,10 @@ export const LikesAndMatchesView: React.FC<LikesAndMatchesViewProps> = ({
             {/* Side-by-Side Avatars */}
             <div className="flex items-center justify-center -space-x-4 py-2">
               <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-xl bg-[#0A0B0F]">
-                <img src={CURRENT_USER.avatar} alt="You" className="w-full h-full object-cover" />
+                <img src={CURRENT_USER?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'} alt="You" className="w-full h-full object-cover" />
               </div>
               <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-rose-400 shadow-xl bg-[#0A0B0F]">
-                <img src={newMatchCelebration.avatar} alt={newMatchCelebration.name} className="w-full h-full object-cover" />
+                <img src={newMatchCelebration.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'} alt={newMatchCelebration.name} className="w-full h-full object-cover" />
               </div>
             </div>
 
