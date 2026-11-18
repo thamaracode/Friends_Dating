@@ -486,7 +486,7 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
       <div className="relative w-full max-w-sm sm:max-w-md flex flex-col items-center shrink-0">
         
         {/* ── TINDER CARD STACK CONTAINER ────────────────────────── */}
-        <div className="relative w-full h-[calc(100dvh-290px)] min-h-[380px] max-h-[500px] sm:max-h-[540px] lg:h-[580px] lg:max-h-[600px]">
+        <div className="relative w-full h-[calc(100dvh-230px)] min-h-[460px] max-h-[620px] sm:h-[580px] lg:h-[620px] lg:max-h-[640px]">
         
         {/* Next Card in Stack (Sits underneath at scale(0.95), smoothly enters) */}
         {nextProfile && (
@@ -650,53 +650,53 @@ export const TinderSwipeDeck: React.FC<TinderSwipeDeckProps> = ({
 
       </div>
 
-      {/* ── TINDER FLOATING ACTION BUTTONS BAR ───────────────────── */}
-      <div className="flex items-center justify-center gap-3 sm:gap-4.5 pt-3 pb-1 z-30">
+      {/* ── TINDER MINIMALIST ACTION BUTTONS BAR ───────────────────── */}
+      <div className="flex items-center justify-center gap-3 sm:gap-4 pt-3 pb-1 z-30">
         
         {/* Rewind / Undo Button (Z or Backspace) */}
         <button
           onClick={handleRewind}
           disabled={history.length === 0}
-          className="w-11 h-11 rounded-full glin-glass-liquid border border-amber-400/30 text-amber-300 hover:border-amber-400 hover:bg-amber-400/10 flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none active:scale-90 shadow-lg"
-          title="Rewind / Undo Last Swipe (Key: Z)"
+          className="w-11 h-11 rounded-full bg-white/[0.05] hover:bg-white/[0.12] border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center transition-all cursor-pointer disabled:opacity-25 disabled:pointer-events-none active:scale-95 shadow-md"
+          title="Rewind / Undo Last Swipe"
         >
           <RotateCcw className="w-4 h-4" />
         </button>
 
-        {/* Pass / Nope Button (Red ❌, Key: ArrowLeft) */}
+        {/* Pass / Nope Button (X) */}
         <button
           onClick={() => triggerSwipe('left')}
-          className="w-14 h-14 rounded-full glin-glass-liquid border border-rose-500/40 text-rose-400 hover:text-rose-300 hover:border-rose-400 hover:bg-rose-950/30 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-[0_8px_24px_rgba(244,63,94,0.25)] hover:shadow-[0_8px_30px_rgba(244,63,94,0.4)]"
-          title="Pass / Nope (Key: ←)"
+          className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-white/[0.06] hover:bg-rose-500/15 border border-white/[0.10] hover:border-rose-500/30 text-zinc-300 hover:text-rose-400 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-lg"
+          title="Pass"
         >
-          <X className="w-6 h-6 stroke-[3]" />
+          <X className="w-6 h-6 stroke-[2.5]" />
         </button>
 
-        {/* Super Like Button (Cyan ⭐, Key: ArrowUp) */}
+        {/* Super Like Button (Star) */}
         <button
           onClick={() => triggerSwipe('up')}
-          className="w-12 h-12 rounded-full glin-glass-liquid border border-cyan-400/40 text-cyan-300 hover:text-cyan-200 hover:border-cyan-300 hover:bg-cyan-950/30 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-[0_8px_20px_rgba(6,182,212,0.25)]"
-          title="Super Like (Key: ↑)"
+          className="w-11 h-11 rounded-full bg-white/[0.05] hover:bg-amber-500/15 border border-white/[0.08] hover:border-amber-400/30 text-zinc-400 hover:text-amber-300 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-md"
+          title="Super Like"
         >
-          <Star className="w-5 h-5 fill-cyan-400/40 text-cyan-300" />
+          <Star className="w-4 h-4 fill-amber-400/30 text-amber-300" />
         </button>
 
-        {/* Like / Heart Button (Large Green 💚, Key: ArrowRight) */}
+        {/* Like / Heart Button */}
         <button
           onClick={() => triggerSwipe('right')}
-          className="w-16 h-16 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-500 to-emerald-400 text-zinc-950 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-[0_0_28px_rgba(16,185,129,0.55)] hover:shadow-[0_0_36px_rgba(16,185,129,0.7)] hover:scale-105"
-          title="Like / Heart (Key: →)"
+          className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-rose-500 to-[#D94668] hover:opacity-95 text-white flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-lg shadow-rose-500/25"
+          title="Like"
         >
-          <Heart className="w-8 h-8 fill-zinc-950 text-zinc-950 stroke-[2.5]" />
+          <Heart className="w-6 h-6 fill-white" />
         </button>
 
-        {/* Direct Instant Message Button (Purple 💬) */}
+        {/* Full Dossier Inspector (Info) */}
         <button
-          onClick={() => onInitiateChat(activeProfile)}
-          className="w-11 h-11 rounded-full glin-glass-liquid border border-purple-400/40 text-purple-300 hover:text-purple-200 hover:border-purple-400 hover:bg-purple-950/30 flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-lg"
-          title="Direct Message"
+          onClick={() => onOpenProfileDetail(activeProfile)}
+          className="w-11 h-11 rounded-full bg-white/[0.05] hover:bg-white/[0.12] border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-md"
+          title="View Full Profile Dossier"
         >
-          <MessageCircle className="w-4 h-4" />
+          <Info className="w-4 h-4" />
         </button>
 
       </div>

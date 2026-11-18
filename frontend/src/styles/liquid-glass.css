@@ -1,276 +1,231 @@
 /**
- * LIQUID GLASS DESIGN SYSTEM (Inspired by visionOS & Premium Liquid Obsidian Interfaces)
- * Master Design System Tokens & Glass Material Classes
+ * SOULVERSE DESIGN SYSTEM — EDITORIAL LUXURY & NEO-NATIVE MINIMALISM
+ * A mature, refined, human-centric design language.
+ * Eliminates generic AI aesthetics, random glowing borders, and loud magenta gradients.
  */
 
 :root {
-  /* ── 1. Color Palette: Deep Obsidian Void & Ambient Aurora ── */
-  --obsidian-base: #07080D;
-  --obsidian-surface: #0E1017;
-  --obsidian-elevated: #151824;
-  --obsidian-card: #12141D;
+  /* ── 1. Color Palette: Deep Charcoal & Soft Neutral Surfaces ── */
+  --charcoal-950: #0A0B0F;
+  --charcoal-900: #0F1117;
+  --charcoal-850: #141720;
+  --charcoal-800: #1A1D28;
+  --charcoal-700: #242838;
+  --charcoal-600: #33384D;
 
-  /* Ambient Aurora Lights (Plum, Magenta, Violet, Ice Blue) */
-  --aurora-plum: rgba(217, 70, 239, 0.16);
-  --aurora-magenta: rgba(244, 63, 94, 0.14);
-  --aurora-violet: rgba(168, 85, 247, 0.18);
-  --aurora-ice: rgba(56, 189, 248, 0.12);
-  --aurora-amber: rgba(245, 158, 11, 0.12);
+  /* Refined Accent: Muted Rose & Burgundy */
+  --accent-rose: #D94668;
+  --accent-rose-hover: #E25D7D;
+  --accent-burgundy: #9E2A4B;
+  --accent-rose-subtle: rgba(217, 70, 104, 0.12);
+  --accent-rose-border: rgba(217, 70, 104, 0.28);
+  --accent-rose-glow: 0 4px 20px -2px rgba(217, 70, 104, 0.25);
 
-  /* Specular Light Refraction Edges */
-  --specular-top-light: rgba(255, 255, 255, 0.35);
-  --specular-top-bright: rgba(255, 255, 255, 0.55);
-  --specular-rim: inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
-  --specular-rim-subtle: inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.14);
-  --specular-rim-glow: inset 0 1px 2px 0 rgba(255, 255, 255, 0.45);
+  /* Warm Off-White & Neutral Text Hierarchy */
+  --text-primary: #F8F8F6;
+  --text-secondary: #D1D5DB;
+  --text-tertiary: #9CA3AF;
+  --text-quaternary: #6B7280;
 
-  /* Refraction Ring Gradients */
-  --ring-crystal: linear-gradient(135deg, rgba(236, 72, 153, 0.7), rgba(168, 85, 247, 0.4) 50%, rgba(255, 255, 255, 0.3));
-  --ring-liquid: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0.12) 100%);
+  /* Ambient Lighting: Restrained, Subtle, Non-Intrusive */
+  --ambient-subtle: rgba(255, 255, 255, 0.03);
+  --ambient-warm: rgba(248, 248, 246, 0.04);
+  --ambient-rose-hint: rgba(217, 70, 104, 0.05);
+
+  /* Physically Realistic Specular Edges */
+  --specular-rim: inset 0 1px 1px 0 rgba(255, 255, 255, 0.12);
+  --specular-rim-subtle: inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.08);
+
+  /* Clean Borders */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-medium: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.20);
 }
 
 /* ========================================================================= */
-/* 2. THE 5 CORE GLASS MATERIALS                                             */
+/* 2. REFINED EDITORIAL SURFACES                                             */
 /* ========================================================================= */
 
 /**
- * 1. PRIMARY GLASS: Main floating surfaces & cards
- * Optimal for: Content cards, main floating panels, modal bodies
+ * 1. PRIMARY SURFACE: Main floating panels, content stages, and modal sheets
  */
 .glass-primary {
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 60%),
-              rgba(14, 16, 24, 0.72);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-top-color: var(--specular-top-light);
-  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.65), var(--specular-rim);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(18, 20, 28, 0.78);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.65), var(--specular-rim-subtle);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .glass-primary-interactive {
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 60%),
-              rgba(14, 16, 24, 0.72);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-top-color: var(--specular-top-light);
-  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.65), var(--specular-rim);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(18, 20, 28, 0.78);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.65), var(--specular-rim-subtle);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
 .glass-primary-interactive:hover {
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 60%),
-              rgba(20, 23, 34, 0.82);
-  border-color: rgba(255, 255, 255, 0.22);
-  border-top-color: var(--specular-top-bright);
+  background: rgba(24, 27, 38, 0.86);
+  border-color: var(--border-strong);
   transform: translateY(-2px);
-  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.8), var(--specular-rim-glow), 0 0 24px -4px rgba(217, 70, 239, 0.18);
+  box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.75), var(--specular-rim);
 }
 
 .glass-primary-interactive:active {
-  transform: scale(0.985);
+  transform: scale(0.99);
 }
 
 /**
- * 2. SECONDARY GLASS: Supporting panels & nested elements
- * Optimal for: Nested lists, sidebars, secondary controls, input wrappers
+ * 2. SECONDARY SURFACE: Supporting cards, sidebar lists, and input containers
  */
 .glass-secondary {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-top-color: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4), var(--specular-rim-subtle);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: all 0.18s ease;
 }
 
 .glass-secondary-interactive:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.18);
-  border-top-color: rgba(255, 255, 255, 0.30);
-  box-shadow: 0 8px 24px -2px rgba(0, 0, 0, 0.5), var(--specular-rim);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-medium);
 }
 
 /**
- * 3. DEEP GLASS: Modals, overlays, drawers & floating dock
- * Optimal for: Action sheets, full-screen dialogs, bottom floating dock
+ * 3. DEEP SURFACE: Overlays, modals, and bottom navigation
  */
 .glass-deep {
-  background: linear-gradient(170deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 50%),
-              rgba(10, 12, 18, 0.88);
-  backdrop-filter: blur(40px) saturate(210%);
-  -webkit-backdrop-filter: blur(40px) saturate(210%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-top-color: var(--specular-top-bright);
-  box-shadow: 0 32px 80px -12px rgba(0, 0, 0, 0.95), var(--specular-rim-glow);
+  background: rgba(12, 14, 20, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.85);
 }
 
 /**
- * 4. CRYSTAL GLASS: Luminous interactive & active pill highlights
- * Optimal for: Active segment tabs, primary buttons, match indicators
+ * 4. CRYSTAL INTERACTIVE: Primary buttons and highlight chips
  */
 .glass-crystal {
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.38) 0%, rgba(168, 85, 247, 0.28) 50%, rgba(99, 102, 241, 0.18) 100%);
-  backdrop-filter: blur(20px) saturate(220%);
-  -webkit-backdrop-filter: blur(20px) saturate(220%);
-  border: 1px solid rgba(255, 255, 255, 0.30);
-  border-top-color: #FFFFFF;
-  box-shadow: 0 8px 30px -4px rgba(236, 72, 153, 0.35), var(--specular-rim-glow);
+  background: linear-gradient(135deg, var(--accent-rose) 0%, var(--accent-burgundy) 100%);
   color: #FFFFFF;
-}
-
-/**
- * 5. AMBIENT GLASS: Atmospheric background panels & pill tags
- * Optimal for: Counter chips, inactive pills, subtle badge overlays
- */
-.glass-ambient {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-top-color: rgba(255, 255, 255, 0.22);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-/* ========================================================================= */
-/* 3. SIGNATURE LIQUID COMPONENTS (From Creative Direction Mockup)           */
-/* ========================================================================= */
-
-/**
- * LIQUID FLOATING DOCK (The centerpiece floating navigation pill)
- */
-.liquid-dock {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(0, 0, 0, 0.2) 100%),
-              rgba(14, 16, 25, 0.82);
-  backdrop-filter: blur(36px) saturate(220%);
-  -webkit-backdrop-filter: blur(36px) saturate(220%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-top-color: var(--specular-top-bright);
-  border-radius: 9999px;
-  box-shadow: 0 20px 50px -4px rgba(0, 0, 0, 0.9), 
-              0 0 30px -2px rgba(217, 70, 239, 0.12),
-              var(--specular-rim-glow);
-}
-
-/**
- * LIQUID SEARCH BAR (Translucent pill search bar with specular rim)
- */
-.liquid-search-bar {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-top-color: rgba(255, 255, 255, 0.25);
-  border-radius: 9999px;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 16px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  box-shadow: var(--accent-rose-glow), inset 0 1px 1px rgba(255, 255, 255, 0.30);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.liquid-search-bar:focus-within {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(236, 72, 153, 0.5);
-  border-top-color: rgba(255, 255, 255, 0.5);
-  box-shadow: 0 0 24px -2px rgba(236, 72, 153, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.25);
+.glass-crystal:hover {
+  background: linear-gradient(135deg, var(--accent-rose-hover) 0%, #A83252 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px -2px rgba(217, 70, 104, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.40);
+}
+
+.glass-crystal:active {
+  transform: scale(0.97);
+}
+
+/* ========================================================================= */
+/* 3. NEO-NATIVE NAVIGATION & SEARCH COMPONENTS                              */
+/* ========================================================================= */
+
+/**
+ * Neo-Native Bottom Bar (Clean, mature, anchored)
+ */
+.neo-bottom-nav {
+  background: rgba(12, 14, 20, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-subtle);
 }
 
 /**
- * LIQUID PILL SWITCHER BUTTONS
+ * Editorial Search Bar (Minimalist, restrained)
  */
-.liquid-pill-active {
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.40) 0%, rgba(168, 85, 247, 0.32) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-top-color: #FFFFFF;
-  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.30), inset 0 1px 1px rgba(255, 255, 255, 0.45);
-  color: #FFFFFF;
-  font-weight: 700;
-}
-
-.liquid-pill-inactive {
-  background: rgba(255, 255, 255, 0.05);
+.liquid-search-bar {
+  background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-top-color: rgba(255, 255, 255, 0.18);
-  color: #9CA3AF;
-  font-weight: 500;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.875rem; /* 14px */
   transition: all 0.2s ease;
 }
 
-.liquid-pill-inactive:hover {
-  background: rgba(255, 255, 255, 0.09);
-  color: #FFFFFF;
-  border-color: rgba(255, 255, 255, 0.16);
+.liquid-search-bar:focus-within {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--accent-rose-border);
+  box-shadow: 0 0 0 1px var(--accent-rose-border);
 }
 
 /**
- * LIQUID CARD (Screen 1 & 2 aesthetic from image)
+ * Category & Intent Pill Switchers
+ */
+.liquid-pill-active {
+  background: var(--text-primary);
+  color: #0C0D12;
+  border: 1px solid #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.liquid-pill-inactive {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+  font-weight: 500;
+  transition: all 0.18s ease;
+}
+
+.liquid-pill-inactive:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+/**
+ * Editorial Content Card
  */
 .liquid-card {
   position: relative;
-  border-radius: 1.5rem; /* 24px */
+  border-radius: 1.25rem; /* 20px */
   overflow: hidden;
-  background: rgba(14, 16, 24, 0.70);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-top-color: var(--specular-top-light);
-  box-shadow: 0 14px 36px -6px rgba(0, 0, 0, 0.65), var(--specular-rim);
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease;
+  background: rgba(16, 18, 26, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.55);
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 
 .liquid-card:hover {
-  transform: translateY(-3px) scale(1.01);
-  border-color: rgba(255, 255, 255, 0.25);
-  border-top-color: var(--specular-top-bright);
-  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.8), 
-              0 0 30px -4px rgba(217, 70, 239, 0.22),
-              var(--specular-rim-glow);
+  transform: translateY(-2px);
+  border-color: var(--border-medium);
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.65);
 }
 
 /**
- * LIQUID AVATAR RING (Instagram / Story aura ring)
+ * Natural Profile Photo Card Styling
  */
-.liquid-avatar-ring {
-  padding: 2.5px;
-  background: linear-gradient(135deg, #EC4899 0%, #A855F7 50%, #6366F1 100%);
-  border-radius: 9999px;
-  box-shadow: 0 0 16px -2px rgba(236, 72, 153, 0.4);
-  transition: all 0.25s ease;
+.editorial-profile-photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  object-position: center 20%;
+  border-radius: 1.5rem;
 }
 
-.liquid-avatar-ring:hover {
-  transform: scale(1.06);
-  box-shadow: 0 0 24px 0 rgba(236, 72, 153, 0.6);
-}
-
-/**
- * LIQUID CENTER PLUS BUTTON
- */
-.liquid-btn-create {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 9999px;
-  background: linear-gradient(135deg, #EC4899 0%, #A855F7 100%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: 0 0 28px rgba(236, 72, 153, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #FFFFFF;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.liquid-btn-create:hover {
-  transform: scale(1.08) rotate(90deg);
-  box-shadow: 0 0 36px rgba(236, 72, 153, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.8);
-}
-
-.liquid-btn-create:active {
-  transform: scale(0.92);
+/* ========================================================================= */
+/* 4. REDUCED MOTION SUPPORT                                                */
+/* ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

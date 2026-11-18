@@ -1340,8 +1340,8 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                       <div
                         className={`relative max-w-[82%] p-3 sm:p-3.5 text-sm space-y-1 shadow-sm ${cornerClass} ${
                           msg.isOutgoing
-                            ? 'bg-[#d6ad60] text-[#17120a] font-medium'
-                            : 'bg-[#202228] border border-white/[0.04] text-zinc-100'
+                            ? 'bg-gradient-to-br from-[#D94668] to-[#B33959] text-white font-normal shadow-[0_2px_12px_rgba(217,70,104,0.2)]'
+                            : 'bg-[#181A22] border border-white/[0.06] text-[#F8F8F6]'
                         }`}
                       >
                       {/* Media Image Attachment with Lightbox Viewer */}

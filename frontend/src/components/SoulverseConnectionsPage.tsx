@@ -1,5 +1,5 @@
 import React from 'react';
-import { RelationshipVaultDashboard } from './vault/RelationshipVaultDashboard';
+import { LikesAndMatchesView } from './discovery/LikesAndMatchesView';
 import type { UserProfile } from '../types';
 
 interface SoulverseConnectionsPageProps {
@@ -8,14 +8,16 @@ interface SoulverseConnectionsPageProps {
 }
 
 /**
- * Soulverse Connections Page: Master Personal Relationship Management (PRM) Vault
- * Houses all connections, private memory notes, prospective reminders, promises, and relational AI.
+ * Soulverse Likes & Matches Page:
+ * Primary destination for people who liked the user, mutual matches, and instant conversation starters.
  */
 export const SoulverseConnectionsPage: React.FC<SoulverseConnectionsPageProps> = ({
-  onInitiateChat
+  onOpenProfile = () => {},
+  onInitiateChat = () => {}
 }) => {
   return (
-    <RelationshipVaultDashboard
+    <LikesAndMatchesView
+      onOpenProfile={onOpenProfile}
       onInitiateChat={onInitiateChat}
     />
   );

@@ -9,7 +9,6 @@ import {
   ChevronRight, 
   ArrowLeft, 
   Heart, 
-  Sparkles as _Sparkles, 
   Flame, 
   Clock, 
   Share2, 

@@ -138,7 +138,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
   const [isControlCenterOpen, setIsControlCenterOpen] = useState(false);
   const [isMobileChatActive, setIsMobileChatActive] = useState(false);
   const [brandLogoVariant, setBrandLogoVariant] = useState<HeartLogoVariant>(() => {
-    return (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'official_neon';
+    return (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'open_heart';
   });
   const [isHeartLogoModalOpen, setIsHeartLogoModalOpen] = useState(false);
   const [isGlinShowcaseOpen, setIsGlinShowcaseOpen] = useState(false);
@@ -166,11 +166,12 @@ export const SoulverseWebsiteShell: React.FC = () => {
     });
   }, []);
 
-  // Map route to 5 primary mobile destinations
+  // Map route to 5 primary neo-native mobile destinations
   const getActiveMobileTab = (): MobilePrimaryTab => {
-    if (currentRoute === 'discover' || currentRoute === 'daily' || currentRoute === 'home' || currentRoute === 'quotes' || currentRoute === 'personality') return 'discover';
-    if (currentRoute === 'connect' || currentRoute === 'worlds' || currentRoute === 'connections') return 'connect';
-    if (currentRoute === 'messages' || currentRoute === 'inbox') return 'inbox';
+    if (currentRoute === 'discover' || currentRoute === 'daily' || currentRoute === 'home') return 'discover';
+    if (currentRoute === 'likes' || currentRoute === 'connections') return 'likes';
+    if (currentRoute === 'messages' || currentRoute === 'inbox') return 'messages';
+    if (currentRoute === 'explore' || currentRoute === 'connect' || currentRoute === 'worlds') return 'explore';
     if (currentRoute === 'profile' || currentRoute === 'settings' || currentRoute === 'identities' || currentRoute === 'account') return 'profile';
     return 'discover';
   };
@@ -181,11 +182,15 @@ export const SoulverseWebsiteShell: React.FC = () => {
       let rawHash = window.location.hash.replace('#', '').toLowerCase();
       if (rawHash === 'guidebooks' || rawHash === 'books' || rawHash === 'playbook') {
         rawHash = 'playbooks';
+      } else if (rawHash === 'connect') {
+        rawHash = 'explore';
+      } else if (rawHash === 'connections') {
+        rawHash = 'likes';
       }
       const hash = rawHash as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
         'home', 'daily', 'discover', 'connect', 'connections', 'messages', 'inbox', 'profile', 
-        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games', 'personality', 'discovery_engine', 'content_engine', 'design_system', 'playbooks'
+        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games', 'personality', 'discovery_engine', 'content_engine', 'design_system', 'playbooks', 'likes', 'explore'
       ];
       if (validRoutes.includes(hash)) {
         setCurrentRoute(hash);
@@ -223,10 +228,10 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
   const handleMobileTabSelect = (tab: MobilePrimaryTab) => {
     if (tab === 'discover') navigateTo('discover');
-    else if (tab === 'connect') navigateTo('connect');
-    else if (tab === 'inbox') navigateTo('messages');
+    else if (tab === 'likes') navigateTo('likes');
+    else if (tab === 'messages') navigateTo('messages');
+    else if (tab === 'explore') navigateTo('explore');
     else if (tab === 'profile') navigateTo('profile');
-    else if (tab === 'create') setIsCreateSheetOpen(true);
   };
 
   const handleCreateActionSelect = (actionType: 'identity' | 'timeline' | 'journal' | 'story' | 'post' | 'event' | 'community' | 'question' | 'confession') => {
@@ -276,44 +281,29 @@ export const SoulverseWebsiteShell: React.FC = () => {
 
   const navCategories: ShellNavCategory[] = [
     {
-      title: 'Discover & Wisdom',
+      title: 'Primary Experiences',
       items: [
-        { id: 'social_feed' as SoulverseRoute, label: 'Social Stream & Feed', icon: Flame, badge: 'Stream' },
-        { id: 'questions_sanctuary' as SoulverseRoute, label: 'Questions Sanctuary', icon: HelpCircle, badge: 'Wisdom' },
-        { id: 'playbooks' as SoulverseRoute, label: 'Dating & Pickup Guide Books', icon: BookOpen, badge: '2 Books' },
-        { id: 'discover' as SoulverseRoute, label: 'Discover Humans', icon: Compass, featureId: 'feat_dating' },
-        { id: 'personality' as SoulverseRoute, label: 'Personality & EI Sanctuary', icon: Brain, badge: 'EI', featureId: 'feat_personality_exploration' },
-        { id: 'content_engine' as SoulverseRoute, label: 'Connection Inquiries', icon: Compass, badge: 'Prompt', featureId: 'feat_daily_quotes' },
-        { id: 'quotes' as SoulverseRoute, label: 'Quotes Sanctuary', icon: QuoteIcon, badge: 'Wise', featureId: 'feat_daily_quotes' },
-        { id: 'journal' as SoulverseRoute, label: 'Soul Prompts & Journal', icon: BookOpen, badge: 'Soul', featureId: 'feat_daily_quotes' },
-        { id: 'daily' as SoulverseRoute, label: 'Daily Intelligence', icon: Flame, badge: 'Daily', featureId: 'feat_daily_quotes' },
-        { id: 'unspoken' as SoulverseRoute, label: 'The Unspoken', icon: Heart, badge: 'Inner', featureId: 'feat_the_unspoken' },
-      ]
-    },
-    {
-      title: 'Relationships & Chat',
-      items: [
-        { id: 'connect' as SoulverseRoute, label: 'Connect & Social', icon: Users, badge: 'Live', featureId: 'feat_friendships' },
-        { id: 'spotify' as SoulverseRoute, label: 'Spotify Embed Sanctuary', icon: Music, badge: 'IFrame', featureId: 'feat_spotify_ambient' },
-        { id: 'mini_games' as SoulverseRoute, label: 'CouplePlayHub Games', icon: Gamepad2, badge: 'Hot' },
-        { id: 'connections' as SoulverseRoute, label: 'Relationship Vault', icon: Heart, badge: 'Vault', featureId: 'feat_relationship_vault' },
+        { id: 'discover' as SoulverseRoute, label: 'Discover Humans', icon: Compass },
+        { id: 'likes' as SoulverseRoute, label: 'Likes & Matches', icon: Heart, badge: '5' },
         { id: 'messages' as SoulverseRoute, label: 'Messages & Rooms', icon: MessageCircle, badge: '3' },
+        { id: 'explore' as SoulverseRoute, label: 'Explore & Tribes', icon: Globe2 },
+        { id: 'profile' as SoulverseRoute, label: 'Digital Identity', icon: User },
       ]
     },
     {
-      title: 'Identities & Memories',
+      title: 'Wisdom & Practice',
       items: [
-        { id: 'profile' as SoulverseRoute, label: 'My Identities', icon: User },
-        { id: 'identities' as SoulverseRoute, label: 'Identity Universe', icon: Heart, featureId: 'feat_imaginary_identities' },
-        { id: 'timeline' as SoulverseRoute, label: 'Life Timeline', icon: Calendar, featureId: 'feat_timeline_view' },
-        { id: 'worlds' as SoulverseRoute, label: 'Story Worlds', icon: Globe2, featureId: 'feat_cinematic_profiles' },
+        { id: 'playbooks' as SoulverseRoute, label: 'Dating & Pickup Guide Books', icon: BookOpen, badge: '2 Books' },
+        { id: 'journal' as SoulverseRoute, label: 'Soul Prompts & Journal', icon: BookOpen },
+        { id: 'questions_sanctuary' as SoulverseRoute, label: 'Questions Sanctuary', icon: HelpCircle },
+        { id: 'unspoken' as SoulverseRoute, label: 'The Unspoken', icon: Heart },
       ]
     },
     {
-      title: 'Control & System',
+      title: 'System & Control',
       items: [
-        { id: 'settings' as SoulverseRoute, label: 'Settings', icon: Settings },
-        { id: 'design_system' as SoulverseRoute, label: 'Design System & UI', icon: Layers, badge: 'UI' },
+        { id: 'settings' as SoulverseRoute, label: 'Settings & Privacy', icon: Settings },
+        { id: 'design_system' as SoulverseRoute, label: 'Design System & Studio', icon: Layers, badge: 'UI' },
         { id: 'admin' as SoulverseRoute, label: 'Admin Ops', icon: ShieldAlert, badge: 'Staff' }
       ]
     }
@@ -640,13 +630,21 @@ export const SoulverseWebsiteShell: React.FC = () => {
               />
             )}
 
-            {/* DESTINATION 2: CONNECT (Events, Communities, Watch Parties, Solo Journals, Worlds) */}
-            {currentRoute === 'connect' && (
+            {/* DESTINATION 2: LIKES & MUTUAL MATCHES */}
+            {(currentRoute === 'likes' || currentRoute === 'connections') && (
+              <SoulverseConnectionsPage
+                onOpenProfile={(p) => setInspectedProfile(p)}
+                onInitiateChat={handleInitiateChat}
+              />
+            )}
+
+            {/* DESTINATION 3: EXPLORE & COMMUNITIES */}
+            {(currentRoute === 'explore' || currentRoute === 'connect') && (
               <SoulverseMobileConnectExperience
                 onOpenWorld={handleOpenWorld}
                 onOpenJournal={() => setIsReadmeModalOpen(true)}
                 onOpenSoloPrompt={() => navigateTo('daily')}
-                onOpenVault={() => navigateTo('connections')}
+                onOpenVault={() => navigateTo('likes')}
                 onOpenUnspoken={() => setIsUnspokenOpen(true)}
               />
             )}
@@ -903,8 +901,8 @@ export const SoulverseWebsiteShell: React.FC = () => {
         <SoulverseMobileNavbar
           activeTab={getActiveMobileTab()}
           onSelectTab={handleMobileTabSelect}
-          onTriggerCreate={() => setIsCreateSheetOpen(true)}
           unreadMessagesCount={3}
+          likesCount={5}
           userAvatar={profile.avatar}
         />
       </div>

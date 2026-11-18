@@ -53,8 +53,8 @@ export const VoiceWaveformPlayer: React.FC<VoiceWaveformPlayerProps> = ({
         onClick={handleTogglePlay}
         className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-md transition-transform active:scale-95 ${
           isOutgoing 
-            ? 'bg-white text-[#FFFFFF]' 
-            : 'bg-[#FFFFFF] text-white'
+            ? 'bg-white text-[#D94668]' 
+            : 'bg-[#D94668] text-white'
         }`}
       >
         {isPlaying ? (
@@ -76,8 +76,8 @@ export const VoiceWaveformPlayer: React.FC<VoiceWaveformPlayerProps> = ({
               style={{ height: `${Math.max(20, amp)}%` }}
               className={`w-1 rounded-full transition-all duration-150 ${
                 isPlayed
-                  ? (isOutgoing ? 'bg-white shadow-[0_0_4px_#FFF]' : 'bg-[#FFFFFF] shadow-[0_0_4px_#FFFFFF]')
-                  : (isOutgoing ? 'bg-white/35' : 'bg-[#9CA3AF]/40')
+                  ? (isOutgoing ? 'bg-white shadow-[0_0_4px_#FFF]' : 'bg-[#D94668] shadow-[0_0_4px_rgba(217,70,104,0.5)]')
+                  : (isOutgoing ? 'bg-white/35' : 'bg-white/20')
               }`}
             />
           );

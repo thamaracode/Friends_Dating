@@ -842,15 +842,15 @@ export const SoulverseSettingsPage: React.FC = () => {
         <div className="space-y-4 animate-fadeIn">
           
           {/* 8 LOGOS BRAND IDENTITY SANCTUARY (Creative Direction Suite) */}
-          <div className="p-5 rounded-3xl dark-glass border border-amber-400/25 space-y-4 shadow-xl">
+          <div className="p-5 rounded-3xl bg-[#12141D] border border-white/10 space-y-4 shadow-xl">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(217,70,104,0.5)]" />
                 <h3 className="text-xs font-heading font-extrabold text-white uppercase tracking-wider">
                   Soulverse 8 Logos & Easter Egg Sanctuary
                 </h3>
               </div>
-              <span className="text-[10px] font-mono text-amber-300 font-bold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+              <span className="text-[10px] font-mono text-rose-300 font-bold px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20">
                 Active: {activeBrandLogo}
               </span>
             </div>
@@ -873,7 +873,7 @@ export const SoulverseSettingsPage: React.FC = () => {
                     }}
                     className={`p-3 rounded-2xl border flex flex-col items-center gap-2 text-center transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-gradient-to-b from-amber-500/20 to-amber-950/20 border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.25)] scale-[1.02]'
+                        ? 'bg-rose-500/10 border-rose-500 shadow-[0_0_16px_rgba(217,70,104,0.25)] scale-[1.02]'
                         : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.06]'
                     }`}
                   >

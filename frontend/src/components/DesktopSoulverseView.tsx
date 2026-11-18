@@ -58,7 +58,7 @@ export const DesktopSoulverseView: React.FC<DesktopSoulverseViewProps> = ({
   onOpenWorld,
   onOpenReadme,
   isEmbeddedInShell = true,
-  brandLogoVariant = (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'official_neon',
+  brandLogoVariant = (localStorage.getItem('soulverse_brand_logo') as HeartLogoVariant) || 'open_heart',
   onOpenLogoModal
 }) => {
   const [profile] = useState(CURRENT_USER);
