@@ -17,6 +17,7 @@ interface SoulverseMorePageProps {
   onOpenDigitalLife: () => void;
   onOpenCrisis: () => void;
   onOpenAdmin: () => void;
+  onOpenPlaybooks?: () => void;
 }
 
 export const SoulverseMorePage: React.FC<SoulverseMorePageProps> = ({
@@ -24,9 +25,20 @@ export const SoulverseMorePage: React.FC<SoulverseMorePageProps> = ({
   onOpenQuestions,
   onOpenDigitalLife,
   onOpenCrisis,
-  onOpenAdmin
+  onOpenAdmin,
+  onOpenPlaybooks
 }) => {
   const items = [
+    {
+      title: 'Dating & Pickup Guide Books',
+      desc: "Complete field playbooks for women and men: 'The Modern Woman's Playbook' (~1.3K Words) and 'The Definitive Man's Codex' (10 Volumes) with psychology, situational openers, and body language.",
+      icon: BookOpen,
+      badge: '2 Books',
+      action: () => {
+        if (onOpenPlaybooks) onOpenPlaybooks();
+        else window.location.hash = '#playbooks';
+      }
+    },
     {
       title: 'Personal README.md Journal',
       desc: 'Compose your 5,000 character GitHub Flavored Markdown manifesto with tables, checklists, and code.',

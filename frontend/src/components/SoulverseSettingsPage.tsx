@@ -27,7 +27,8 @@ import {
   Heart, 
   AlertTriangle,
   ShieldAlert,
-  ShieldCheck
+  ShieldCheck,
+  BookOpen
 } from 'lucide-react';
 import { 
   loadDiscoverySettings, 
@@ -1030,6 +1031,32 @@ export const SoulverseSettingsPage: React.FC = () => {
       {/* ===================================================================== */}
       {activeTab === 'safety' && (
         <div className="space-y-6 animate-fadeIn">
+          {/* Featured Dating & Pickup Guide Books Sanctuary Card */}
+          <div className="p-5 sm:p-6 rounded-3xl dark-glass border border-pink-500/30 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                  Featured Resource
+                </span>
+                <span className="text-[10px] font-mono text-zinc-400">2 Complete Field Volumes</span>
+              </div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-pink-400" />
+                <span>Dating & Connection Guide Books</span>
+              </h3>
+              <p className="text-xs text-zinc-300 max-w-xl leading-relaxed">
+                Explore <em>"The Modern Woman's Playbook"</em> (approaching, magnetizing & inspiring pursuit) and <em>"The Definitive Man's Codex"</em> (10 deep volumes on grounded presence, vocal resonance, natural openers, banter, and date psychology).
+              </p>
+            </div>
+            <button
+              onClick={() => { window.location.hash = '#playbooks'; }}
+              className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-pink-500/25 transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Read Guide Books</span>
+            </button>
+          </div>
+
           {/* Safety Articles, Suicide Prevention & Global Helplines Center */}
           <SafetyAndSupportCenter />
 

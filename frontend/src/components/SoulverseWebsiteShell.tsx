@@ -97,6 +97,7 @@ import { DynamicContentEngineView } from './content/DynamicContentEngineView';
 import { DesignSystemShowcase } from './ui/DesignSystemShowcase';
 import { SocialFeedView } from './social/SocialFeedView';
 import { QuestionSanctuaryView } from './social/QuestionSanctuaryView';
+import { DatingPlaybooksSanctuary } from './resources/DatingPlaybooksSanctuary';
 
 export const SoulverseWebsiteShell: React.FC = () => {
   const [profile] = useState(CURRENT_USER);
@@ -177,10 +178,14 @@ export const SoulverseWebsiteShell: React.FC = () => {
   // Sync with browser URL hash for native back/forward history & deep links
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') as SoulverseRoute;
+      let rawHash = window.location.hash.replace('#', '').toLowerCase();
+      if (rawHash === 'guidebooks' || rawHash === 'books' || rawHash === 'playbook') {
+        rawHash = 'playbooks';
+      }
+      const hash = rawHash as SoulverseRoute;
       const validRoutes: SoulverseRoute[] = [
         'home', 'daily', 'discover', 'connect', 'connections', 'messages', 'inbox', 'profile', 
-        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games', 'personality', 'discovery_engine', 'content_engine', 'design_system'
+        'identities', 'worlds', 'timeline', 'collections', 'account', 'settings', 'more', 'journal', 'admin', 'unspoken', 'quotes', 'spotify', 'mini_games', 'personality', 'discovery_engine', 'content_engine', 'design_system', 'playbooks'
       ];
       if (validRoutes.includes(hash)) {
         setCurrentRoute(hash);
@@ -275,6 +280,7 @@ export const SoulverseWebsiteShell: React.FC = () => {
       items: [
         { id: 'social_feed' as SoulverseRoute, label: 'Social Stream & Feed', icon: Flame, badge: 'Stream' },
         { id: 'questions_sanctuary' as SoulverseRoute, label: 'Questions Sanctuary', icon: HelpCircle, badge: 'Wisdom' },
+        { id: 'playbooks' as SoulverseRoute, label: 'Dating & Pickup Guide Books', icon: BookOpen, badge: '2 Books' },
         { id: 'discover' as SoulverseRoute, label: 'Discover Humans', icon: Compass, featureId: 'feat_dating' },
         { id: 'personality' as SoulverseRoute, label: 'Personality & EI Sanctuary', icon: Brain, badge: 'EI', featureId: 'feat_personality_exploration' },
         { id: 'content_engine' as SoulverseRoute, label: 'Connection Inquiries', icon: Compass, badge: 'Prompt', featureId: 'feat_daily_quotes' },
@@ -828,12 +834,24 @@ export const SoulverseWebsiteShell: React.FC = () => {
             {/* SUB-VIEW: MORE / JOURNAL / QUESTIONS */}
             {currentRoute === 'more' && (
               <SoulverseMorePage
+                onOpenPlaybooks={() => navigateTo('playbooks')}
                 onOpenJournal={() => setIsReadmeModalOpen(true)}
                 onOpenQuestions={() => navigateTo('timeline')}
                 onOpenDigitalLife={() => navigateTo('profile')}
                 onOpenCrisis={() => setIsCrisisModalOpen(true)}
                 onOpenAdmin={() => navigateTo('admin')}
               />
+            )}
+
+            {/* SUB-VIEW: DATING & PICKUP GUIDE BOOKS SANCTUARY (Women & Men Playbooks) */}
+            {currentRoute === 'playbooks' && (
+              <div className="min-h-[calc(100vh-6.5rem)] rounded-3xl overflow-hidden border border-white/10 shadow-2xl dark-glass p-2 sm:p-4">
+                <DatingPlaybooksSanctuary
+                  initialBookId="boys_guide_to_girls"
+                  onClose={() => navigateTo('discover')}
+                  onNavigateToTab={(tab) => navigateTo(tab as any)}
+                />
+              </div>
             )}
 
             {/* SUB-VIEW: SEPARATE ADMIN CONSOLE PORTAL */}

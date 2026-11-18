@@ -25,7 +25,8 @@ export type SoulverseRoute =
   | 'design_system'
   | 'spotify'
   | 'social_feed'
-  | 'questions_sanctuary';
+  | 'questions_sanctuary'
+  | 'playbooks';
 
 export type MobilePrimaryTab = 'discover' | 'connect' | 'create' | 'inbox' | 'profile';
 
