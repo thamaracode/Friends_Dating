@@ -8,6 +8,8 @@ import {
   DeliveryStatus
 } from './types';
 import { SafetyService } from './safetyService';
+import { OutboxService } from './outboxService';
+import { PushNotificationService } from './pushNotificationService';
 
 export class MessagingService {
   // =========================================================================
@@ -529,13 +531,50 @@ export class MessagingService {
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `).run(`rcp_${messageId}_${senderId}`, messageId, conversationId, senderId, now, now, now);
 
+      // Enqueue Transactional Outbox Event for Centrifugo pub/sub broadcast
+      OutboxService.enqueue({
+        eventType: 'chat.message.created',
+        aggregateType: 'message',
+        aggregateId: messageId,
+        channel: `dialog:${conversationId}`,
+        payload: {
+          type: 'chat.message.created',
+          conversationId,
+          messageId,
+          clientMessageId,
+          senderId,
+          sequenceNumber: seq,
+          messageType: params.type || 'text',
+          text: params.text,
+          mediaUrl: params.mediaUrl,
+          createdAt: now
+        }
+      });
+
       savedMsg = db.prepare('SELECT * FROM messages WHERE id = ?').get(messageId);
     });
 
     tx.immediate();
 
+    const formatted = this.formatMessageRow(savedMsg, senderId);
+
+    // Asynchronously notify offline/background devices via push
+    try {
+      const otherMembers = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ?')
+        .all(conversationId, senderId) as { user_id: string }[];
+      for (const m of otherMembers) {
+        PushNotificationService.notifyNewMessage(
+          m.user_id,
+          senderId,
+          conversationId,
+          messageId,
+          params.text || (params.type === 'voice' ? 'Voice message' : 'Sent an attachment')
+        ).catch(() => {});
+      }
+    } catch { /* suppress non-critical notification error */ }
+
     return {
-      message: this.formatMessageRow(savedMsg, senderId),
+      message: formatted,
       deduplicated: false
     };
   }
@@ -625,6 +664,21 @@ export class MessagingService {
         SET text_content = ?, is_edited = 1
         WHERE id = ?
       `).run(newText, messageId);
+
+      // Enqueue Outbox event
+      OutboxService.enqueue({
+        eventType: 'chat.message.edited',
+        aggregateType: 'message',
+        aggregateId: messageId,
+        channel: `dialog:${msg.conversation_id}`,
+        payload: {
+          type: 'chat.message.edited',
+          conversationId: msg.conversation_id,
+          messageId,
+          newText,
+          editedAt: now
+        }
+      });
     });
 
     tx();
@@ -644,11 +698,27 @@ export class MessagingService {
       if (msg.sender_id !== userId) {
         throw new Error('Forbidden: Only sender can delete for everyone');
       }
-      db.prepare(`
-        UPDATE messages 
-        SET is_deleted_for_everyone = 1, text_content = 'This message was deleted' 
-        WHERE id = ?
-      `).run(messageId);
+      const tx = db.transaction(() => {
+        db.prepare(`
+          UPDATE messages 
+          SET is_deleted_for_everyone = 1, text_content = 'This message was deleted' 
+          WHERE id = ?
+        `).run(messageId);
+
+        OutboxService.enqueue({
+          eventType: 'chat.message.deleted',
+          aggregateType: 'message',
+          aggregateId: messageId,
+          channel: `dialog:${msg.conversation_id}`,
+          payload: {
+            type: 'chat.message.deleted',
+            conversationId: msg.conversation_id,
+            messageId,
+            deletedForEveryone: true
+          }
+        });
+      });
+      tx();
     } else {
       // Delete for me: add userId to deleted_for_users_json
       const currentDeleted: string[] = JSON.parse(msg.deleted_for_users_json || '[]');
@@ -666,22 +736,98 @@ export class MessagingService {
    * Toggles an emoji reaction on a message
    */
   public static toggleReaction(messageId: string, userId: string, emoji: string): { reacted: boolean } {
+    const msg = db.prepare('SELECT conversation_id FROM messages WHERE id = ?').get(messageId) as any;
+    if (!msg) throw new Error('Message not found');
+
     const existing = db.prepare(`
       SELECT id FROM message_reactions WHERE message_id = ? AND user_id = ? AND emoji = ?
     `).get(messageId, userId, emoji);
 
-    if (existing) {
-      db.prepare('DELETE FROM message_reactions WHERE message_id = ? AND user_id = ? AND emoji = ?')
-        .run(messageId, userId, emoji);
-      return { reacted: false };
-    } else {
-      const id = `rx_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    let reacted = false;
+    const now = Date.now();
+
+    const tx = db.transaction(() => {
+      if (existing) {
+        db.prepare('DELETE FROM message_reactions WHERE message_id = ? AND user_id = ? AND emoji = ?')
+          .run(messageId, userId, emoji);
+        reacted = false;
+      } else {
+        const id = `rx_${now}_${Math.random().toString(36).slice(2, 6)}`;
+        db.prepare(`
+          INSERT INTO message_reactions (id, message_id, user_id, emoji, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(id, messageId, userId, emoji, now);
+        reacted = true;
+      }
+
+      OutboxService.enqueue({
+        eventType: 'chat.reaction.updated',
+        aggregateType: 'message',
+        aggregateId: messageId,
+        channel: `dialog:${msg.conversation_id}`,
+        payload: {
+          type: 'chat.reaction.updated',
+          conversationId: msg.conversation_id,
+          messageId,
+          userId,
+          emoji,
+          reacted
+        }
+      });
+    });
+
+    tx();
+    return { reacted };
+  }
+
+  /**
+   * Marks a message as delivered by recipient and broadcasts state transition
+   */
+  public static markAsDelivered(messageId: string, recipientId: string): boolean {
+    const msg = db.prepare('SELECT conversation_id, sender_id FROM messages WHERE id = ?').get(messageId) as any;
+    if (!msg) return false;
+    if (msg.sender_id === recipientId) return false;
+
+    const now = Date.now();
+    const tx = db.transaction(() => {
       db.prepare(`
-        INSERT INTO message_reactions (id, message_id, user_id, emoji, created_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(id, messageId, userId, emoji, Date.now());
-      return { reacted: true };
-    }
+        INSERT INTO message_receipts (id, message_id, conversation_id, user_id, delivered_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(message_id, user_id) DO UPDATE SET
+          delivered_at = COALESCE(delivered_at, excluded.delivered_at)
+      `).run(`rcp_${messageId}_${recipientId}`, messageId, msg.conversation_id, recipientId, now, now);
+
+      OutboxService.enqueue({
+        eventType: 'chat.receipt.delivered',
+        aggregateType: 'message',
+        aggregateId: messageId,
+        channel: `dialog:${msg.conversation_id}`,
+        payload: {
+          type: 'chat.receipt.delivered',
+          conversationId: msg.conversation_id,
+          messageId,
+          recipientId,
+          deliveredAt: now
+        }
+      });
+
+      OutboxService.enqueue({
+        eventType: 'chat.receipt.delivered',
+        aggregateType: 'message',
+        aggregateId: messageId,
+        channel: `user:${msg.sender_id}`,
+        payload: {
+          type: 'chat.receipt.delivered',
+          conversationId: msg.conversation_id,
+          messageId,
+          recipientId,
+          deliveredAt: now
+        }
+      });
+    });
+
+    tx();
+    return true;
   }
 
   /**
@@ -690,31 +836,68 @@ export class MessagingService {
   public static markAsRead(conversationId: string, userId: string, sequenceNumber?: number): boolean {
     const now = Date.now();
 
-    // 1. Reset unread count for member
-    db.prepare(`
-      UPDATE conversation_members 
-      SET unread_count = 0, last_read_sequence = COALESCE(?, (SELECT MAX(sequence_number) FROM messages WHERE conversation_id = ?))
-      WHERE conversation_id = ? AND user_id = ?
-    `).run(sequenceNumber || null, conversationId, conversationId, userId);
+    const tx = db.transaction(() => {
+      // 1. Reset unread count for member
+      db.prepare(`
+        UPDATE conversation_members 
+        SET unread_count = 0, last_read_sequence = COALESCE(?, (SELECT MAX(sequence_number) FROM messages WHERE conversation_id = ?))
+        WHERE conversation_id = ? AND user_id = ?
+      `).run(sequenceNumber || null, conversationId, conversationId, userId);
 
-    // 2. Update read receipts on messages
-    db.prepare(`
-      INSERT OR REPLACE INTO message_receipts (
-        id, message_id, conversation_id, user_id, delivered_at, read_at, created_at
-      )
-      SELECT 
-        'rcp_' || m.id || '_' || ?,
-        m.id,
-        m.conversation_id,
-        ?,
-        COALESCE(r.delivered_at, ?),
-        ?,
-        ?
-      FROM messages m
-      LEFT JOIN message_receipts r ON m.id = r.message_id AND r.user_id = ?
-      WHERE m.conversation_id = ? AND m.sender_id != ?
-    `).run(userId, userId, now, now, now, userId, conversationId, userId);
+      // 2. Update read receipts on messages
+      db.prepare(`
+        INSERT OR REPLACE INTO message_receipts (
+          id, message_id, conversation_id, user_id, delivered_at, read_at, created_at
+        )
+        SELECT 
+          'rcp_' || m.id || '_' || ?,
+          m.id,
+          m.conversation_id,
+          ?,
+          COALESCE(r.delivered_at, ?),
+          ?,
+          ?
+        FROM messages m
+        LEFT JOIN message_receipts r ON m.id = r.message_id AND r.user_id = ?
+        WHERE m.conversation_id = ? AND m.sender_id != ?
+      `).run(userId, userId, now, now, now, userId, conversationId, userId);
 
+      // 3. Outbox Event for conversation
+      OutboxService.enqueue({
+        eventType: 'chat.receipt.read',
+        aggregateType: 'conversation',
+        aggregateId: conversationId,
+        channel: `dialog:${conversationId}`,
+        payload: {
+          type: 'chat.receipt.read',
+          conversationId,
+          userId,
+          sequenceNumber: sequenceNumber || null,
+          readAt: now
+        }
+      });
+
+      // 4. Outbox Event for participants' user channels
+      const otherMembers = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ?')
+        .all(conversationId, userId) as { user_id: string }[];
+      for (const m of otherMembers) {
+        OutboxService.enqueue({
+          eventType: 'chat.receipt.read',
+          aggregateType: 'conversation',
+          aggregateId: conversationId,
+          channel: `user:${m.user_id}`,
+          payload: {
+            type: 'chat.receipt.read',
+            conversationId,
+            userId,
+            sequenceNumber: sequenceNumber || null,
+            readAt: now
+          }
+        });
+      }
+    });
+
+    tx();
     return true;
   }
 
@@ -1008,6 +1191,32 @@ export class MessagingService {
       }
     }
 
+    // Compute authoritative delivery status (sending -> sent -> delivered -> read)
+    let status: DeliveryStatus = 'sent';
+    if (row.sender_id === currentUserId) {
+      const otherReceipts = db.prepare(`
+        SELECT read_at, delivered_at FROM message_receipts WHERE message_id = ? AND user_id != ?
+      `).all(row.id, currentUserId) as any[];
+
+      if (otherReceipts.some(r => r.read_at && r.read_at > 0)) {
+        status = 'read';
+      } else if (otherReceipts.some(r => r.delivered_at && r.delivered_at > 0)) {
+        status = 'delivered';
+      } else {
+        const conv = db.prepare('SELECT type FROM conversations WHERE id = ?').get(row.conversation_id) as any;
+        status = conv?.type === 'saved_messages' ? 'read' : 'sent';
+      }
+    } else {
+      const myReceipt = db.prepare(`
+        SELECT read_at, delivered_at FROM message_receipts WHERE message_id = ? AND user_id = ?
+      `).get(row.id, currentUserId) as any;
+      if (myReceipt && myReceipt.read_at && myReceipt.read_at > 0) {
+        status = 'read';
+      } else {
+        status = 'delivered';
+      }
+    }
+
     return {
       id: row.id,
       clientMessageId: row.client_message_id,
@@ -1030,7 +1239,7 @@ export class MessagingService {
       isDeleted,
       deletedForMe: isDeletedForMe,
       reactions,
-      status: 'delivered',
+      status,
       createdAt: row.created_at,
       timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isOutgoing: row.sender_id === currentUserId,

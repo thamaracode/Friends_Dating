@@ -46,6 +46,8 @@ import { SocialActivitiesService } from './communication/socialActivitiesService
 import { SafetyService } from './communication/safetyService';
 import { RealtimeGateway } from './communication/realtimeGateway';
 import { CentrifugoService } from './communication/centrifugoService';
+import { OutboxService } from './communication/outboxService';
+import { E2EEService } from './communication/e2eeService';
 import {
   createRateLimiter,
   isUserSuspended,
@@ -9177,6 +9179,113 @@ app.post('/api/v1/communication/conversations/:id/read', (req, res) => {
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to mark as read' });
   }
+});
+
+// Acknowledge message delivery (SENDING -> SENT -> DELIVERED transition)
+app.post(['/api/v1/communication/messages/:id/delivered', '/api/v1/messages/:id/delivered'], (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const success = MessagingService.markAsDelivered(String(req.params.id), userId);
+    res.json({ success, messageId: req.params.id, deliveredAt: Date.now() });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to record delivery receipt' });
+  }
+});
+
+// Transactional Outbox status & drain trigger
+app.get('/api/v1/communication/outbox/status', (_req, res) => {
+  try {
+    const pendingCount = OutboxService.getPendingCount();
+    const deadLetters = OutboxService.getDeadLetterEvents(20);
+    res.json({
+      success: true,
+      pendingCount,
+      deadLettersCount: deadLetters.length,
+      deadLetters
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to query outbox status' });
+  }
+});
+
+app.post('/api/v1/communication/outbox/drain', async (_req, res) => {
+  try {
+    const result = await OutboxService.dispatchPending(100);
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to drain outbox' });
+  }
+});
+
+// Signal Protocol End-to-End Encryption (E2EE) Public Key Endpoints
+app.post('/api/v1/communication/e2ee/keys', (req, res) => {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+    const { deviceId, registrationId, identityKey, signedPrekeyId, signedPrekey, signedPrekeySignature, oneTimePrekeys } = req.body;
+
+    if (!deviceId || !identityKey || !signedPrekey || !signedPrekeySignature) {
+      return res.status(400).json({ error: 'Missing required Signal key bundle parameters' });
+    }
+
+    E2EEService.registerKeyBundle({
+      userId,
+      deviceId,
+      registrationId: registrationId || 1,
+      identityKey,
+      signedPrekeyId: signedPrekeyId || 1,
+      signedPrekey,
+      signedPrekeySignature,
+      oneTimePrekeys: oneTimePrekeys || []
+    });
+
+    res.json({ success: true, message: 'Signal Protocol key bundle registered successfully' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to register E2EE key bundle' });
+  }
+});
+
+app.get('/api/v1/communication/e2ee/prekey/:userId', (req, res) => {
+  try {
+    const bundle = E2EEService.getPrekeyBundle(String(req.params.userId));
+    if (!bundle) {
+      return res.status(404).json({ error: 'No E2EE key bundle found for user' });
+    }
+    res.json({ success: true, bundle });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to retrieve prekey bundle' });
+  }
+});
+
+app.post('/api/v1/communication/e2ee/validate-envelope', (req, res) => {
+  try {
+    const result = E2EEService.validateEnvelope(req.body);
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Envelope validation failed' });
+  }
+});
+
+// Dedicated Media Upload with Safety Validation
+app.post('/api/v1/communication/media/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file provided' });
+  }
+
+  const val = SafetyService.validateAttachment(req.file.originalname, req.file.size, req.file.mimetype);
+  if (!val.valid) {
+    return res.status(400).json({ error: `File validation failed: ${val.error}` });
+  }
+
+  const mediaUrl = `/uploads/${req.file.filename}`;
+  res.json({
+    success: true,
+    file: {
+      fileName: req.file.originalname,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      url: mediaUrl
+    }
+  });
 });
 
 // Polls: Creation & Voting

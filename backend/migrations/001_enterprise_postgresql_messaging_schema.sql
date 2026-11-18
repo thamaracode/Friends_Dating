@@ -195,4 +195,51 @@ CREATE TABLE IF NOT EXISTS saved_messages (
 
 CREATE INDEX IF NOT EXISTS idx_saved_messages_owner ON saved_messages(owner_id);
 
+-- 13. TRANSACTIONAL OUTBOX PATTERN (Centrifugo Reliable Real-Time Delivery)
+CREATE TABLE IF NOT EXISTS outbox_events (
+    id VARCHAR(64) PRIMARY KEY,
+    event_type VARCHAR(64) NOT NULL,
+    aggregate_type VARCHAR(64) NOT NULL,
+    aggregate_id VARCHAR(64) NOT NULL,
+    channel VARCHAR(128) NOT NULL,
+    payload_json JSONB NOT NULL,
+    status VARCHAR(24) NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'publishing', 'published', 'failed', 'dead_letter')),
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    max_retries INTEGER NOT NULL DEFAULT 5,
+    last_error TEXT,
+    next_retry_at BIGINT NOT NULL,
+    created_at BIGINT NOT NULL,
+    published_at BIGINT
+);
+
+CREATE INDEX IF NOT EXISTS idx_outbox_status_retry ON outbox_events(status, next_retry_at);
+CREATE INDEX IF NOT EXISTS idx_outbox_aggregate ON outbox_events(aggregate_type, aggregate_id);
+CREATE INDEX IF NOT EXISTS idx_outbox_channel ON outbox_events(channel);
+
+-- 14. SIGNAL PROTOCOL END-TO-END ENCRYPTION (E2EE KEY BUNDLES)
+CREATE TABLE IF NOT EXISTS user_e2ee_identity_keys (
+    user_id VARCHAR(64) PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    device_id VARCHAR(64) NOT NULL,
+    registration_id INTEGER NOT NULL,
+    identity_key TEXT NOT NULL,
+    signed_prekey_id INTEGER NOT NULL,
+    signed_prekey TEXT NOT NULL,
+    signed_prekey_signature TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS user_e2ee_prekeys (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    key_id INTEGER NOT NULL,
+    public_key TEXT NOT NULL,
+    is_consumed BOOLEAN DEFAULT FALSE,
+    consumed_at BIGINT,
+    created_at BIGINT NOT NULL,
+    UNIQUE(user_id, key_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_e2ee_prekeys ON user_e2ee_prekeys(user_id, is_consumed);
+
 COMMIT;

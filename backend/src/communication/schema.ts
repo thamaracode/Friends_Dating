@@ -362,6 +362,58 @@ export function initCommunicationSchema() {
     );
   `);
 
+  // 11. Transactional Outbox Pattern Table (Centrifugo Reliable Delivery)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS outbox_events (
+      id TEXT PRIMARY KEY,
+      event_type TEXT NOT NULL,
+      aggregate_type TEXT NOT NULL,
+      aggregate_id TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      payload_json TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'publishing', 'published', 'failed', 'dead_letter')),
+      retry_count INTEGER NOT NULL DEFAULT 0,
+      max_retries INTEGER NOT NULL DEFAULT 5,
+      last_error TEXT,
+      next_retry_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
+      published_at INTEGER
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_outbox_status_retry ON outbox_events(status, next_retry_at);
+    CREATE INDEX IF NOT EXISTS idx_outbox_aggregate ON outbox_events(aggregate_type, aggregate_id);
+    CREATE INDEX IF NOT EXISTS idx_outbox_channel ON outbox_events(channel);
+  `);
+
+  // 12. Signal Protocol E2EE Cryptographic Key Bundles
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_e2ee_identity_keys (
+      user_id TEXT PRIMARY KEY,
+      device_id TEXT NOT NULL,
+      registration_id INTEGER NOT NULL,
+      identity_key TEXT NOT NULL,
+      signed_prekey_id INTEGER NOT NULL,
+      signed_prekey TEXT NOT NULL,
+      signed_prekey_signature TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS user_e2ee_prekeys (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      key_id INTEGER NOT NULL,
+      public_key TEXT NOT NULL,
+      is_consumed INTEGER DEFAULT 0,
+      consumed_at INTEGER,
+      created_at INTEGER NOT NULL,
+      UNIQUE(user_id, key_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_e2ee_prekeys ON user_e2ee_prekeys(user_id, is_consumed);
+  `);
+
   // Seed initial social activity rooms if table is empty
   const roomCount = (db.prepare('SELECT COUNT(*) as count FROM social_activity_rooms').get() as any)?.count || 0;
   if (roomCount === 0) {

@@ -214,6 +214,42 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     };
   }, []);
 
+  const renderMessageStatus = (msg: { isOutgoing?: boolean; status?: string }) => {
+    if (!msg.isOutgoing) return null;
+    if (msg.status === 'sending' || msg.status === 'queued') {
+      return (
+        <span title="Sending...">
+          <Clock className="w-3 h-3 text-white/50 animate-pulse" />
+        </span>
+      );
+    }
+    if (msg.status === 'sent') {
+      return (
+        <span title="Sent to server">
+          <Check className="w-3 h-3 text-white/70" />
+        </span>
+      );
+    }
+    if (msg.status === 'delivered') {
+      return (
+        <span title="Delivered to peer">
+          <CheckCheck className="w-3 h-3 text-white/70" />
+        </span>
+      );
+    }
+    if (msg.status === 'read') {
+      return (
+        <span title="Read by peer">
+          <CheckCheck className="w-3 h-3 text-emerald-300 drop-shadow-[0_0_4px_rgba(52,211,153,0.6)]" />
+        </span>
+      );
+    }
+    if (msg.status === 'failed') {
+      return <span className="text-[9px] text-red-400 font-bold" title="Failed to deliver">!</span>;
+    }
+    return <CheckCheck className="w-3 h-3 text-white/70" />;
+  };
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -1318,7 +1354,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                         {/* Floating Translucent Pill (Telegram Authenticity) */}
                         <div className="absolute bottom-0 right-0 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white/90 shadow-md">
                           <span>{msg.timestamp}</span>
-                          {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FFFFFF]" />}
+                          {renderMessageStatus(msg)}
                         </div>
                       </div>
                     ) : msg.type === 'sticker' ? (
@@ -1333,7 +1369,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                         />
                         <div className="absolute bottom-1 right-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[9px] text-white/90 shadow-md">
                           <span>{msg.timestamp}</span>
-                          {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-[#FFFFFF]" />}
+                          {renderMessageStatus(msg)}
                         </div>
                       </div>
                     ) : (
@@ -1428,7 +1464,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
                       <div className={`flex items-center justify-end gap-1.5 text-[9px] ${msg.isOutgoing ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
                         {msg.isEdited && <span>edited</span>}
                         <span>{msg.timestamp}</span>
-                        {msg.isOutgoing && <CheckCheck className="w-3 h-3 text-white" />}
+                        {renderMessageStatus(msg)}
                       </div>
                     </div>
                   )}

@@ -5,6 +5,7 @@ import { SafetyService } from './safetyService';
 import { SocialActivitiesService } from './socialActivitiesService';
 import { SocketClientEvent, SocketServerEvent } from './types';
 import { CentrifugoService } from './centrifugoService';
+import { OutboxService } from './outboxService';
 
 // Rate limiter state: userId -> timestamp[]
 const userMessageRateLimits = new Map<string, number[]>();
@@ -17,6 +18,28 @@ export class RealtimeGateway {
    * Initializes the WebSocket Server with authentication, authorization, and event handling
    */
   public static init(wss: WebSocketServer) {
+    // Configure Transactional Outbox mirror to distribute events to local WebSocket sessions
+    OutboxService.setRealtimeMirror((channel: string, payload: any) => {
+      try {
+        if (channel.startsWith('dialog:')) {
+          const convId = channel.replace('dialog:', '');
+          const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?')
+            .all(convId) as { user_id: string }[];
+          for (const m of members) {
+            this.sendToUser(m.user_id, payload);
+          }
+        } else if (channel.startsWith('user:')) {
+          const uId = channel.replace('user:', '');
+          this.sendToUser(uId, payload);
+        }
+      } catch (err) {
+        console.warn('[RealtimeGateway] Outbox mirror error:', err);
+      }
+    });
+
+    // Start background Outbox poller for reliable delivery recovery
+    OutboxService.startOutboxWorker(2500);
+
     wss.on('connection', (ws: WebSocket, req: any) => {
       const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
       let userId = url.searchParams.get('userId') || 'usr_me';
@@ -203,6 +226,14 @@ export class RealtimeGateway {
       }
 
       // 4. Delivery & Read receipts
+      case 'message.delivered': {
+        const { messageId } = event;
+        if (messageId) {
+          MessagingService.markAsDelivered(messageId, userId);
+        }
+        break;
+      }
+
       case 'message.read': {
         const { conversationId, sequenceNumber } = event;
         if (conversationId) {

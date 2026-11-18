@@ -158,6 +158,28 @@ export class ChatApiClient {
           );
         }
 
+        // Automatic delivery receipt handling for incoming messages
+        if (payload.type === 'chat.message.created') {
+          const msg = payload.message || payload;
+          if (msg && msg.id && msg.senderId && msg.senderId !== this.currentUserId) {
+            this.markDelivered(msg.id);
+          }
+        }
+
+        // Delivery receipt state synchronization
+        if (payload.type === 'chat.receipt.delivered') {
+          if (payload.messageId) {
+            offlineChatDb.updateMessageStatus(payload.messageId, 'delivered');
+          }
+        }
+
+        // Read receipt state synchronization
+        if (payload.type === 'chat.receipt.read') {
+          if (payload.conversationId) {
+            offlineChatDb.markConversationMessagesRead(payload.conversationId, payload.sequenceNumber);
+          }
+        }
+
         // WebRTC call signaling handling
         if (payload.type === 'call.signal' || payload.type?.startsWith('call.')) {
           webrtcCallService.handleIncomingSignal(
@@ -214,6 +236,28 @@ export class ChatApiClient {
               payload.sequenceNumber,
               payload.timestamp
             );
+          }
+
+          // Automatic delivery receipt handling for incoming messages
+          if (payload.type === 'chat.message.created') {
+            const msg = payload.message || payload;
+            if (msg && msg.id && msg.senderId && msg.senderId !== this.currentUserId) {
+              this.markDelivered(msg.id);
+            }
+          }
+
+          // Delivery receipt state synchronization
+          if (payload.type === 'chat.receipt.delivered') {
+            if (payload.messageId) {
+              offlineChatDb.updateMessageStatus(payload.messageId, 'delivered');
+            }
+          }
+
+          // Read receipt state synchronization
+          if (payload.type === 'chat.receipt.read') {
+            if (payload.conversationId) {
+              offlineChatDb.markConversationMessagesRead(payload.conversationId, payload.sequenceNumber);
+            }
           }
 
           // WebRTC call signaling handling
@@ -374,6 +418,22 @@ export class ChatApiClient {
     if (!res.ok) throw new Error('Failed to sync messages');
     const data = await res.json();
     return data.messages || [];
+  }
+
+  /**
+   * Dispatches delivery receipt when recipient device receives message
+   */
+  public async markDelivered(messageId: string): Promise<void> {
+    try {
+      this.sendSocketEvent('message.delivered', { messageId });
+      await fetch(`${API_BASE}/communication/messages/${encodeURIComponent(messageId)}/delivered`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: this.currentUserId })
+      });
+    } catch {
+      // Best-effort delivery ack
+    }
   }
 
   // -------------------------------------------------------------

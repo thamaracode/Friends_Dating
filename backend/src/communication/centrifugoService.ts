@@ -28,6 +28,10 @@ export class CentrifugoService {
   private static isServerReachable: boolean | null = null;
   private static lastHealthCheck: number = 0;
 
+  public static isConfiguredEnabled(): boolean {
+    return this.config.enabled;
+  }
+
   /**
    * Encodes a JSON object or string into Base64URL format without padding (RFC 7515)
    */

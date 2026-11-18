@@ -169,6 +169,26 @@ export class SoulverseOfflineDatabase extends Dexie {
     await this.outbox.delete(clientMessageId);
   }
 
+  public async updateMessageStatus(messageId: string, status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed') {
+    const msg = await this.messages.get(messageId);
+    if (msg) {
+      msg.status = status;
+      await this.messages.put(msg);
+    }
+  }
+
+  public async markConversationMessagesRead(conversationId: string, upToSequence?: number) {
+    const msgs = await this.messages.where('conversationId').equals(conversationId).toArray();
+    for (const m of msgs) {
+      if (!upToSequence || m.sequenceNumber <= upToSequence) {
+        if (m.status !== 'read') {
+          m.status = 'read';
+          await this.messages.put(m);
+        }
+      }
+    }
+  }
+
   // --- Outbox Helpers ---
   public async queueOutboxMessage(msg: Omit<OutboxMessage, 'status' | 'retryCount' | 'createdAt'>): Promise<OutboxMessage> {
     const outboxItem: OutboxMessage = {
