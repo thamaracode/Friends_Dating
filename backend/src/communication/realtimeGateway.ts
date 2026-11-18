@@ -4,6 +4,7 @@ import { MessagingService } from './messagingService';
 import { SafetyService } from './safetyService';
 import { SocialActivitiesService } from './socialActivitiesService';
 import { SocketClientEvent, SocketServerEvent } from './types';
+import { CentrifugoService } from './centrifugoService';
 
 // Rate limiter state: userId -> timestamp[]
 const userMessageRateLimits = new Map<string, number[]>();
@@ -278,9 +279,13 @@ export class RealtimeGateway {
   }
 
   /**
-   * Delivers a WebSocket event to all active sessions of a user
+   * Delivers an event to all active sessions of a user (via Centrifugo and local WebSockets)
    */
   public static sendToUser(userId: string, event: SocketServerEvent | any) {
+    // 1. Centrifugo personal channel publication
+    CentrifugoService.publish(`user:${userId}`, event).catch(() => {});
+
+    // 2. Local WebSocket session delivery
     const sockets = this.userSockets.get(userId);
     if (sockets) {
       const payload = JSON.stringify(event);
@@ -289,6 +294,21 @@ export class RealtimeGateway {
           ws.send(payload);
         }
       }
+    }
+  }
+
+  /**
+   * Broadcasts an event to a specific conversation channel across Centrifugo & connected members
+   */
+  public static broadcastToConversation(conversationId: string, event: SocketServerEvent | any) {
+    // 1. Centrifugo dialog channel publication
+    CentrifugoService.publish(`dialog:${conversationId}`, event).catch(() => {});
+
+    // 2. Local member delivery
+    const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?')
+      .all(conversationId) as { user_id: string }[];
+    for (const m of members) {
+      this.sendToUser(m.user_id, event);
     }
   }
 

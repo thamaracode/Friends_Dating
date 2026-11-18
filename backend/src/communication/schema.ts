@@ -254,6 +254,39 @@ export function initCommunicationSchema() {
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON user_notifications(user_id, is_read, created_at DESC);
   `);
 
+  // 6b. Create user_devices table for push notifications (FCM/APNs) & multi-device sync
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_devices (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      device_name TEXT NOT NULL,
+      device_type TEXT NOT NULL DEFAULT 'web',
+      fcm_token TEXT,
+      apns_token TEXT,
+      public_key TEXT,
+      is_active INTEGER DEFAULT 1,
+      last_active_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
+      UNIQUE (user_id, fcm_token),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_devices_user ON user_devices(user_id, is_active);
+  `);
+
+  // 6c. Create message_edits table for message edit audit history
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS message_edits (
+      id TEXT PRIMARY KEY,
+      message_id TEXT NOT NULL,
+      previous_text TEXT NOT NULL,
+      edited_by TEXT NOT NULL,
+      edited_at INTEGER NOT NULL,
+      FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+      FOREIGN KEY (edited_by) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_message_edits_msg ON message_edits(message_id);
+  `);
+
   // 7. Create watch_party_rooms table (Coordinated video watching)
   db.exec(`
     CREATE TABLE IF NOT EXISTS watch_party_rooms (

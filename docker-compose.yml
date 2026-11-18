@@ -65,7 +65,37 @@ services:
     networks:
       - soulverse-network
 
-  # 5. Reverse Proxy Router for Subdomain Segregation
+  # 5. Centrifugo Real-Time Transport Engine (Master Real-Time Infrastructure)
+  soulverse-centrifugo:
+    image: centrifugo/centrifugo:v5
+    container_name: soulverse-centrifugo
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./centrifugo.json:/centrifugo/config.json:ro
+    command: centrifugo -c config.json
+    environment:
+      - CENTRIFUGO_API_KEY=soulverse-centrifugo-api-key-hyper-secure-token
+      - CENTRIFUGO_TOKEN_HMAC_SECRET_KEY=soulverse-centrifugo-hmac-sha256-secret-key-auth
+    depends_on:
+      - soulverse-redis
+    networks:
+      - soulverse-network
+
+  # 6. Redis Distributed Broker & Presence Engine
+  soulverse-redis:
+    image: redis:7-alpine
+    container_name: soulverse-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - soulverse-network
+
+  # 7. Reverse Proxy Router for Subdomain Segregation
   soulverse-proxy:
     image: nginx:alpine
     container_name: soulverse-proxy
@@ -79,11 +109,14 @@ services:
       - soulverse-user-api
       - soulverse-admin-frontend
       - soulverse-admin-api
+      - soulverse-centrifugo
     networks:
       - soulverse-network
 
 volumes:
   sqlite-data:
+    driver: local
+  redis-data:
     driver: local
 
 networks:

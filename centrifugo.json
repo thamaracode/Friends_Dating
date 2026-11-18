@@ -1,0 +1,52 @@
+{
+  "port": 8000,
+  "admin": true,
+  "admin_password": "soulverse-centrifugo-admin-hyper-secure-pass",
+  "admin_secret": "soulverse-centrifugo-admin-secret-key-32chars",
+  "api_key": "soulverse-centrifugo-api-key-hyper-secure-token",
+  "token_hmac_secret_key": "soulverse-centrifugo-hmac-sha256-secret-key-auth",
+  "allowed_origins": [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+    "https://*.trycloudflare.com",
+    "https://*.soulverse.im"
+  ],
+  "namespaces": [
+    {
+      "name": "dialog",
+      "presence": true,
+      "join_leave": true,
+      "history_size": 300,
+      "history_ttl": "300s",
+      "force_recovery": true,
+      "allow_subscribe_for_client": false,
+      "protected": true
+    },
+    {
+      "name": "user",
+      "presence": true,
+      "history_size": 100,
+      "history_ttl": "300s",
+      "force_recovery": true,
+      "allow_subscribe_for_client": false,
+      "protected": true
+    },
+    {
+      "name": "group",
+      "presence": true,
+      "join_leave": true,
+      "history_size": 500,
+      "history_ttl": "600s",
+      "force_recovery": true,
+      "allow_subscribe_for_client": false,
+      "protected": true
+    }
+  ],
+  "client": {
+    "proxy_connect_endpoint": "",
+    "proxy_subscribe_endpoint": "",
+    "proxy_publish_endpoint": ""
+  }
+}

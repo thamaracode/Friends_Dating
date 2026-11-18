@@ -347,6 +347,7 @@ export const MessagingInboxView: React.FC<MessagingInboxViewProps> = ({
     const loadMsgs = async () => {
       setIsLoadingMessages(true);
       try {
+        chatClient.subscribeToConversation(activeConversationId);
         const msgs = await chatClient.getMessages(activeConversationId);
         setCurrentMessages(msgs);
         try {

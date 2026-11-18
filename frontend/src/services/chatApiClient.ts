@@ -1,17 +1,21 @@
+import { Centrifuge, type Subscription } from 'centrifuge';
 import { API_BASE_V1 as API_BASE, WS_BASE } from './apiConfig';
 import { offlineChatDb } from './offlineChatDb';
 import { webrtcCallService } from './webrtcCallService';
 
 export class ChatApiClient {
   private ws: WebSocket | null = null;
+  private centrifuge: Centrifuge | null = null;
+  private activeSubscriptions: Map<string, Subscription> = new Map();
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private currentUserId: string = 'usr_me';
   private eventListeners: Map<string, Set<(data: any) => void>> = new Map();
   private isDrainingOutbox: boolean = false;
+  private activeTransport: 'centrifugo' | 'native_websocket' = 'native_websocket';
 
   constructor(userId: string = 'usr_me') {
     this.currentUserId = userId;
-    this.initWebSocket();
+    this.initRealtimeTransport();
 
     // Connect WebRTC signaling bridge
     webrtcCallService.setSignalSender((signalPayload) => {
@@ -28,10 +32,162 @@ export class ChatApiClient {
     this.currentUserId = userId;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;
-    const previousSocket = this.ws;
-    this.ws = null;
-    previousSocket?.close();
+    this.disconnectAll();
+    this.initRealtimeTransport();
+  }
+
+  public getTransportMode(): 'centrifugo' | 'native_websocket' {
+    return this.activeTransport;
+  }
+
+  private disconnectAll() {
+    if (this.centrifuge) {
+      try {
+        this.centrifuge.disconnect();
+      } catch { /* noop */ }
+      this.centrifuge = null;
+      this.activeSubscriptions.clear();
+    }
+    if (this.ws) {
+      try {
+        this.ws.close();
+      } catch { /* noop */ }
+      this.ws = null;
+    }
+  }
+
+  /**
+   * Initializes real-time transport: Attempts Centrifugo connection first;
+   * falls back gracefully to high-performance native WebSocket if Centrifugo is offline.
+   */
+  private async initRealtimeTransport() {
+    try {
+      const tokenRes = await fetch(`${API_BASE}/realtime/token?userId=${encodeURIComponent(this.currentUserId)}`);
+      if (tokenRes.ok) {
+        const tokenData = await tokenRes.json();
+        if (tokenData.success && tokenData.centrifugoAvailable && tokenData.wsUrl && tokenData.token) {
+          this.initCentrifugo(tokenData.wsUrl, tokenData.token);
+          return;
+        }
+      }
+    } catch {
+      // Centrifugo token endpoint or service unavailable; continue to native fallback
+    }
+
+    // Fallback to native WebSocket
     this.initWebSocket();
+  }
+
+  /**
+   * Connects to Centrifugo WebSocket server with signed HMAC-SHA256 JWT
+   */
+  private initCentrifugo(wsUrl: string, token: string) {
+    try {
+      const centrifuge = new Centrifuge(wsUrl, {
+        token,
+        getToken: async () => {
+          const res = await fetch(`${API_BASE}/realtime/token?userId=${encodeURIComponent(this.currentUserId)}`);
+          const data = await res.json();
+          return data.token;
+        }
+      });
+
+      this.centrifuge = centrifuge;
+
+      centrifuge.on('connected', () => {
+        this.activeTransport = 'centrifugo';
+        this.triggerEvent('ws.open', { userId: this.currentUserId, transport: 'centrifugo' });
+        this.drainOutbox();
+      });
+
+      centrifuge.on('disconnected', () => {
+        this.triggerEvent('ws.close', { userId: this.currentUserId, transport: 'centrifugo' });
+      });
+
+      centrifuge.on('error', (ctx) => {
+        console.warn('Centrifugo connection error', ctx);
+        // If Centrifugo fails to connect, fallback to native WebSocket
+        if (this.activeTransport !== 'centrifugo') {
+          this.initWebSocket();
+        }
+      });
+
+      // Subscribe to user notification & presence stream
+      const userChannel = `user:${this.currentUserId}`;
+      this.subscribeChannel(userChannel);
+
+      centrifuge.connect();
+    } catch (e) {
+      console.warn('Centrifugo initialization failed, reverting to native WebSocket', e);
+      this.initWebSocket();
+    }
+  }
+
+  /**
+   * Subscribes to a Centrifugo channel with publication dispatching and recovery
+   */
+  public async subscribeChannel(channel: string): Promise<Subscription | null> {
+    if (!this.centrifuge || this.activeSubscriptions.has(channel)) {
+      return this.activeSubscriptions.get(channel) || null;
+    }
+
+    try {
+      const sub = this.centrifuge.newSubscription(channel, {
+        getToken: async () => {
+          const res = await fetch(`${API_BASE}/realtime/subscribe-token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: this.currentUserId, channel })
+          });
+          const data = await res.json();
+          return data.token;
+        }
+      });
+
+      sub.on('publication', (ctx) => {
+        const payload = ctx.data;
+        if (!payload) return;
+
+        // Server message ACK handling
+        if (payload.type === 'ack') {
+          offlineChatDb.reconcileMessageAck(
+            payload.clientMessageId,
+            payload.serverMessageId,
+            payload.sequenceNumber,
+            payload.timestamp
+          );
+        }
+
+        // WebRTC call signaling handling
+        if (payload.type === 'call.signal' || payload.type?.startsWith('call.')) {
+          webrtcCallService.handleIncomingSignal(
+            payload.senderId,
+            payload.signalData || payload,
+            payload.senderName,
+            payload.senderAvatar
+          );
+        }
+
+        this.triggerEvent(payload.type, payload);
+        this.triggerEvent('*', payload);
+      });
+
+      sub.subscribe();
+      this.activeSubscriptions.set(channel, sub);
+      return sub;
+    } catch (err) {
+      console.warn(`Failed to subscribe to Centrifugo channel ${channel}`, err);
+      return null;
+    }
+  }
+
+  /**
+   * Subscribes to conversation dialog stream (e.g. dialog:conv_123)
+   */
+  public async subscribeToConversation(conversationId: string) {
+    if (this.centrifuge) {
+      await this.subscribeChannel(`dialog:${conversationId}`);
+    }
   }
 
   private initWebSocket() {

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",
+    "centrifuge": "^5.8.0",
     "clsx": "^2.1.1",
     "dexie": "^4.4.7",
     "framer-motion": "^14.12.0",

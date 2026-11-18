@@ -45,6 +45,7 @@ import { InteractiveGamesEngine } from './communication/gamesEngine';
 import { SocialActivitiesService } from './communication/socialActivitiesService';
 import { SafetyService } from './communication/safetyService';
 import { RealtimeGateway } from './communication/realtimeGateway';
+import { CentrifugoService } from './communication/centrifugoService';
 import {
   createRateLimiter,
   isUserSuspended,
@@ -136,6 +137,9 @@ wss.on('connection', (ws, req) => {
 });
 
 function broadcastToUser(userId: string, event: any) {
+  // Centrifugo real-time event dispatching to personal user stream
+  CentrifugoService.publish(`user:${userId}`, event).catch(() => {});
+
   const sockets = userSockets.get(userId);
   if (sockets) {
     const payload = JSON.stringify(event);
@@ -145,6 +149,19 @@ function broadcastToUser(userId: string, event: any) {
       }
     }
   }
+}
+
+function broadcastToConversation(conversationId: string, event: any) {
+  // Centrifugo real-time publication to private dialog channel
+  CentrifugoService.publish(`dialog:${conversationId}`, event).catch(() => {});
+
+  const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id = ?').all(conversationId) as { user_id: string }[];
+  members.forEach(m => {
+    broadcastToUser(m.user_id, {
+      ...event,
+      isOutgoing: event.message ? (m.user_id === event.message.senderId) : undefined
+    });
+  });
 }
 
 function broadcastToAll(event: any) {
@@ -157,6 +174,139 @@ function broadcastToAll(event: any) {
     }
   }
 }
+
+// =============================================================================
+// CENTRIFUGO REAL-TIME TRANSPORT LAYER & TOKEN ENDPOINTS (Master Prompt 08)
+// =============================================================================
+
+// 1. Issue signed HMAC-SHA256 connection token for Centrifugo WebSocket clients
+app.get('/api/v1/realtime/token', async (req, res) => {
+  const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+  const userInfo = db.prepare('SELECT name, avatar_url FROM users WHERE id = ?').get(userId) as any;
+  const token = CentrifugoService.generateConnectionToken(userId, 86400, {
+    name: userInfo?.name || 'Soulverse Human',
+    avatar: userInfo?.avatar_url
+  });
+  const isCentrifugoUp = await CentrifugoService.isAvailable();
+  res.json({
+    success: true,
+    token,
+    userId,
+    wsUrl: process.env.CENTRIFUGO_WS_URL || 'ws://127.0.0.1:8000/connection/websocket',
+    centrifugoAvailable: isCentrifugoUp,
+    expiresIn: 86400
+  });
+});
+
+// 2. Issue signed HMAC-SHA256 subscription token for private conversation channels
+app.post('/api/v1/realtime/subscribe-token', (req, res) => {
+  const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+  const { channel } = req.body;
+  if (!channel) {
+    return res.status(400).json({ error: 'Missing channel parameter' });
+  }
+  const auth = CentrifugoService.authorizeChannelSubscription(userId, channel);
+  if (!auth.authorized) {
+    return res.status(403).json({ error: auth.reason || 'Forbidden: Subscription unauthorized', code: 'SUBSCRIPTION_DENIED' });
+  }
+  const token = CentrifugoService.generateSubscriptionToken(userId, channel, 86400);
+  res.json({ success: true, channel, token, expiresIn: 86400 });
+});
+
+// 3. Centrifugo Subscribe Proxy endpoint (Webhook for Centrifugo server verification)
+app.post('/api/v1/realtime/centrifugo-subscribe-proxy', (req, res) => {
+  const { user: userId, channel } = req.body;
+  if (!userId || !channel) {
+    return res.status(400).json({ error: { code: 1001, message: 'Invalid payload' } });
+  }
+  const auth = CentrifugoService.authorizeChannelSubscription(userId, channel);
+  if (!auth.authorized) {
+    return res.json({ error: { code: 1000, message: auth.reason || 'Unauthorized' } });
+  }
+  res.json({ result: {} });
+});
+
+// 4. Cursor-based message synchronization for offline recovery & reconnection
+app.get('/api/v1/conversations/:id/messages/sync', (req, res) => {
+  const { id } = req.params;
+  const userId = (req.headers['x-user-id'] as string) || (req.query.userId as string) || 'usr_me';
+  const sinceSequence = parseInt(req.query.sinceSequence as string, 10) || 0;
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 100, 200);
+
+  if (!isConversationMember(id, userId)) {
+    return res.status(403).json({ error: 'Forbidden: user is not a conversation member', code: 'NOT_CONVERSATION_MEMBER' });
+  }
+
+  const rows = db.prepare(`
+    SELECT 
+      m.id,
+      m.client_message_id,
+      m.conversation_id,
+      m.sender_id,
+      u.name as sender_name,
+      m.sequence_number,
+      m.message_type as type,
+      m.text_content as text,
+      m.media_url,
+      m.voice_duration,
+      m.voice_waveform,
+      m.reply_to_message_id,
+      m.is_edited,
+      m.is_pinned,
+      m.is_deleted_for_everyone,
+      m.attachment_json,
+      m.created_at
+    FROM messages m
+    JOIN users u ON m.sender_id = u.id
+    WHERE m.conversation_id = ? AND m.sequence_number > ?
+    ORDER BY m.sequence_number ASC
+    LIMIT ?
+  `).all(id, sinceSequence, limit) as any[];
+
+  const messages = rows.map(r => ({
+    id: r.id,
+    clientMessageId: r.client_message_id,
+    conversationId: r.conversation_id,
+    senderId: r.sender_id,
+    senderName: r.sender_name,
+    sequenceNumber: r.sequence_number,
+    type: r.type,
+    text: r.is_deleted_for_everyone ? 'This message was deleted' : r.text,
+    mediaUrl: r.media_url,
+    voiceDurationSeconds: r.voice_duration,
+    voiceWaveform: r.voice_waveform ? JSON.parse(r.voice_waveform) : undefined,
+    replyToMessageId: r.reply_to_message_id,
+    isEdited: Boolean(r.is_edited),
+    isPinned: Boolean(r.is_pinned),
+    isDeleted: Boolean(r.is_deleted_for_everyone),
+    timestamp: new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    createdAt: r.created_at,
+    isOutgoing: r.sender_id === userId,
+    status: 'delivered'
+  }));
+
+  res.json({ success: true, conversationId: id, messages, count: messages.length });
+});
+
+// 5. Device Token Registry (FCM & APNs Push Notification Management)
+app.post('/api/v1/devices', (req, res) => {
+  const userId = (req.headers['x-user-id'] as string) || req.body.userId || 'usr_me';
+  const { deviceName = 'Browser Web Session', deviceType = 'web', fcmToken, apnsToken, publicKey } = req.body;
+  const now = Date.now();
+  const deviceId = `dev_${uuidv4().replace(/-/g, '').slice(0, 12)}`;
+
+  db.prepare(`
+    INSERT INTO user_devices (id, user_id, device_name, device_type, fcm_token, apns_token, public_key, is_active, last_active_at, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+    ON CONFLICT(user_id, fcm_token) DO UPDATE SET 
+      device_name = excluded.device_name,
+      device_type = excluded.device_type,
+      is_active = 1,
+      last_active_at = excluded.last_active_at
+  `).run(deviceId, userId, deviceName, deviceType, fcmToken || null, apnsToken || null, publicKey || null, now, now);
+
+  res.json({ success: true, deviceId, userId, registeredAt: now });
+});
 
 // Background Runner for Scheduled Messages (Runs every 10 seconds)
 setInterval(() => {
