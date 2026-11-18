@@ -189,6 +189,7 @@ class SocialApiClient {
     feed_mode?: FeedMode;
     category?: string;
     tag?: string;
+    post_type?: string;
     cursor?: string | null;
     limit?: number;
     search?: string;
@@ -197,6 +198,7 @@ class SocialApiClient {
     if (params.feed_mode) q.set('feed_mode', params.feed_mode);
     if (params.category) q.set('category', params.category);
     if (params.tag) q.set('tag', params.tag);
+    if (params.post_type && params.post_type !== 'all') q.set('post_type', params.post_type);
     if (params.cursor) q.set('cursor', params.cursor);
     if (params.limit) q.set('limit', String(params.limit));
     if (params.search) q.set('search', params.search);
@@ -355,6 +357,79 @@ class SocialApiClient {
     if (!res.ok) throw new Error('Failed to submit report');
     const data = await res.json();
     return data.report_id;
+  }
+
+  async hidePost(postId: string, userId = 'usr_me'): Promise<void> {
+    const res = await fetch(`${this.base}/posts/${postId}/hide`, {
+      method: 'POST',
+      headers: this.getHeaders(userId)
+    });
+    if (!res.ok) throw new Error('Failed to hide post');
+  }
+
+  // =========================================================================
+  // CREATOR DISCOVERY & SOCIAL GRAPH
+  // =========================================================================
+
+  async toggleFollowCreator(creatorId: string, userId = 'usr_me'): Promise<{ is_following: boolean; followers_count: number }> {
+    const res = await fetch(`${this.base}/creators/${creatorId}/follow`, {
+      method: 'POST',
+      headers: this.getHeaders(userId)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to update follow status');
+    }
+    return res.json();
+  }
+
+  async getCreatorProfile(creatorId: string, userId = 'usr_me'): Promise<any> {
+    const res = await fetch(`${this.base}/creators/${creatorId}`, {
+      headers: this.getHeaders(userId)
+    });
+    if (!res.ok) throw new Error('Failed to load creator profile');
+    const data = await res.json();
+    return data.creator;
+  }
+
+  async getCreatorPosts(creatorId: string, cursor?: string | null, limit = 15, userId = 'usr_me'): Promise<FeedResponse> {
+    const q = new URLSearchParams();
+    if (cursor) q.set('cursor', cursor);
+    if (limit) q.set('limit', String(limit));
+
+    const res = await fetch(`${this.base}/creators/${creatorId}/posts?${q.toString()}`, {
+      headers: this.getHeaders(userId)
+    });
+    if (!res.ok) throw new Error('Failed to load creator posts');
+    return res.json();
+  }
+
+  // =========================================================================
+  // CURATED INTERESTS & PERSONALIZATION PREFERENCES
+  // =========================================================================
+
+  async getInterests(): Promise<Array<{ id: string; label: string; tag: string }>> {
+    const res = await fetch(`${this.base}/interests`);
+    if (!res.ok) throw new Error('Failed to load interests');
+    const data = await res.json();
+    return data.interests || [];
+  }
+
+  async getUserPreferences(userId = 'usr_me'): Promise<{ preferred_categories: string[]; preferred_feed_mode: string }> {
+    const res = await fetch(`${this.base}/user/preferences`, {
+      headers: this.getHeaders(userId)
+    });
+    if (!res.ok) return { preferred_categories: ['all'], preferred_feed_mode: 'for_you' };
+    return res.json();
+  }
+
+  async updateUserPreferences(preferredCategories: string[], preferredFeedMode = 'for_you', userId = 'usr_me'): Promise<void> {
+    const res = await fetch(`${this.base}/user/preferences`, {
+      method: 'PUT',
+      headers: this.getHeaders(userId),
+      body: JSON.stringify({ preferred_categories: preferredCategories, preferred_feed_mode: preferredFeedMode })
+    });
+    if (!res.ok) throw new Error('Failed to update preferences');
   }
 }
 

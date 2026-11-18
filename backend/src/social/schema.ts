@@ -260,6 +260,15 @@ export function initSocialSchema(database: Database.Database = db): void {
       resolved_at INTEGER,
       FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
     );
-    CREATE INDEX IF NOT EXISTS idx_moderation_status ON content_moderation_reports(status, created_at DESC);
+    -- 14. Hidden Posts
+    CREATE TABLE IF NOT EXISTS social_hidden_posts (
+      user_id TEXT NOT NULL,
+      post_id TEXT NOT NULL,
+      hidden_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, post_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (post_id) REFERENCES social_posts(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_hidden_posts_user ON social_hidden_posts(user_id, post_id);
   `);
 }

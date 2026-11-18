@@ -313,12 +313,13 @@ socialRouter.post('/posts', (req: Request, res: Response) => {
 socialRouter.get('/posts', (req: Request, res: Response) => {
   try {
     const viewerId = getViewerId(req);
-    const { feed_mode, category, tag, cursor, limit, search } = req.query;
+    const { feed_mode, category, tag, post_type, cursor, limit, search } = req.query;
 
     const result = PostsService.getFeed({
       feed_mode: (feed_mode as FeedMode) || 'for_you',
       category: category as string,
       tag: tag as string,
+      post_type: post_type as string,
       cursor: cursor as string,
       limit: limit ? parseInt(limit as string, 10) : 15,
       search_query: search as string
@@ -327,6 +328,119 @@ socialRouter.get('/posts', (req: Request, res: Response) => {
     res.json({ success: true, ...result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/social/interests
+ * Curated interest streams for content-first discovery.
+ */
+socialRouter.get('/interests', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    interests: [
+      { id: 'all', label: 'All Streams', tag: '' },
+      { id: 'philosophy', label: 'Philosophy & Mind', tag: '#philosophy' },
+      { id: 'cinema', label: 'Cinema & 35mm', tag: '#cinema' },
+      { id: 'architecture', label: 'Architecture & Spaces', tag: '#architecture' },
+      { id: 'music', label: 'Soundscapes & Ambient', tag: '#soundscapes' },
+      { id: 'literature', label: 'Literature & Poetry', tag: '#literature' },
+      { id: 'ceramics', label: 'Craft & Textures', tag: '#ceramics' },
+      { id: 'astrophotography', label: 'Cosmos & Astrophotography', tag: '#astrophotography' },
+      { id: 'slowliving', label: 'Slow Living', tag: '#slowliving' }
+    ]
+  });
+});
+
+/**
+ * GET /api/v1/social/user/preferences
+ */
+socialRouter.get('/user/preferences', (req: Request, res: Response) => {
+  try {
+    const viewerId = getViewerId(req);
+    const prefs = PostsService.getUserPreferences(viewerId);
+    res.json({ success: true, ...prefs });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * PUT /api/v1/social/user/preferences
+ */
+socialRouter.put('/user/preferences', (req: Request, res: Response) => {
+  try {
+    const viewerId = getViewerId(req);
+    const { preferred_categories, preferred_feed_mode } = req.body;
+    PostsService.updateUserPreferences(viewerId, preferred_categories || [], preferred_feed_mode || 'for_you');
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/social/creators/:id/follow
+ * Toggle follow/unfollow for creator.
+ */
+socialRouter.post('/creators/:id/follow', (req: Request, res: Response) => {
+  try {
+    const viewerId = getViewerId(req);
+    const result = PostsService.toggleFollow(viewerId, String(req.params.id));
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/social/creators/:id
+ * Retrieve creator dossier with public counts.
+ */
+socialRouter.get('/creators/:id', (req: Request, res: Response) => {
+  try {
+    const viewerId = getViewerId(req);
+    const creator = PostsService.getCreatorProfile(String(req.params.id), viewerId);
+    if (!creator) {
+      return res.status(404).json({ success: false, error: 'Creator not found' });
+    }
+    res.json({ success: true, creator });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/social/creators/:id/posts
+ * Retrieve public posts by creator.
+ */
+socialRouter.get('/creators/:id/posts', (req: Request, res: Response) => {
+  try {
+    const viewerId = getViewerId(req);
+    const { cursor, limit } = req.query;
+    const result = PostsService.getCreatorPosts(
+      String(req.params.id),
+      cursor as string,
+      limit ? parseInt(limit as string, 10) : 15,
+      viewerId
+    );
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/social/posts/:id/hide
+ * Hide post from user's future feeds.
+ */
+socialRouter.post('/posts/:id/hide', (req: Request, res: Response) => {
+  try {
+    const viewerId = getViewerId(req);
+    PostsService.hidePost(viewerId, String(req.params.id));
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
   }
 });
 

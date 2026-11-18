@@ -1,5 +1,6 @@
 import { db } from '../db';
 import { v4 as uuidv4 } from 'uuid';
+import { SEED_EDITORIAL_POSTS } from './postsSeed';
 import {
   SocialPostItem,
   PostType,
@@ -205,9 +206,60 @@ export class PostsService {
   }
 
   /**
+   * Seed authentic editorial posts across diverse categories if not already seeded.
+   */
+  public static seedDefaultPosts(): void {
+    const now = Date.now();
+    for (const p of SEED_EDITORIAL_POSTS) {
+      const existing = db.prepare('SELECT id FROM social_posts WHERE id = ?').get(p.id);
+      if (!existing) {
+        const user = db.prepare('SELECT id FROM users WHERE id = ?').get(p.user_id);
+        if (user) {
+          const createdAt = now - (p.created_at_offset_hours * 3600 * 1000);
+          db.prepare(`
+            INSERT INTO social_posts (
+              id, user_id, post_type, title, content, summary, media_urls,
+              attachment_json, question_id, poll_id, visibility, custom_audience_ids,
+              content_warning, location_name, tags, mentions, is_pinned, is_archived,
+              comments_disabled, is_deleted, likes_count, comments_count, shares_count,
+              bookmarks_count, views_count, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, '[]', NULL, NULL, ?, '[]', 0, 0, 0, 0, ?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            p.id,
+            p.user_id,
+            p.post_type,
+            p.title || null,
+            p.content,
+            p.summary || null,
+            JSON.stringify(p.media_urls || []),
+            JSON.stringify(p.attachment_json || {}),
+            p.attachment_json?.poll_id || null,
+            p.visibility,
+            JSON.stringify(p.tags),
+            p.likes_count,
+            p.comments_count,
+            p.shares_count,
+            p.bookmarks_count,
+            p.likes_count * 4 + 25,
+            createdAt,
+            createdAt
+          );
+        }
+      }
+    }
+  }
+
+  /**
    * Social Feed Retrieval with Cursor Pagination & Transparent Recommendation.
    */
   public static getFeed(params: FeedQueryParams, viewerId?: string): FeedResponse {
+    // Ensure default editorial posts are seeded
+    try {
+      this.seedDefaultPosts();
+    } catch (e) {
+      // Ignored if table busy
+    }
+
     const feedMode = params.feed_mode || 'for_you';
     const limit = Math.min(params.limit || 15, 50);
 
@@ -232,15 +284,46 @@ export class PostsService {
       }
     }
 
-    // Feed Mode Filtering
-    if (feedMode === 'following' && viewerId) {
+    // Exclude posts hidden by viewer
+    if (viewerId) {
       whereClauses.push(`
-        p.user_id IN (
-          SELECT target_user_id FROM user_relationships
-          WHERE user_id = ? AND relationship_type IN ('friend', 'match', 'selected')
+        p.id NOT IN (
+          SELECT post_id FROM social_hidden_posts
+          WHERE user_id = ?
         )
       `);
       queryParams.push(viewerId);
+    }
+
+    // Content Type Filtering
+    if (params.post_type && params.post_type !== 'all') {
+      whereClauses.push('p.post_type = ?');
+      queryParams.push(params.post_type);
+    }
+
+    // Category / Stream filtering
+    if (params.category && params.category !== 'all') {
+      whereClauses.push('(p.tags LIKE ? OR p.content LIKE ? OR p.title LIKE ?)');
+      const c = `%${params.category.toLowerCase()}%`;
+      queryParams.push(c, c, c);
+    }
+
+    // Feed Mode Filtering
+    if (feedMode === 'following' && viewerId) {
+      whereClauses.push(`
+        (
+          p.user_id IN (
+            SELECT target_user_id FROM user_interactions
+            WHERE user_id = ? AND interaction_type = 'follow'
+          )
+          OR
+          p.user_id IN (
+            SELECT target_user_id FROM user_relationships
+            WHERE user_id = ? AND relationship_type IN ('friend', 'match', 'selected')
+          )
+        )
+      `);
+      queryParams.push(viewerId, viewerId);
     } else if (feedMode === 'friends' && viewerId) {
       whereClauses.push(`
         p.user_id IN (
@@ -267,9 +350,9 @@ export class PostsService {
     }
 
     if (params.search_query && params.search_query.trim()) {
-      whereClauses.push('(p.content LIKE ? OR p.title LIKE ? OR p.tags LIKE ?)');
+      whereClauses.push('(p.content LIKE ? OR p.title LIKE ? OR p.tags LIKE ? OR u.name LIKE ?)');
       const s = `%${params.search_query.trim()}%`;
-      queryParams.push(s, s, s);
+      queryParams.push(s, s, s, s);
     }
 
     if (whereClauses.length > 0) {
@@ -278,7 +361,7 @@ export class PostsService {
 
     // Order by strategy
     if (feedMode === 'trending') {
-      baseSql += ' ORDER BY (p.likes_count * 2 + p.comments_count * 3 + p.shares_count * 4) DESC, p.created_at DESC';
+      baseSql += ' ORDER BY (p.likes_count * 2 + p.comments_count * 3 + p.shares_count * 4 + p.bookmarks_count * 2) DESC, p.created_at DESC';
     } else {
       baseSql += ' ORDER BY p.is_pinned DESC, p.created_at DESC, p.id DESC';
     }
@@ -818,5 +901,149 @@ export class PostsService {
       updated_at: row.updated_at,
       is_liked: isLiked
     };
+  }
+
+  /**
+   * Follow or Unfollow a Creator with persistence in user_interactions & user_relationships.
+   */
+  public static toggleFollow(viewerId: string, creatorId: string): { is_following: boolean; followers_count: number } {
+    if (viewerId === creatorId) {
+      throw new Error('You cannot follow yourself');
+    }
+    const existing = db.prepare(`
+      SELECT id FROM user_interactions
+      WHERE user_id = ? AND target_user_id = ? AND interaction_type = 'follow'
+    `).get(viewerId, creatorId) as any;
+
+    const now = Date.now();
+    if (existing) {
+      db.prepare('DELETE FROM user_interactions WHERE id = ?').run(existing.id);
+      db.prepare("DELETE FROM user_relationships WHERE user_id = ? AND target_user_id = ? AND relationship_type = 'friend'").run(viewerId, creatorId);
+    } else {
+      const id = `act_${viewerId}_${creatorId}_follow_${now}`;
+      db.prepare(`
+        INSERT INTO user_interactions (id, user_id, target_user_id, interaction_type, connection_type, created_at)
+        VALUES (?, ?, ?, 'follow', 'friendship', ?)
+      `).run(id, viewerId, creatorId, now);
+      db.prepare(`
+        INSERT OR IGNORE INTO user_relationships (user_id, target_user_id, relationship_type, created_at)
+        VALUES (?, ?, 'friend', ?)
+      `).run(viewerId, creatorId, now);
+    }
+
+    const countRow = db.prepare(`
+      SELECT count(*) as c FROM user_interactions
+      WHERE target_user_id = ? AND interaction_type = 'follow'
+    `).get(creatorId) as any;
+
+    return {
+      is_following: !existing,
+      followers_count: countRow?.c || 0
+    };
+  }
+
+  /**
+   * Retrieve creator profile with stats and follower status.
+   */
+  public static getCreatorProfile(creatorId: string, viewerId?: string) {
+    const user = db.prepare('SELECT id, name, username, avatar_url, last_seen_at, status_text FROM users WHERE id = ?').get(creatorId) as any;
+    if (!user) return null;
+
+    const postsCountRow = db.prepare("SELECT count(*) as c FROM social_posts WHERE user_id = ? AND is_deleted = 0 AND visibility = 'public'").get(creatorId) as any;
+    const followersCountRow = db.prepare("SELECT count(*) as c FROM user_interactions WHERE target_user_id = ? AND interaction_type = 'follow'").get(creatorId) as any;
+    const followingCountRow = db.prepare("SELECT count(*) as c FROM user_interactions WHERE user_id = ? AND interaction_type = 'follow'").get(creatorId) as any;
+
+    let isFollowing = false;
+    if (viewerId) {
+      const f = db.prepare("SELECT 1 FROM user_interactions WHERE user_id = ? AND target_user_id = ? AND interaction_type = 'follow'").get(viewerId, creatorId);
+      isFollowing = !!f;
+    }
+
+    const disc = db.prepare('SELECT tagline, bio, city, country, interests_json, core_values_json FROM discovery_profiles WHERE user_id = ?').get(creatorId) as any;
+
+    return {
+      ...user,
+      bio: disc?.bio || user.status_text || 'Soulverse Creator & Storyteller',
+      tagline: disc?.tagline || 'Exploring connection and craft',
+      location: disc?.city ? `${disc.city}, ${disc.country}` : undefined,
+      interests: disc?.interests_json ? JSON.parse(disc.interests_json) : ['Philosophy', 'Presence', 'Craft'],
+      core_values: disc?.core_values_json ? JSON.parse(disc.core_values_json) : ['Depth', 'Authenticity'],
+      posts_count: postsCountRow?.c || 0,
+      followers_count: followersCountRow?.c || 0,
+      following_count: followingCountRow?.c || 0,
+      is_following: isFollowing
+    };
+  }
+
+  /**
+   * Retrieve public posts by creator with cursor pagination.
+   */
+  public static getCreatorPosts(creatorId: string, cursor?: string, limit = 15, viewerId?: string): FeedResponse {
+    let sql = `
+      SELECT p.*, u.name as author_name, u.avatar_url as author_avatar, u.username as author_username
+      FROM social_posts p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.user_id = ? AND p.is_deleted = 0 AND p.is_archived = 0
+    `;
+    const params: any[] = [creatorId];
+    if (cursor) {
+      const parts = cursor.split('_');
+      if (parts.length >= 2) {
+        sql += ' AND (p.created_at < ? OR (p.created_at = ? AND p.id < ?))';
+        params.push(parseInt(parts[0], 10), parseInt(parts[0], 10), parts.slice(1).join('_'));
+      }
+    }
+    sql += ' ORDER BY p.is_pinned DESC, p.created_at DESC LIMIT ?';
+    params.push(limit + 1);
+
+    const rows = db.prepare(sql).all(...params) as any[];
+    const items = rows.slice(0, limit).map(r => this.mapPostRow(r, viewerId));
+    const hasMore = rows.length > limit;
+    const last = items[items.length - 1];
+
+    return {
+      items,
+      has_more: hasMore,
+      next_cursor: hasMore && last ? `${last.created_at}_${last.id}` : null,
+      feed_mode: 'for_you'
+    };
+  }
+
+  /**
+   * Hide post from user's future discovery.
+   */
+  public static hidePost(viewerId: string, postId: string): void {
+    const now = Date.now();
+    db.prepare(`
+      INSERT OR IGNORE INTO social_hidden_posts (user_id, post_id, hidden_at)
+      VALUES (?, ?, ?)
+    `).run(viewerId, postId, now);
+  }
+
+  /**
+   * User Feed Preferences
+   */
+  public static getUserPreferences(userId: string): { preferred_categories: string[]; excluded_tags: string[]; preferred_feed_mode: string } {
+    const row = db.prepare('SELECT * FROM user_feed_preferences WHERE user_id = ?').get(userId) as any;
+    if (!row) {
+      return { preferred_categories: ['all', 'philosophy', 'cinema', 'architecture', 'music'], excluded_tags: [], preferred_feed_mode: 'for_you' };
+    }
+    return {
+      preferred_categories: JSON.parse(row.preferred_categories || '[]'),
+      excluded_tags: JSON.parse(row.excluded_tags || '[]'),
+      preferred_feed_mode: row.preferred_feed_mode || 'for_you'
+    };
+  }
+
+  public static updateUserPreferences(userId: string, categories: string[], feedMode = 'for_you'): void {
+    const now = Date.now();
+    db.prepare(`
+      INSERT INTO user_feed_preferences (user_id, preferred_categories, excluded_tags, preferred_feed_mode, updated_at)
+      VALUES (?, ?, '[]', ?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        preferred_categories = excluded.preferred_categories,
+        preferred_feed_mode = excluded.preferred_feed_mode,
+        updated_at = excluded.updated_at
+    `).run(userId, JSON.stringify(categories), feedMode, now);
   }
 }

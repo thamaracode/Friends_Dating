@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MapPin, 
   ShieldCheck, 
@@ -20,8 +20,13 @@ import {
   Share2, 
   Check, 
   ArrowLeft,
-  X
+  X,
+  Sparkles,
+  Quote,
+  Loader2
 } from 'lucide-react';
+import { socialApiClient } from '../../services/socialApiClient';
+import type { SocialPostItem } from '../../types/social';
 import type { UserProfile } from '../../types';
 
 interface EditorialHumanProfileViewProps {
@@ -43,6 +48,18 @@ export const EditorialHumanProfileView: React.FC<EditorialHumanProfileViewProps>
 }) => {
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [creatorPosts, setCreatorPosts] = useState<SocialPostItem[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+
+  useEffect(() => {
+    if (profile?.id) {
+      setLoadingPosts(true);
+      socialApiClient.getCreatorPosts(profile.id)
+        .then(res => setCreatorPosts(res.items || []))
+        .catch(() => setCreatorPosts([]))
+        .finally(() => setLoadingPosts(false));
+    }
+  }, [profile?.id]);
 
   const photos = profile.photos && profile.photos.length > 0 
     ? profile.photos 
@@ -491,6 +508,81 @@ export const EditorialHumanProfileView: React.FC<EditorialHumanProfileViewProps>
             <span className="text-xs font-bold text-white block mt-0.5">Gallery walk & warm tea</span>
           </div>
         </div>
+      </section>
+
+      {/* ===================================================================== */}
+      {/* 7. THEIR EXPRESSIONS & THOUGHTS (Public Post Dossier)                 */}
+      {/* ===================================================================== */}
+      <section className="p-6 rounded-3xl dark-glass border border-white/[0.08] space-y-4">
+        <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            <h2 className="text-lg font-bold text-white font-heading">Public Expressions</h2>
+            <span className="text-xs text-zinc-500 font-mono">Thoughts, Quotes & Creations</span>
+          </div>
+          <span className="px-2 py-0.5 rounded-full bg-white/[0.06] text-xs font-mono text-zinc-300">
+            {creatorPosts.length} shared
+          </span>
+        </div>
+
+        {loadingPosts ? (
+          <div className="flex items-center justify-center py-8 text-zinc-500 gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-rose-500" />
+            <span className="text-xs">Loading creations...</span>
+          </div>
+        ) : creatorPosts.length === 0 ? (
+          <div className="text-center py-8 text-zinc-500 space-y-1">
+            <Sparkles className="w-6 h-6 mx-auto text-zinc-600 stroke-1" />
+            <p className="text-xs">No public expressions shared yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {creatorPosts.map(post => (
+              <div
+                key={post.id}
+                className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-white/[0.1] transition-all space-y-2"
+              >
+                <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                  <span className="uppercase text-rose-400 font-bold tracking-wider">
+                    {post.post_type}
+                  </span>
+                  <span>{new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                </div>
+
+                {post.title && (
+                  <h3 className="text-sm font-bold text-white font-heading">
+                    {post.title}
+                  </h3>
+                )}
+
+                <p className="text-xs text-zinc-300 leading-relaxed line-clamp-3">
+                  {post.content}
+                </p>
+
+                {post.media_urls && post.media_urls.length > 0 && (
+                  <div className="pt-1 rounded-xl overflow-hidden">
+                    <img
+                      src={post.media_urls[0]}
+                      alt="Expression media"
+                      className="w-full max-h-48 object-cover rounded-xl border border-white/10"
+                    />
+                  </div>
+                )}
+
+                <div className="pt-2 flex items-center gap-4 text-xs text-zinc-500">
+                  <span className="flex items-center gap-1">
+                    <Heart className="w-3.5 h-3.5 text-rose-500" />
+                    <span>{post.likes_count}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MessageCircle className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>{post.comments_count}</span>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Bottom Sticky Action Bar (For Non-Owner viewing) */}

@@ -212,6 +212,7 @@ export interface FeedQueryParams {
   feed_mode?: FeedMode;
   category?: string;
   tag?: string;
+  post_type?: string;
   cursor?: string; // timestamp_id
   limit?: number;
   exclude_ids?: string[];
