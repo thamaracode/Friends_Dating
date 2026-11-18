@@ -1021,6 +1021,27 @@ export const SoulverseSettingsPage: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* TYPOGRAPHIC PERSONALITY (Editorial Triad) */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl dark-glass-card border border-white/[0.06] gap-3 mt-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-white">Typographic Personality</span>
+                  <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[9px] font-bold">
+                    Editorial Triad
+                  </span>
+                </div>
+                <p className="text-[10px] text-zinc-400">
+                  Headings: <span className="text-white font-medium">Bricolage Grotesque</span> • Chat & UI: <span className="text-white font-medium">Instrument Sans</span> • Hero: <span className="text-white font-medium">Syne</span>
+                </p>
+              </div>
+              <button
+                onClick={() => { window.location.hash = '#design_system'; }}
+                className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-semibold text-white transition-all self-start sm:self-auto cursor-pointer"
+              >
+                Typography Studio
+              </button>
+            </div>
           </div>
 
         </div>

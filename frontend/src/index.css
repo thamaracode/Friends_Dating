@@ -3,11 +3,35 @@
 @import "./styles/liquid-glass.css";
 
 :root {
-  /* Centralized Typography Families */
-  --font-heading: 'Plus Jakarta Sans', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-editorial: 'Playfair Display', 'Lora', Georgia, serif;
+  /* ═════════════════════════════════════════════════════════════════════════ */
+  /* DISTINCTIVE EDITORIAL TYPOGRAPHY ARCHITECTURE                            */
+  /* ═════════════════════════════════════════════════════════════════════════ */
+  
+  /* 1. Brand & Headings: Bricolage Grotesque (Distinctive letterforms, expressive editorial shapes) */
+  --font-heading: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* 2. Main Application UI, Chat, Long Reading, & Messages: Instrument Sans (Quiet luxury, exceptional readability) */
+  --font-body: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* 3. Large Promotional Titles & Hero Accents: Syne (Artistic, bold, unconventional, editorial power) */
+  --font-display: 'Syne', sans-serif;
+  --font-promo: 'Syne', sans-serif;
+  
+  /* 4. Poetic & Sanctuary Accents: Bricolage Grotesque */
+  --font-editorial: 'Bricolage Grotesque', 'Instrument Sans', sans-serif;
+  
+  /* 5. Monospace System Tokens: JetBrains Mono */
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* 8 Distinctive Typographic Exploration Tokens */
+  --font-bricolage: 'Bricolage Grotesque', sans-serif;
+  --font-instrument: 'Instrument Sans', sans-serif;
+  --font-syne: 'Syne', sans-serif;
+  --font-space-grotesk: 'Space Grotesk', sans-serif;
+  --font-general-sans: 'General Sans', sans-serif;
+  --font-clash-display: 'Clash Display', sans-serif;
+  --font-switzer: 'Switzer', sans-serif;
+  --font-figtree: 'Figtree', sans-serif;
 
   font-family: var(--font-body);
   color-scheme: dark;
@@ -112,18 +136,42 @@ body {
   font-family: var(--font-mono);
 }
 
+.font-display,
+.font-promo,
+.font-syne {
+  font-family: var(--font-display);
+}
+
+/* Individual Utility Classes for All 8 Distinctive Fonts */
+.font-bricolage { font-family: var(--font-bricolage); }
+.font-instrument { font-family: var(--font-instrument); }
+.font-space-grotesk { font-family: var(--font-space-grotesk); }
+.font-general-sans { font-family: var(--font-general-sans); }
+.font-clash-display { font-family: var(--font-clash-display); }
+.font-switzer { font-family: var(--font-switzer); }
+.font-figtree { font-family: var(--font-figtree); }
+
 .type-hero {
-  font-family: var(--font-heading);
-  font-size: clamp(2rem, 4vw, 2.5rem); /* 32px – 40px */
-  line-height: 1.15;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 4.5vw, 3.25rem); /* 36px – 52px */
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   font-weight: 800;
+  color: #FFFFFF;
+}
+
+.type-promo {
+  font-family: var(--font-display);
+  font-size: clamp(1.875rem, 3.5vw, 2.75rem); /* 30px – 44px */
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  font-weight: 700;
   color: #FFFFFF;
 }
 
 .type-page-heading {
   font-family: var(--font-heading);
-  font-size: clamp(1.75rem, 3vw, 2.125rem); /* 28px – 34px */
+  font-size: clamp(1.75rem, 3vw, 2.25rem); /* 28px – 36px */
   line-height: 1.25;
   letter-spacing: -0.02em;
   font-weight: 700;
